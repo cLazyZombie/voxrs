@@ -23,14 +23,12 @@ fn main() {
             }
             _ => {}
         },
-        Event::RedrawRequested(_) => {
-            match renderer.render() {
-                Ok(_) => {}
-                Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
-                Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                Err(e) => eprintln!("{:?}", e),
-            }
-        }
+        Event::RedrawRequested(_) => match renderer.render() {
+            Ok(_) => {}
+            Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
+            Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+            Err(e) => eprintln!("{:?}", e),
+        },
         Event::MainEventsCleared => {
             window.request_redraw();
         }

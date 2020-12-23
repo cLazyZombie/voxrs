@@ -54,8 +54,8 @@ impl Renderer {
         let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
         let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
 
-        let render_pipeline_layout = 
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor{
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Cube Render Pipeline Layout"),
                 bind_group_layouts: &[],
                 push_constant_ranges: &[],
@@ -81,7 +81,7 @@ impl Renderer {
                 depth_bias_clamp: 0.0,
             }),
             primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-            color_states: &[wgpu::ColorStateDescriptor{
+            color_states: &[wgpu::ColorStateDescriptor {
                 format: swap_chain_desc.format,
                 alpha_blend: wgpu::BlendDescriptor::REPLACE,
                 color_blend: wgpu::BlendDescriptor::REPLACE,
@@ -118,9 +118,11 @@ impl Renderer {
     pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
         let frame = self.swap_chain.get_current_frame()?.output;
 
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -129,7 +131,7 @@ impl Renderer {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1, 
+                            r: 0.1,
                             g: 0.2,
                             b: 0.3,
                             a: 1.0,
@@ -154,7 +156,9 @@ impl Renderer {
         self.size = new_size;
         self.swap_chain_desc.width = new_size.width;
         self.swap_chain_desc.height = new_size.height;
-        self.swap_chain = self.device.create_swap_chain(&self.surface, &self.swap_chain_desc);
+        self.swap_chain = self
+            .device
+            .create_swap_chain(&self.surface, &self.swap_chain_desc);
     }
 
     pub fn resize_self(&mut self) {
