@@ -32,4 +32,9 @@ impl Camera {
     pub fn resize(&mut self, width: u32, height: u32) {
         self.aspect = width as f32 / height as f32;
     }
+
+    pub fn move_camera(&mut self, offset: glm::Vec3) {
+        self.eye += offset;
+        self.target += offset;
+    }
 }

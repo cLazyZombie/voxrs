@@ -16,7 +16,7 @@ pub struct Renderer {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
-    camera: Camera,
+    pub camera: Camera, // temp
     uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
@@ -237,15 +237,16 @@ impl Renderer {
 
         self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
         self.camera.resize(new_size.width, new_size.height);
-
-        self.uniforms.update_view_proj(&self.camera);
-
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 
     pub fn resize_self(&mut self) {
         let new_size = self.size;
         self.resize(new_size);
+    }
+
+    pub fn update_camera(&mut self) {
+        self.uniforms.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 }
 
