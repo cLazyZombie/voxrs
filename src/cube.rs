@@ -11,10 +11,10 @@ pub struct CubeVertex {
 #[rustfmt::skip]
 pub const CUBE_VERTICES: &[CubeVertex] = &[
     // +y
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.] },
+    CubeVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.] },
+    CubeVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.] },
+    CubeVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.] },
+    CubeVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.] },
 
     // -y
     CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.] },
@@ -41,14 +41,32 @@ pub const CUBE_VERTICES: &[CubeVertex] = &[
     CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.] },
 
     // -z
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.] },
+    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.] },
+    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.] },
+    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.] },
+    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.] },
 ];
 
 #[rustfmt::skip]
-pub const CUBE_INDICES: &[u16] = &[0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 18, 17, 19, 20, 21, 22, 22, 21, 23];
+pub const CUBE_INDICES: &[u16] = &[
+    0, 1, 2, 
+    2, 1, 3, 
+    
+    4, 5, 6, 
+    6, 5, 7, 
+    
+    8, 9, 10, 
+    10, 9, 11, 
+    
+    12, 13, 14, 
+    14, 13, 15, 
+    
+    16, 17, 18, 
+    18, 17, 19, 
+    
+    20, 21, 22, 
+    22, 21, 23,
+];
 
 pub fn create_cube_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
