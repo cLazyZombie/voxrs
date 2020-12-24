@@ -6,45 +6,46 @@ use wgpu::util::DeviceExt;
 pub struct CubeVertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
+    pub uv: [f32; 2],
 }
 
 #[rustfmt::skip]
 pub const CUBE_VERTICES: &[CubeVertex] = &[
     // +y
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.] },
+    CubeVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.], uv: [1.0, 1.0] },
 
     // -y
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.] },
+    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // +x
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.] },
+    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
     
     // -x
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.] },
+    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // +z
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.] },
+    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // -z
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.] },
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.] },
+    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 0.0] },
+    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 0.0] },
+    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 1.0] },
+    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 1.0] },
 ];
 
 #[rustfmt::skip]
@@ -98,6 +99,11 @@ pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
                 format: wgpu::VertexFormat::Float3,
+            },
+            wgpu::VertexAttributeDescriptor {
+                offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>()) as wgpu::BufferAddress,
+                shader_location: 2,
+                format: wgpu::VertexFormat::Float2,
             },
         ],
     }
