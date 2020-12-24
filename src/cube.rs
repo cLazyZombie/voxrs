@@ -1,5 +1,155 @@
 use bytemuck;
 use wgpu::util::DeviceExt;
+use crate::texture;
+
+pub struct CubeRenderSystem {
+    vs_module: wgpu::ShaderModule,
+    fs_module: wgpu::ShaderModule,
+    uniform_bind_group_layout: wgpu::BindGroupLayout,
+    diffuse_bind_group_layout: wgpu::BindGroupLayout,
+    render_pipeline_layout: wgpu::PipelineLayout,
+    render_pipeline: wgpu::RenderPipeline,
+}
+
+impl CubeRenderSystem {
+    pub fn new(device: &wgpu::Device) -> Self {
+        let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
+        let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
+
+        let uniform_bind_group_layout = device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor{
+                label: Some("view projection bind group layout for cube"),
+                entries: &[
+                    // view-projection matrix
+                    wgpu::BindGroupLayoutEntry{
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::VERTEX,
+                        ty: wgpu::BindingType::UniformBuffer{
+                            dynamic: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+            }
+        );
+
+        let diffuse_bind_group_layout = device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("diffuse texture bind group layout for cube"),
+                entries: &[
+                    // texture
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::SampledTexture{
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    // sampler
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler {
+                            comparison: false,
+                        },
+                        count: None,
+                    },
+                ],
+            }
+        );
+
+        let render_pipeline_layout = device.create_pipeline_layout(
+            &wgpu::PipelineLayoutDescriptor {
+                label: Some("cube render system pipeline layout"),
+                bind_group_layouts: &[
+                    &uniform_bind_group_layout,
+                    &diffuse_bind_group_layout,
+                ],
+                push_constant_ranges: &[],
+            }
+        );
+
+        let render_pipeline = device.create_render_pipeline(
+            &wgpu::RenderPipelineDescriptor {
+                label: Some("cube render system render pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex_stage: wgpu::ProgrammableStageDescriptor{
+                    module: &vs_module,
+                    entry_point: "main",
+                },
+                fragment_stage: Some(wgpu::ProgrammableStageDescriptor{
+                    module: &fs_module,
+                    entry_point: "main",
+                }),
+                rasterization_state: Some(wgpu::RasterizationStateDescriptor{
+                    front_face: wgpu::FrontFace::Cw,
+                    cull_mode: wgpu::CullMode::Back,
+                    clamp_depth: false,
+                    depth_bias: 0,
+                    depth_bias_slope_scale: 0.0,
+                    depth_bias_clamp: 0.0,
+                }),
+                primitive_topology: wgpu::PrimitiveTopology::TriangleList,
+                color_states: &[
+                    wgpu::ColorStateDescriptor{
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        alpha_blend: wgpu::BlendDescriptor::REPLACE,
+                        color_blend: wgpu::BlendDescriptor::REPLACE,
+                        write_mask: wgpu::ColorWrite::ALL,
+                    }
+                ],
+                depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor{
+                    format: texture::DEPTH_FORMAT,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: wgpu::StencilStateDescriptor::default(),
+                }),
+                vertex_state: wgpu::VertexStateDescriptor{
+                    index_format: wgpu::IndexFormat::Uint16,
+                    vertex_buffers: &[
+                        wgpu::VertexBufferDescriptor {
+                            stride: std::mem::size_of::<CubeVertex>() as wgpu::BufferAddress,
+                            step_mode: wgpu::InputStepMode::Vertex,
+                            attributes: &[
+                                wgpu::VertexAttributeDescriptor {
+                                    offset: 0,
+                                    shader_location: 0,
+                                    format: wgpu::VertexFormat::Float3,
+                                },
+                                wgpu::VertexAttributeDescriptor {
+                                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                                    shader_location: 1,
+                                    format: wgpu::VertexFormat::Float3,
+                                },
+                                wgpu::VertexAttributeDescriptor {
+                                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>()) as wgpu::BufferAddress,
+                                    shader_location: 2,
+                                    format: wgpu::VertexFormat::Float2,
+                                },
+                            ],
+                        }
+                    ],
+                },
+                sample_count: 1,
+                sample_mask: !0,
+                alpha_to_coverage_enabled: false,
+            }
+        );
+
+        Self {
+            vs_module,
+            fs_module,
+            uniform_bind_group_layout,
+            diffuse_bind_group_layout,
+            render_pipeline_layout,
+            render_pipeline,
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -109,4 +259,44 @@ pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
     }
 }
 
-pub struct Cube {}
+pub struct Cube {
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+    //uniform_bind_group: wgpu::BindGroup, // 외부에서 공유
+    diffuse: texture::Texture,
+    diffuse_bind_group: wgpu::BindGroup,
+}
+
+impl Cube {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, diffuse_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
+        let vertex_buffer = create_cube_vertexbuffer(device);
+        let index_buffer = create_cube_indexbuffer(device);
+
+        let diffuse_bytes = include_bytes!("gravel.png");
+        let diffuse = texture::Texture::from_bytes(device, queue, diffuse_bytes, "cube_diffuse").unwrap();
+
+        let diffuse_bind_group = device.create_bind_group(
+            &wgpu::BindGroupDescriptor{
+                label: Some("diffuse_bind_group"),
+                layout: diffuse_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry{
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&diffuse.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&diffuse.sampler),
+                    }
+                ],
+            }
+        );
+
+        Self {
+            vertex_buffer,
+            index_buffer,
+            diffuse,
+            diffuse_bind_group,
+        }
+    }
+}

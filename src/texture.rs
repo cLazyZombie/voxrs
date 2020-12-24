@@ -1,6 +1,8 @@
 use image::{GenericImageView};
 use anyhow::*;
 
+pub const COLOR_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
+pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -77,9 +79,6 @@ impl Texture {
         Ok(Self { texture, view, sampler })
     }
 
-
-    pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-
     pub fn create_depth_texture(device: &wgpu::Device, swap_chain_desc: &wgpu::SwapChainDescriptor, label: &str) -> Self {
         let size = wgpu::Extent3d {
             width: swap_chain_desc.width,
@@ -93,7 +92,7 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: Self::DEPTH_FORMAT,
+            format: DEPTH_FORMAT,
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::SAMPLED,
         };
 
