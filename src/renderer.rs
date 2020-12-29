@@ -1,9 +1,8 @@
 use std::iter;
 
 use winit::window::Window;
-use wgpu::util::DeviceExt;
 
-use crate::{camera::Camera, cube, texture};
+use crate::{camera::Camera, cube::CubeRenderSystem, texture};
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -11,19 +10,10 @@ pub struct Renderer {
     queue: wgpu::Queue,
     swap_chain_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
-    render_pipeline: wgpu::RenderPipeline,
     size: winit::dpi::PhysicalSize<u32>,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
     pub camera: Camera, // temp
-    uniforms: Uniforms,
-    uniform_buffer: wgpu::Buffer,
-    uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
-    #[allow(dead_code)]
-    diffuse_texture: texture::Texture,
-    diffuse_bind_group: wgpu::BindGroup,
+    cube_renderer: CubeRenderSystem,
 }
 
 impl Renderer {
@@ -60,10 +50,6 @@ impl Renderer {
         };
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
-        let vertex_buffer = cube::create_cube_vertexbuffer(&device);
-        let index_buffer = cube::create_cube_indexbuffer(&device);
-        let num_indices = cube::CUBE_INDICES.len() as u32;
-
         let camera = Camera::new(
             glm::vec3(3.5, 3.5, -10.0),
             glm::vec3(0.5, 0.5, 10.0),
@@ -74,142 +60,9 @@ impl Renderer {
             100.0,
         );
 
-        let mut uniforms = Uniforms::new();
-        uniforms.update_view_proj(&camera);
-
-        let uniform_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            }
-        );
-
-        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer {
-                        dynamic: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("uniform_bind_group_layout"),
-        });
-
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..))
-                }
-            ],
-            label: Some("uniform_bind_group"),
-        });
-
         let depth_texture = texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
-        let diffuse_bytes = include_bytes!("gravel.png");
-        let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "gravel.png").unwrap();
-        let diffuse_bind_group_layout = device.create_bind_group_layout(
-            &wgpu::BindGroupLayoutDescriptor {
-                label: Some("diffuse_bind_group_layout"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::SampledTexture {
-                            multisampled: false,
-                            dimension: wgpu::TextureViewDimension::D2,
-                            component_type: wgpu::TextureComponentType::Uint,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler {
-                            comparison: false,
-                        },
-                        count: None,
-                    },
-                ],
-            }
-        );
-        let diffuse_bind_group = device.create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                label: Some("diffuse_bind_group"),
-                layout: &diffuse_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
-                    }
-                ],
-            }
-        );
-
-        let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
-        let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
-
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Cube Render Pipeline Layout"),
-                bind_group_layouts: &[
-                    &uniform_bind_group_layout,
-                    &diffuse_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
-
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Cube Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
-                module: &vs_module,
-                entry_point: "main",
-            },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
-                front_face: wgpu::FrontFace::Cw,
-                cull_mode: wgpu::CullMode::Back,
-                clamp_depth: false,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-            }),
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-            color_states: &[wgpu::ColorStateDescriptor {
-                format: swap_chain_desc.format,
-                alpha_blend: wgpu::BlendDescriptor::REPLACE,
-                color_blend: wgpu::BlendDescriptor::REPLACE,
-                write_mask: wgpu::ColorWrite::ALL,
-            }],
-            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
-                format: texture::DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilStateDescriptor::default(),
-            }),
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[cube::create_cube_vertexbuffer_desc()],
-            },
-            sample_count: 1,
-            sample_mask: !0,
-            alpha_to_coverage_enabled: false,
-        });
+        let cube_renderer = CubeRenderSystem::new(&device, &queue);
 
         Self {
             surface,
@@ -217,18 +70,10 @@ impl Renderer {
             queue,
             swap_chain_desc,
             swap_chain,
-            render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
             size,
             camera,
-            uniforms,
-            uniform_buffer,
-            uniform_bind_group,
             depth_texture,
-            diffuse_texture,
-            diffuse_bind_group,
+            cube_renderer,
         }
     }
 
@@ -266,12 +111,7 @@ impl Renderer {
                 }),
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.diffuse_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..));
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            self.cube_renderer.render(&mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -296,27 +136,26 @@ impl Renderer {
     }
 
     pub fn update_camera(&mut self) {
-        self.uniforms.update_view_proj(&self.camera);
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
+        self.cube_renderer.update_camera(&self.camera, &self.queue);
     }
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct Uniforms {
+pub struct Uniforms {
     view_proj: [f32; 16],
 }
 
 use std::convert::TryInto;
 
 impl Uniforms {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             view_proj: (glm::identity() as glm::Mat4).as_slice().try_into().unwrap(),
         }
     }
 
-    fn update_view_proj(&mut self, camera: &Camera) {
+    pub fn update_view_proj(&mut self, camera: &Camera) {
         self.view_proj = camera.build_view_projection_matrix().as_slice().try_into().unwrap();
     }
 }

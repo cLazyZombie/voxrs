@@ -1,18 +1,28 @@
 use bytemuck;
 use wgpu::util::DeviceExt;
-use crate::texture;
+use crate::{camera::Camera, renderer::Uniforms, texture};
 
 pub struct CubeRenderSystem {
+    #[allow(dead_code)]
     vs_module: wgpu::ShaderModule,
+    #[allow(dead_code)]
     fs_module: wgpu::ShaderModule,
+    #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
+    uniforms: Uniforms,
+    uniform_buffer: wgpu::Buffer,   // TODO: buffer는 외부에서 관리해야 함
+    #[allow(dead_code)]
+    uniform_bind_group: wgpu::BindGroup,
+    #[allow(dead_code)]
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
+    #[allow(dead_code)]
     render_pipeline_layout: wgpu::PipelineLayout,
     render_pipeline: wgpu::RenderPipeline,
+    cubes: Vec<Cube>
 }
 
 impl CubeRenderSystem {
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
         let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
         let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
 
@@ -33,6 +43,27 @@ impl CubeRenderSystem {
                 ],
             }
         );
+
+        let uniforms = Uniforms::new();
+
+        let uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..))
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
 
         let diffuse_bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -140,14 +171,39 @@ impl CubeRenderSystem {
             }
         );
 
+        let cubes = vec![
+            Cube::new(device, queue, &diffuse_bind_group_layout),
+        ];
+
         Self {
             vs_module,
             fs_module,
             uniform_bind_group_layout,
+            uniforms,
+            uniform_buffer,
+            uniform_bind_group,
             diffuse_bind_group_layout,
             render_pipeline_layout,
             render_pipeline,
+            cubes,
         }
+    }
+
+    pub fn render<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
+
+        for cube in &self.cubes {
+            render_pass.set_bind_group(1, &cube.diffuse_bind_group, &[]);
+            render_pass.set_vertex_buffer(0, cube.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(cube.index_buffer.slice(..));
+            render_pass.draw_indexed(0..cube.num_indices, 0, 0..1);
+        }
+    }
+
+    pub fn update_camera(&mut self, camera: &Camera, queue: &wgpu::Queue) {
+        self.uniforms.update_view_proj(camera);
+        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 }
 
@@ -262,9 +318,10 @@ pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
 pub struct Cube {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    //uniform_bind_group: wgpu::BindGroup, // 외부에서 공유
+    #[allow(dead_code)]
     diffuse: texture::Texture,
     diffuse_bind_group: wgpu::BindGroup,
+    num_indices: u32,
 }
 
 impl Cube {
@@ -292,11 +349,14 @@ impl Cube {
             }
         );
 
+        let num_indices = CUBE_INDICES.len() as u32;
+
         Self {
             vertex_buffer,
             index_buffer,
             diffuse,
             diffuse_bind_group,
+            num_indices,
         }
     }
 }
