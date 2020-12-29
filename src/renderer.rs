@@ -1,7 +1,6 @@
 use std::iter;
-
 use winit::window::Window;
-
+use wgpu::util::DeviceExt;
 use crate::{camera::Camera, cube::CubeRenderSystem, texture};
 
 pub struct Renderer {
@@ -11,9 +10,12 @@ pub struct Renderer {
     swap_chain_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
-    pub camera: Camera, // temp
     depth_texture: texture::Texture,
     cube_renderer: CubeRenderSystem,
+
+    pub camera: Camera, // temp
+    uniforms: Uniforms,
+    view_proj_buf: wgpu::Buffer,
 }
 
 impl Renderer {
@@ -62,7 +64,16 @@ impl Renderer {
 
         let depth_texture = texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
-        let cube_renderer = CubeRenderSystem::new(&device, &queue);
+        let uniforms = Uniforms::new();
+        let view_proj_buf = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("view_proj buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let cube_renderer = CubeRenderSystem::new(&device, &queue, &view_proj_buf);
 
         Self {
             surface,
@@ -71,9 +82,11 @@ impl Renderer {
             swap_chain_desc,
             swap_chain,
             size,
-            camera,
             depth_texture,
             cube_renderer,
+            camera,
+            uniforms,
+            view_proj_buf,
         }
     }
 
@@ -136,7 +149,8 @@ impl Renderer {
     }
 
     pub fn update_camera(&mut self) {
-        self.cube_renderer.update_camera(&self.camera, &self.queue);
+        self.uniforms.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.view_proj_buf, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 }
 

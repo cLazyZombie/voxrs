@@ -1,6 +1,6 @@
 use bytemuck;
 use wgpu::util::DeviceExt;
-use crate::{camera::Camera, renderer::Uniforms, texture};
+use crate::texture;
 
 pub struct CubeRenderSystem {
     #[allow(dead_code)]
@@ -9,8 +9,6 @@ pub struct CubeRenderSystem {
     fs_module: wgpu::ShaderModule,
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
-    uniforms: Uniforms,
-    uniform_buffer: wgpu::Buffer,   // TODO: buffer는 외부에서 관리해야 함
     #[allow(dead_code)]
     uniform_bind_group: wgpu::BindGroup,
     #[allow(dead_code)]
@@ -22,7 +20,7 @@ pub struct CubeRenderSystem {
 }
 
 impl CubeRenderSystem {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, view_proj_buff: &wgpu::Buffer) -> Self {
         let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
         let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
 
@@ -44,22 +42,22 @@ impl CubeRenderSystem {
             }
         );
 
-        let uniforms = Uniforms::new();
+        // let uniforms = Uniforms::new();
 
-        let uniform_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            }
-        );
+        // let uniform_buffer = device.create_buffer_init(
+        //     &wgpu::util::BufferInitDescriptor {
+        //         label: Some("Uniform buffer"),
+        //         contents: bytemuck::cast_slice(&[uniforms]),
+        //         usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        //     }
+        // );
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &uniform_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..))
+                    resource: wgpu::BindingResource::Buffer(view_proj_buff.slice(..))
                 }
             ],
             label: Some("uniform_bind_group"),
@@ -179,8 +177,6 @@ impl CubeRenderSystem {
             vs_module,
             fs_module,
             uniform_bind_group_layout,
-            uniforms,
-            uniform_buffer,
             uniform_bind_group,
             diffuse_bind_group_layout,
             render_pipeline_layout,
@@ -199,11 +195,6 @@ impl CubeRenderSystem {
             render_pass.set_index_buffer(cube.index_buffer.slice(..));
             render_pass.draw_indexed(0..cube.num_indices, 0, 0..1);
         }
-    }
-
-    pub fn update_camera(&mut self, camera: &Camera, queue: &wgpu::Queue) {
-        self.uniforms.update_view_proj(camera);
-        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 }
 
