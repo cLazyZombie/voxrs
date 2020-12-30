@@ -1,7 +1,12 @@
+use crate::{
+    camera::Camera,
+    cube::CubeRenderSystem,
+    math::{Matrix4, Vector3},
+    texture,
+};
 use std::iter;
-use winit::window::Window;
 use wgpu::util::DeviceExt;
-use crate::{camera::Camera, cube::CubeRenderSystem, texture};
+use winit::window::Window;
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -53,25 +58,24 @@ impl Renderer {
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
         let camera = Camera::new(
-            glm::vec3(3.5, 3.5, -10.0),
-            glm::vec3(0.5, 0.5, 10.0),
-            glm::vec3(0.0, 1.0, 0.0),
+            Vector3::new(3.5, 3.5, -10.0),
+            Vector3::new(0.5, 0.5, 10.0),
+            Vector3::new(0.0, 1.0, 0.0),
             swap_chain_desc.width as f32 / swap_chain_desc.height as f32,
             45.0,
             0.1,
             100.0,
         );
 
-        let depth_texture = texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
+        let depth_texture =
+            texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
         let uniforms = Uniforms::new();
-        let view_proj_buf = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("view_proj buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            }
-        );
+        let view_proj_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("view_proj buffer"),
+            contents: bytemuck::cast_slice(&[uniforms]),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
 
         let cube_renderer = CubeRenderSystem::new(&device, &queue, &view_proj_buf);
 
@@ -139,7 +143,11 @@ impl Renderer {
             .device
             .create_swap_chain(&self.surface, &self.swap_chain_desc);
 
-        self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
+        self.depth_texture = texture::Texture::create_depth_texture(
+            &self.device,
+            &self.swap_chain_desc,
+            "depth_texture",
+        );
         self.camera.resize(new_size.width, new_size.height);
     }
 
@@ -150,7 +158,11 @@ impl Renderer {
 
     pub fn update_camera(&mut self) {
         self.uniforms.update_view_proj(&self.camera);
-        self.queue.write_buffer(&self.view_proj_buf, 0, bytemuck::cast_slice(&[self.uniforms]));
+        self.queue.write_buffer(
+            &self.view_proj_buf,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
     }
 }
 
@@ -165,11 +177,15 @@ use std::convert::TryInto;
 impl Uniforms {
     pub fn new() -> Self {
         Self {
-            view_proj: (glm::identity() as glm::Mat4).as_slice().try_into().unwrap(),
+            view_proj: Matrix4::identity().to_array(),
         }
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.build_view_projection_matrix().as_slice().try_into().unwrap();
+        self.view_proj = camera
+            .build_view_projection_matrix()
+            .as_slice()
+            .try_into()
+            .unwrap();
     }
 }

@@ -2,7 +2,7 @@
 
 ## todo
 
-- uniforms -> view_proj (in renderer)
+- add local transform to cube
 
 - custom math lib
 

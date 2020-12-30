@@ -1,8 +1,9 @@
+use crate::math::{Matrix4, Vector3};
 
 pub struct Camera {
-    eye: glm::Vec3,
-    target: glm::Vec3,
-    up: glm::Vec3,
+    eye: Vector3,
+    target: Vector3,
+    up: Vector3,
     aspect: f32,
     fovy: f32,
     znear: f32,
@@ -10,7 +11,15 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(eye: glm::Vec3, target: glm::Vec3, up: glm::Vec3, aspect: f32, fovy: f32, znear: f32, zfar: f32) -> Self {
+    pub fn new(
+        eye: Vector3,
+        target: Vector3,
+        up: Vector3,
+        aspect: f32,
+        fovy: f32,
+        znear: f32,
+        zfar: f32,
+    ) -> Self {
         Camera {
             eye,
             target,
@@ -22,9 +31,9 @@ impl Camera {
         }
     }
 
-    pub fn build_view_projection_matrix(&self) -> glm::Mat4 {
-        let view : glm::Mat4 = glm::look_at_lh(&self.eye, &self.target, &self.up);
-        let proj : glm::Mat4 = glm::perspective_lh_zo(self.aspect, self.fovy, self.znear, self.zfar);
+    pub fn build_view_projection_matrix(&self) -> Matrix4 {
+        let view = Matrix4::look_at(&self.eye, &self.target, &self.up);
+        let proj = Matrix4::perspective(self.aspect, self.fovy, self.znear, self.zfar);
 
         return proj * view;
     }
@@ -33,7 +42,7 @@ impl Camera {
         self.aspect = width as f32 / height as f32;
     }
 
-    pub fn move_camera(&mut self, offset: glm::Vec3) {
+    pub fn move_camera(&mut self, offset: Vector3) {
         self.eye += offset;
         self.target += offset;
     }
