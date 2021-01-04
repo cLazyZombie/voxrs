@@ -1,4 +1,6 @@
-extern crate nalgebra_glm as glm;
+#![warn(clippy::all)]
+#![allow(clippy::clippy::too_many_arguments)]
+#![allow(clippy::float_cmp)]
 
 pub mod camera;
 pub mod cube;

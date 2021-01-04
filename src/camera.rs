@@ -35,7 +35,7 @@ impl Camera {
         let view = Matrix4::look_at(&self.eye, &self.target, &self.up);
         let proj = Matrix4::perspective(self.aspect, self.fovy, self.znear, self.zfar);
 
-        return proj * view;
+        proj * view
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {

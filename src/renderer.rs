@@ -70,7 +70,7 @@ impl Renderer {
         let depth_texture =
             texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
-        let uniforms = Uniforms::new();
+        let uniforms = Uniforms::default();
         let view_proj_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("view_proj buffer"),
             contents: bytemuck::cast_slice(&[uniforms]),
@@ -175,17 +175,19 @@ pub struct Uniforms {
 use std::convert::TryInto;
 
 impl Uniforms {
-    pub fn new() -> Self {
-        Self {
-            view_proj: Matrix4::identity().to_array(),
-        }
-    }
-
     pub fn update_view_proj(&mut self, camera: &Camera) {
         self.view_proj = camera
             .build_view_projection_matrix()
             .as_slice()
             .try_into()
             .unwrap();
+    }
+}
+
+impl Default for Uniforms {
+    fn default() -> Self {
+        Self {
+            view_proj: Matrix4::identity().to_array(),
+        }
     }
 }

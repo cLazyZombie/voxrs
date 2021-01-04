@@ -1,4 +1,5 @@
-use crate::math::vector3::Vector3;
+use nalgebra_glm as glm;
+use crate::math::Vector3;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix4 {
@@ -71,6 +72,8 @@ impl std::ops::Mul for Matrix4 {
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
+    use approx::*;
+
     use super::*;
 
     #[test]
@@ -84,7 +87,7 @@ mod tests {
 
         for c in 0..4_usize {
             for r in 0..4_usize {
-                assert_eq!(m[(r, c)], (r * 4 + (c + 1)) as f32);
+                assert_relative_eq!(m[(r, c)], (r * 4 + (c + 1)) as f32);
             }
         }
     }
@@ -92,10 +95,10 @@ mod tests {
     #[test]
     fn create_identity_matrix() {
         let m = Matrix4::identity();
-        assert_eq!(m[(0, 0)], 1.0);
-        assert_eq!(m[(1, 1)], 1.0);
-        assert_eq!(m[(2, 2)], 1.0);
-        assert_eq!(m[(3, 3)], 1.0);
+        assert_relative_eq!(m[(0, 0)], 1.0);
+        assert_relative_eq!(m[(1, 1)], 1.0);
+        assert_relative_eq!(m[(2, 2)], 1.0);
+        assert_relative_eq!(m[(3, 3)], 1.0);
     }
 
     #[test]
@@ -150,15 +153,20 @@ mod tests {
         );
 
         let m2 = Matrix4::new(
-            2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0,
+            2.0, 0.0, 0.0, 0.0, 
+            0.0, 2.0, 0.0, 0.0, 
+            0.0, 0.0, 2.0, 0.0, 
+            0.0, 0.0, 0.0, 2.0,
         );
 
         let m3 = m1 * m2;
         assert_eq!(
             m3.as_slice(),
             Matrix4::new(
-                2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0,
-                30.0, 32.0,
+                2.0, 4.0, 6.0, 8.0, 
+                10.0, 12.0, 14.0, 16.0, 
+                18.0, 20.0, 22.0, 24.0, 
+                26.0, 28.0, 30.0, 32.0,
             )
             .as_slice()
         );

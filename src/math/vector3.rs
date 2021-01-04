@@ -1,3 +1,4 @@
+use nalgebra_glm as glm;
 #[derive(Copy, Clone, Debug)]
 pub struct Vector3 {
     v: glm::Vec3,
