@@ -1,4 +1,3 @@
-#![warn(clippy::all)]
 #![allow(clippy::clippy::too_many_arguments)]
 #![allow(clippy::float_cmp)]
 
