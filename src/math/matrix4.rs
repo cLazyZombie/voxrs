@@ -51,6 +51,15 @@ impl Matrix4 {
             m: glm::perspective_lh_zo(aspect, fovy, near, far),
         }
     }
+
+    pub fn translate(v: &Vector3) -> Self {
+        Self::new(
+            1.0, 0.0, 0.0, v.x(),
+            0.0, 1.0, 0.0, v.y(),
+            0.0, 0.0, 1.0, v.z(),
+            0.0, 0.0, 0.0, 1.0,
+        )
+    }
 }
 
 impl std::ops::Index<(usize, usize)> for Matrix4 {

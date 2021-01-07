@@ -1,4 +1,5 @@
 use crate::texture;
+use crate::math;
 use wgpu::util::DeviceExt;
 
 pub struct CubeRenderSystem {
@@ -10,6 +11,7 @@ pub struct CubeRenderSystem {
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
     uniform_bind_group: wgpu::BindGroup,
+    _uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
@@ -49,6 +51,22 @@ impl CubeRenderSystem {
             label: Some("uniform_bind_group"),
         });
 
+        // cube마다 설정할 uniform값들
+        let uniform_local_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
+            label: Some("local bind group layout for cube"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ]  
+        });
+
         let diffuse_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("diffuse texture bind group layout for cube"),
@@ -77,7 +95,10 @@ impl CubeRenderSystem {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("cube render system pipeline layout"),
-                bind_group_layouts: &[&uniform_bind_group_layout, &diffuse_bind_group_layout],
+                bind_group_layouts: &[
+                    &uniform_bind_group_layout, 
+                    &uniform_local_bind_group_layout,
+                    &diffuse_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -144,13 +165,17 @@ impl CubeRenderSystem {
             alpha_to_coverage_enabled: false,
         });
 
-        let cubes = vec![Cube::new(device, queue, &diffuse_bind_group_layout)];
+        let cubes = vec![
+            Cube::new(device, queue, &diffuse_bind_group_layout, &uniform_local_bind_group_layout, math::Vector3::new(0.0, 0.0, 0.0)),
+            Cube::new(device, queue, &diffuse_bind_group_layout, &uniform_local_bind_group_layout, math::Vector3::new(0.0, 1.0, 0.0))
+        ];
 
         Self {
             vs_module,
             fs_module,
             uniform_bind_group_layout,
             uniform_bind_group,
+            _uniform_local_bind_group_layout: uniform_local_bind_group_layout,
             diffuse_bind_group_layout,
             render_pipeline_layout,
             render_pipeline,
@@ -163,7 +188,8 @@ impl CubeRenderSystem {
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
 
         for cube in &self.cubes {
-            render_pass.set_bind_group(1, &cube.diffuse_bind_group, &[]);
+            render_pass.set_bind_group(1, &cube.local_uniform_bind_group, &[]);
+            render_pass.set_bind_group(2, &cube.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, cube.vertex_buffer.slice(..));
             render_pass.set_index_buffer(cube.index_buffer.slice(..));
             render_pass.draw_indexed(0..cube.num_indices, 0, 0..1);
@@ -286,6 +312,9 @@ pub struct Cube {
     #[allow(dead_code)]
     diffuse: texture::Texture,
     diffuse_bind_group: wgpu::BindGroup,
+    _location: math::Vector3,
+    local_uniform_bind_group: wgpu::BindGroup,
+    _local_uniform_buffer: wgpu::Buffer,
     num_indices: u32,
 }
 
@@ -294,6 +323,8 @@ impl Cube {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
+        local_uniform_bind_group_layout: &wgpu::BindGroupLayout,
+        location: math::Vector3,
     ) -> Self {
         let vertex_buffer = create_cube_vertexbuffer(device);
         let index_buffer = create_cube_indexbuffer(device);
@@ -317,6 +348,25 @@ impl Cube {
             ],
         });
 
+        let world_transform = math::Matrix4::translate(&location);
+
+        let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("view_proj buffer"),
+            contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
+
+        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
+            label: Some("local_uniform_bind_group"),
+            layout: local_uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+                }
+            ]
+        });
+
         let num_indices = CUBE_INDICES.len() as u32;
 
         Self {
@@ -324,6 +374,9 @@ impl Cube {
             index_buffer,
             diffuse,
             diffuse_bind_group,
+            _location: location,
+            local_uniform_bind_group,
+            _local_uniform_buffer: local_uniform_buffer,
             num_indices,
         }
     }
