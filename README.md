@@ -2,8 +2,7 @@
 
 ## todo
 
-- add local transform to cube
-
-- custom math lib
-
 - asset
+ - loading (get)
+ - remove unused asset
+ - async loading
