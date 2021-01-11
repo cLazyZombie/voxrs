@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::{HashMap, hash_map::DefaultHasher}, marker::PhantomData, path::{Path, PathBuf}};
 use std::hash::{Hash, Hasher};
 
-use crate::io::FileSystem;
+use crate::{io::FileSystem, texture::Texture};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
@@ -63,12 +63,14 @@ pub trait Asset{
 pub struct TextureAsset {
     #[allow(dead_code)]
     buf: Vec<u8>,
+    texture: Option<Texture>,
 }
 
 impl TextureAsset {
     pub fn new(buf: Vec<u8>) -> Self {
         Self {
             buf,
+            texture: None,
         }
     }
 }
@@ -76,6 +78,25 @@ impl TextureAsset {
 // todo: #[derive(Asset)] 형태로 수정
 impl Asset for TextureAsset {
     const ASSET_TYPE: AssetType = AssetType::Texture;
+}
+
+impl TextureAsset {
+    pub fn build(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
+        if self.texture.is_some() {
+            println!("texture already built");
+            return;
+        }
+
+        let result = Texture::from_bytes(device, queue, &self.buf, "texture");
+        match result {
+            Ok(texture) => {
+                self.texture = Some(texture);
+            }
+            Err(err) => {
+                println!("texture build error. err: {}", &err.to_string()); // build 실패한 texture는 두번 빌드 하지않게 수정
+            }
+        }
+    }
 }
 
 pub struct TextAsset {
@@ -161,6 +182,14 @@ impl<F: FileSystem> AssetManager<F> {
                     let p : *const T = (texture as *const TextureAsset).cast();
                     &*p
                 }
+            }
+        }
+    }
+
+    pub fn build_textures(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
+        for texture in self.textures.values_mut() {
+            if texture.texture.is_none() {
+                texture.build(device, queue)
             }
         }
     }
