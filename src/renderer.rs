@@ -1,9 +1,4 @@
-use crate::{
-    camera::Camera,
-    cube::CubeRenderSystem,
-    math::{Matrix4, Vector3},
-    texture,
-};
+use crate::{blueprint::Blueprint, camera::Camera, cube::CubeRenderSystem, math::Matrix4, texture};
 use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
@@ -17,8 +12,6 @@ pub struct Renderer {
     size: winit::dpi::PhysicalSize<u32>,
     depth_texture: texture::Texture,
     cube_renderer: CubeRenderSystem,
-
-    pub camera: Camera, // temp
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
 }
@@ -57,16 +50,6 @@ impl Renderer {
         };
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
-        let camera = Camera::new(
-            Vector3::new(3.5, 3.5, -10.0),
-            Vector3::new(0.5, 0.5, 10.0),
-            Vector3::new(0.0, 1.0, 0.0),
-            swap_chain_desc.width as f32 / swap_chain_desc.height as f32,
-            45.0,
-            0.1,
-            100.0,
-        );
-
         let depth_texture =
             texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
@@ -88,13 +71,14 @@ impl Renderer {
             size,
             depth_texture,
             cube_renderer,
-            camera,
             uniforms,
             view_proj_buf,
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
+    pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
+        self.update_camera(&bp.camera);
+
         let frame = self.swap_chain.get_current_frame()?.output;
 
         let mut encoder = self
@@ -148,7 +132,6 @@ impl Renderer {
             &self.swap_chain_desc,
             "depth_texture",
         );
-        self.camera.resize(new_size.width, new_size.height);
     }
 
     pub fn resize_self(&mut self) {
@@ -156,8 +139,8 @@ impl Renderer {
         self.resize(new_size);
     }
 
-    pub fn update_camera(&mut self) {
-        self.uniforms.update_view_proj(&self.camera);
+    fn update_camera(&mut self, camera: &Camera) {
+        self.uniforms.update_view_proj(camera);
         self.queue.write_buffer(
             &self.view_proj_buf,
             0,

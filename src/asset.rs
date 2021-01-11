@@ -17,6 +17,15 @@ pub struct AssetHandle<T: Asset> {
     _marker: PhantomData<T>,
 }
 
+impl<T: Asset> Clone for AssetHandle<T> {
+    fn clone(&self) -> Self {
+        Self {
+            hash: self.hash,
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl<T: Asset> AssetHandle<T> {
     fn new(hash: AssetHash) -> Self {
         Self {

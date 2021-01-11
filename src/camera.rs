@@ -10,6 +10,20 @@ pub struct Camera {
     zfar: f32,
 }
 
+impl Clone for Camera {
+    fn clone(&self) -> Self {
+        Camera::new(
+            self.eye,
+            self.target,
+            self.up,
+            self.aspect,
+            self.fovy,
+            self.znear,
+            self.zfar,
+        )
+    }
+}
+
 impl Camera {
     pub fn new(
         eye: Vector3,

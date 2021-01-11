@@ -9,3 +9,4 @@ pub mod renderer;
 pub mod texture;
 pub mod asset;
 pub mod io;
+pub mod blueprint;
