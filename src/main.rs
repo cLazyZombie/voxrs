@@ -80,7 +80,7 @@ fn main() {
                 texture_handle.clone(),
             ));
 
-            match renderer.render(bp) {
+            match renderer.render(bp, &mut asset_manager) {
                 Ok(_) => {}
                 Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
                 Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,

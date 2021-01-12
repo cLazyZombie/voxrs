@@ -1,4 +1,4 @@
-use crate::{blueprint::Blueprint, camera::Camera, cube::CubeRenderSystem, math::Matrix4, texture};
+use crate::{asset::AssetManager, blueprint::Blueprint, camera::Camera, cube::CubeRenderSystem, io::FileSystem, math::Matrix4, texture};
 use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
@@ -76,7 +76,9 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
+    pub fn render<F: FileSystem>(&mut self, bp: Blueprint, asset_manager: &mut AssetManager<F>) -> Result<(), wgpu::SwapChainError> {
+        asset_manager.build_textures(&self.device, &self.queue);
+
         self.update_camera(&bp.camera);
 
         let frame = self.swap_chain.get_current_frame()?.output;
