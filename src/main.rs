@@ -52,6 +52,13 @@ fn main() {
                     VirtualKeyCode::S | VirtualKeyCode::Down if is_pressed => {
                         camera.move_camera(Vector3::new(0.0, 0.0, -0.1));
                     }
+                    VirtualKeyCode::A | VirtualKeyCode::Left if is_pressed => {
+                        camera.move_camera(Vector3::new(-0.1, 0.0, 0.0));
+                    }
+                    VirtualKeyCode::D | VirtualKeyCode::Right if is_pressed => {
+                        camera.move_camera(Vector3::new(0.1, 0.0, 0.0));
+                    }
+
                     _ => {}
                 }
             }
