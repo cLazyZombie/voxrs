@@ -1,12 +1,9 @@
 # voxrs
 
 ## todo
-- sperate game logic and rendering logic
-
-- apply asset (texture)
-
 - asset
- - loading (get)
+ - add test to asset path 
+ - add asset build type (NotBuilt, Ok, Err)
  - remove unused asset
  - async loading
 

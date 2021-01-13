@@ -1,12 +1,12 @@
-use crate::{asset::AssetManager, blueprint, io::FileSystem, texture};
+use crate::{asset::{AssetHandle, AssetManager, TextureAsset, ShaderAsset}, blueprint, io::FileSystem, texture};
 use crate::math;
-use wgpu::util::DeviceExt;
+use wgpu::util::{DeviceExt};
 
 pub struct CubeRenderSystem {
-    #[allow(dead_code)]
-    vs_module: wgpu::ShaderModule,
-    #[allow(dead_code)]
-    fs_module: wgpu::ShaderModule,
+    // #[allow(dead_code)]
+    // vs_module: wgpu::ShaderModule,
+    // #[allow(dead_code)]
+    // fs_module: wgpu::ShaderModule,
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
@@ -23,9 +23,21 @@ pub struct CubeRenderSystem {
 }
 
 impl CubeRenderSystem {
-    pub fn new(device: &wgpu::Device, view_proj_buff: &wgpu::Buffer) -> Self {
-        let vs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.vert.spv"));
-        let fs_module = device.create_shader_module(wgpu::include_spirv!("cube_shader.frag.spv"));
+    pub fn new<F: FileSystem>(device: &wgpu::Device, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
+        const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
+        const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
+
+        //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
+        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&VS_PATH.into()).unwrap();
+        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&FS_PATH.into()).unwrap();
+
+        asset_manager.build_shaders(device);
+
+        let vs_asset = asset_manager.get_asset::<ShaderAsset>(&vs_handle);
+        let fs_asset = asset_manager.get_asset::<ShaderAsset>(&fs_handle);
+
+        let vs_module = vs_asset.module.as_ref().unwrap();
+        let fs_module = fs_asset.module.as_ref().unwrap();
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -172,8 +184,8 @@ impl CubeRenderSystem {
         let num_indices = CUBE_INDICES.len() as u32;
 
         Self {
-            vs_module,
-            fs_module,
+            //vs_module,
+            //fs_module,
             uniform_bind_group_layout,
             uniform_bind_group,
             uniform_local_bind_group_layout,
@@ -196,7 +208,7 @@ impl CubeRenderSystem {
 
         for cube in cubes {
             // texture
-            let diffuse = asset_manager.get_asset::<crate::asset::TextureAsset>(&cube.tex);
+            let diffuse = asset_manager.get_asset::<TextureAsset>(&cube.tex);
             if diffuse.texture.is_none() {
                 println!("texture is not loaded");
                 continue;
@@ -388,7 +400,7 @@ impl Cube {
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Option<Self> {
-        let diffuse = asset_manager.get_asset::<crate::asset::TextureAsset>(&bp.tex);
+        let diffuse = asset_manager.get_asset::<TextureAsset>(&bp.tex);
         if diffuse.texture.is_none() {
             println!("texture is not loaded");
             return None;

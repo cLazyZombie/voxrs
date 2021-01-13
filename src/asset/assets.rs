@@ -1,12 +1,17 @@
-use std::{borrow::Cow, collections::{HashMap, hash_map::DefaultHasher}, marker::PhantomData, path::{Path, PathBuf}};
-use std::hash::{Hash, Hasher};
+use std::{collections::HashMap, marker::PhantomData};
+use std::hash::Hash;
+
+use wgpu::util::make_spirv;
 
 use crate::{io::FileSystem, texture::Texture};
+
+use super::AssetPath;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
     Texture,
     Text,
+    Shader,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -35,34 +40,8 @@ impl<T: Asset> AssetHandle<T> {
     }
 }
 
-pub struct AssetPath<'a> {
-    path: Cow<'a, Path>,
-}
-
-impl<'a> AssetPath<'a> {
-    pub fn new(path: PathBuf) -> Self {
-       Self {
-           path: Cow::Owned(path),
-       } 
-    }
-
-    pub fn new_ref(path: &'a Path) -> Self {
-       Self {
-           path: Cow::Borrowed(path),
-       } 
-    }
-
-    fn get_hash(&self) -> AssetHash {
-        let mut s = DefaultHasher::new();
-        self.path.hash(&mut s);
-        let hash_value = s.finish();
-
-        AssetHash(hash_value)
-    }
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Debug, Hash)]
-struct AssetHash(u64);
+pub struct AssetHash(pub u64);
 
 /// any concrete asset should impl Asset
 pub trait Asset{
@@ -125,9 +104,38 @@ impl TextAsset {
     }
 }
 
+pub struct ShaderAsset {
+    pub buf: Vec<u8>,
+    pub module: Option<wgpu::ShaderModule>,
+}
+
+impl Asset for ShaderAsset {
+    const ASSET_TYPE: AssetType = AssetType::Shader;
+}
+
+impl ShaderAsset {
+    pub fn new(buf: Vec<u8>) -> Self {
+        Self {
+            buf,
+            module: None,
+        }
+    }
+
+    pub fn build(&mut self, device: &wgpu::Device) {
+        if self.module.is_some() {
+            println!("shader already built");
+            return;
+        }
+    
+        let module = device.create_shader_module(make_spirv(&self.buf));
+        self.module = Some(module);
+    }
+}
+
 pub struct AssetManager<F: FileSystem> {
     textures: HashMap<AssetHash, TextureAsset>,
     texts: HashMap<AssetHash, TextAsset>,
+    shaders: HashMap<AssetHash, ShaderAsset>,
     _marker: std::marker::PhantomData<F>,
 }
 
@@ -136,6 +144,7 @@ impl<F: FileSystem> AssetManager<F> {
         Self {
             textures: HashMap::new(),
             texts: HashMap::new(),
+            shaders: HashMap::new(),
             _marker: std::marker::PhantomData,
        }
     }
@@ -144,6 +153,7 @@ impl<F: FileSystem> AssetManager<F> {
         match T::ASSET_TYPE {
             AssetType::Text => self.get_text(path),
             AssetType::Texture => self.get_texture(path),
+            AssetType::Shader => self.get_shader(path),
         }
     }
 
@@ -176,7 +186,20 @@ impl<F: FileSystem> AssetManager<F> {
         }
     }
 
-    pub fn get_asset<T: Asset>(&mut self, handle: &AssetHandle<T>) -> &T {
+    fn get_shader<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
+        let hash = path.get_hash();
+        if let Some(_shader) = self.shaders.get(&hash) {
+            Some(AssetHandle::new(hash))
+        } else if let Ok(read) = F::read_binary(&path.path) {
+            let shader_asset = ShaderAsset::new(read);
+            self.shaders.insert(hash, shader_asset);
+            Some(AssetHandle::new(hash))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
         match T::ASSET_TYPE {
             AssetType::Text => {
                 let text = self.texts.get(&handle.hash).unwrap();
@@ -192,13 +215,28 @@ impl<F: FileSystem> AssetManager<F> {
                     &*p
                 }
             }
+            AssetType::Shader => {
+                let shader = self.shaders.get(&handle.hash).unwrap();
+                unsafe {
+                    let p : *const T = (shader as *const ShaderAsset).cast();
+                    &*p
+                }
+            }
         }
     }
 
     pub fn build_textures(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
         for texture in self.textures.values_mut() {
             if texture.texture.is_none() {
-                texture.build(device, queue)
+                texture.build(device, queue);
+            }
+        }
+    }
+
+    pub fn build_shaders(&mut self, device: &wgpu::Device) {
+        for shader in self.shaders.values_mut() {
+            if shader.module.is_none() {
+                shader.build(device);
             }
         }
     }
@@ -213,7 +251,7 @@ mod tests {
     #[test]
     fn get_text() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path = AssetPath::new_ref(&Path::new("test.txt"));
+        let path = "test.txt".into();
         let handle = manager.get::<TextAsset>(&path);
         assert!(handle.is_some());
 
@@ -224,11 +262,11 @@ mod tests {
     #[test]
     fn get_texture() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path = AssetPath::new(Path::new("texture.png").to_path_buf());
+        let path = "texture.png".into();
         let handle = manager.get::<TextureAsset>(&path);
         assert!(handle.is_some());
 
         let texture_asset = manager.get_asset(&handle.unwrap());
-        assert_eq!(texture_asset.buf, include_bytes!("test_assets/texture.png"));
+        assert_eq!(texture_asset.buf, include_bytes!("../test_assets/texture.png"));
     }
 }

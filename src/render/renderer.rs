@@ -1,7 +1,9 @@
-use crate::{asset::AssetManager, blueprint::Blueprint, camera::Camera, cube::CubeRenderSystem, io::FileSystem, math::Matrix4, texture};
+use std::convert::TryInto;
 use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
+use crate::{asset::AssetManager, blueprint::Blueprint, camera::Camera, io::FileSystem, math::Matrix4, texture};
+use super::cube::CubeRenderSystem;
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -17,7 +19,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub async fn new(window: &Window) -> Self {
+    pub async fn new<F: FileSystem>(window: &Window, asset_manager: &mut AssetManager<F>) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
@@ -60,7 +62,7 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let cube_renderer = CubeRenderSystem::new(&device, &view_proj_buf);
+        let cube_renderer = CubeRenderSystem::new(&device, asset_manager, &view_proj_buf);
 
         Self {
             surface,
@@ -158,8 +160,6 @@ impl Renderer {
 pub struct Uniforms {
     view_proj: [f32; 16],
 }
-
-use std::convert::TryInto;
 
 impl Uniforms {
     pub fn update_view_proj(&mut self, camera: &Camera) {

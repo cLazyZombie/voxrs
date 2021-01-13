@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use voxrs::{asset::{AssetPath, TextureAsset}, blueprint::Blueprint, camera::Camera, math::Vector3, renderer::Renderer};
+use voxrs::{asset::{TextureAsset}, blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -22,10 +20,10 @@ fn main() {
         100.0,
     );
 
-    let mut renderer = futures::executor::block_on(Renderer::new(&window));
 
     let mut asset_manager = voxrs::asset::AssetManager::<voxrs::io::GeneralFileSystem>::new();
-    let texture_handle = asset_manager.get::<TextureAsset>(&AssetPath::new(PathBuf::from("assets/texture.png"))).unwrap();
+    let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
+    let texture_handle = asset_manager.get::<TextureAsset>(&"assets/texture.png".into()).unwrap();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
