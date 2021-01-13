@@ -22,10 +22,6 @@ impl Blueprint {
 pub struct Cube {
     pub pos: Vector3,
     pub tex: AssetHandle<TextureAsset>,
-
-    // rendering data. should be moved to other struct?
-    pub diffuse_bind_group: Option<wgpu::BindGroup>,
-    pub local_uniform_bind_group: Option<wgpu::BindGroup>,
 }
 
 impl Cube {
@@ -33,8 +29,6 @@ impl Cube {
         Self {
             pos,
             tex,
-            diffuse_bind_group: None,
-            local_uniform_bind_group: None,
         }
     }
 }

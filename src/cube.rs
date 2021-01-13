@@ -1,4 +1,4 @@
-use crate::{blueprint, texture};
+use crate::{asset::AssetManager, blueprint, io::FileSystem, texture};
 use crate::math;
 use wgpu::util::DeviceExt;
 
@@ -186,12 +186,14 @@ impl CubeRenderSystem {
         }
     }
 
-    pub fn prepare_cubes<F: crate::io::FileSystem>(
+    pub fn prepare<F: FileSystem>(
         &self,
         cubes: &mut Vec<blueprint::Cube>,
-        asset_manager: &mut crate::asset::AssetManager<F>,
+        asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
-    ) {
+    ) -> Vec<Cube> {
+        let mut cubes_for_render = Vec::new();
+
         for cube in cubes {
             // texture
             let diffuse = asset_manager.get_asset::<crate::asset::TextureAsset>(&cube.tex);
@@ -217,8 +219,6 @@ impl CubeRenderSystem {
                 ],
             });
 
-            cube.diffuse_bind_group = Some(diffuse_bind_group);
-
             // local uniform buffer
             let world_transform = math::Matrix4::translate(&cube.pos);
 
@@ -239,13 +239,18 @@ impl CubeRenderSystem {
                 ]
             });
 
-            cube.local_uniform_bind_group = Some(local_uniform_bind_group);
+            cubes_for_render.push(Cube{
+                diffuse_bind_group,
+                local_uniform_bind_group,
+            });
         }
+
+        cubes_for_render
     }
 
     pub fn render<'a>(
         &'a self, 
-        cubes: &'a [blueprint::Cube],
+        cubes: &'a [Cube],
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
@@ -254,8 +259,8 @@ impl CubeRenderSystem {
         render_pass.set_index_buffer(self.index_buffer.slice(..));
 
         for cube in cubes {
-            render_pass.set_bind_group(1, cube.local_uniform_bind_group.as_ref().unwrap(), &[]);
-            render_pass.set_bind_group(2, cube.diffuse_bind_group.as_ref().unwrap(), &[]);
+            render_pass.set_bind_group(1, &cube.local_uniform_bind_group, &[]);
+            render_pass.set_bind_group(2, &cube.diffuse_bind_group, &[]);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
     }
@@ -367,5 +372,68 @@ pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
                 format: wgpu::VertexFormat::Float2,
             },
         ],
+    }
+}
+
+pub struct Cube {
+    pub diffuse_bind_group: wgpu::BindGroup,
+    pub local_uniform_bind_group: wgpu::BindGroup,
+}
+
+impl Cube {
+    pub fn from_bp<F: FileSystem>(
+        bp: &blueprint::Cube,
+        asset_manager: &mut AssetManager<F>,
+        device: &wgpu::Device,
+        diffuse_bind_group_layout: &wgpu::BindGroupLayout,
+        uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> Option<Self> {
+        let diffuse = asset_manager.get_asset::<crate::asset::TextureAsset>(&bp.tex);
+        if diffuse.texture.is_none() {
+            println!("texture is not loaded");
+            return None;
+        }
+
+        let diffuse = diffuse.texture.as_ref().unwrap();
+
+        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("diffuse_bind_group"),
+            layout: diffuse_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&diffuse.sampler),
+                },
+            ],
+        });
+
+        // local uniform buffer
+        let world_transform = math::Matrix4::translate(&bp.pos);
+
+        let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("view_proj buffer"),
+            contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
+
+        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
+            label: Some("local_uniform_bind_group"),
+            layout: uniform_local_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+                }
+            ]
+        });
+
+        Some(Self {
+            diffuse_bind_group,
+            local_uniform_bind_group,
+        })
     }
 }

@@ -78,7 +78,8 @@ impl Renderer {
 
     pub fn render<F: FileSystem>(&mut self, mut bp: Blueprint, asset_manager: &mut AssetManager<F>) -> Result<(), wgpu::SwapChainError> {
         asset_manager.build_textures(&self.device, &self.queue);
-        self.cube_renderer.prepare_cubes(&mut bp.cubes, asset_manager, &self.device);
+        
+        let cubes = self.cube_renderer.prepare(&mut bp.cubes, asset_manager, &self.device);
 
         self.update_camera(&bp.camera);
 
@@ -115,7 +116,7 @@ impl Renderer {
                 }),
             });
 
-            self.cube_renderer.render(&bp.cubes, &mut render_pass);
+            self.cube_renderer.render(&cubes, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
