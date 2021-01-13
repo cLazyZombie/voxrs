@@ -72,7 +72,7 @@ pub trait Asset{
 pub struct TextureAsset {
     #[allow(dead_code)]
     buf: Vec<u8>,
-    texture: Option<Texture>,
+    pub texture: Option<Texture>,
 }
 
 impl TextureAsset {

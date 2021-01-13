@@ -79,6 +79,10 @@ fn main() {
                 Vector3::new(0.0, 1.0, 0.0),
                 texture_handle.clone(),
             ));
+            bp.add_cube(voxrs::blueprint::Cube::new(
+                Vector3::new(0.0, 2.0, 0.0),
+                texture_handle.clone(),
+            ));
 
             match renderer.render(bp, &mut asset_manager) {
                 Ok(_) => {}

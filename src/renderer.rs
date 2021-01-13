@@ -60,7 +60,7 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let cube_renderer = CubeRenderSystem::new(&device, &queue, &view_proj_buf);
+        let cube_renderer = CubeRenderSystem::new(&device, &view_proj_buf);
 
         Self {
             surface,
@@ -76,8 +76,9 @@ impl Renderer {
         }
     }
 
-    pub fn render<F: FileSystem>(&mut self, bp: Blueprint, asset_manager: &mut AssetManager<F>) -> Result<(), wgpu::SwapChainError> {
+    pub fn render<F: FileSystem>(&mut self, mut bp: Blueprint, asset_manager: &mut AssetManager<F>) -> Result<(), wgpu::SwapChainError> {
         asset_manager.build_textures(&self.device, &self.queue);
+        self.cube_renderer.prepare_cubes(&mut bp.cubes, asset_manager, &self.device);
 
         self.update_camera(&bp.camera);
 
@@ -114,7 +115,7 @@ impl Renderer {
                 }),
             });
 
-            self.cube_renderer.render(&mut render_pass);
+            self.cube_renderer.render(&bp.cubes, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
