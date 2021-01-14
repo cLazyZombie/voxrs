@@ -3,10 +3,6 @@ use crate::math;
 use wgpu::util::{DeviceExt};
 
 pub struct CubeRenderSystem {
-    // #[allow(dead_code)]
-    // vs_module: wgpu::ShaderModule,
-    // #[allow(dead_code)]
-    // fs_module: wgpu::ShaderModule,
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
@@ -210,7 +206,7 @@ impl CubeRenderSystem {
             // texture
             let diffuse = asset_manager.get_asset::<TextureAsset>(&cube.tex);
             if !diffuse.texture.is_built() {
-                println!("texture is not loaded");
+                log::error!("texture is not loaded");
                 continue;
             }
 

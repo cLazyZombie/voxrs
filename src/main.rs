@@ -6,7 +6,9 @@ use winit::{
 };
 
 fn main() {
-    env_logger::init();
+    //env_logger::init();
+    env_logger::builder().filter_level(log::LevelFilter::Info).init();
+
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 

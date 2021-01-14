@@ -99,10 +99,10 @@ impl TextureAsset {
     pub fn build(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
         match &self.texture {
             AssetBuildResult::Ok(_) => {
-                println!("texture already built");
+                log::warn!("texture already built");
             }
             AssetBuildResult::Err(err) => {
-                println!("texture build already has error. {:?}", err);
+                log::warn!("texture build already has error. {:?}", err);
             }
             AssetBuildResult::NotBuilt => {
                 let result = Texture::from_bytes(device, queue, &self.buf, "texture");
@@ -111,7 +111,7 @@ impl TextureAsset {
                         self.texture = AssetBuildResult::Ok(texture);
                     }
                     Err(err) => {
-                        println!("texture build error. err: {}", &err.to_string()); 
+                        log::error!("texture build error. err: {}", &err.to_string()); 
                         self.texture = AssetBuildResult::Err(err.context("texture build error"));
                     }
                 }
@@ -156,7 +156,7 @@ impl ShaderAsset {
 
     pub fn build(&mut self, device: &wgpu::Device) {
         if self.module.is_built() {
-            println!("shader already built");
+            log::warn!("shader already built");
             return;
         }
     

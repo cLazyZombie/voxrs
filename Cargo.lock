@@ -1864,6 +1864,7 @@ dependencies = [
  "futures",
  "glob",
  "image",
+ "log",
  "nalgebra-glm",
  "shaderc",
  "wgpu",
