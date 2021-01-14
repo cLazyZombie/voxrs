@@ -209,7 +209,7 @@ impl CubeRenderSystem {
         for cube in cubes {
             // texture
             let diffuse = asset_manager.get_asset::<TextureAsset>(&cube.tex);
-            if diffuse.texture.is_none() {
+            if !diffuse.texture.is_built() {
                 println!("texture is not loaded");
                 continue;
             }
@@ -401,7 +401,7 @@ impl Cube {
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Option<Self> {
         let diffuse = asset_manager.get_asset::<TextureAsset>(&bp.tex);
-        if diffuse.texture.is_none() {
+        if !diffuse.texture.is_built() {
             println!("texture is not loaded");
             return None;
         }

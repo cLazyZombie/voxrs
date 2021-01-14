@@ -14,6 +14,33 @@ pub enum AssetType {
     Shader,
 }
 
+pub enum AssetBuildResult<T> {
+    NotBuilt,
+    Ok(T),
+    Err(anyhow::Error),
+}
+
+impl<T> AssetBuildResult<T> {
+    pub fn is_built(&self) -> bool {
+        matches!(self, AssetBuildResult::Ok(_))
+    }
+
+    pub fn as_ref(&self) -> AssetBuildResult<&T> {
+        match self {
+            AssetBuildResult::NotBuilt => AssetBuildResult::NotBuilt,
+            AssetBuildResult::Ok(built) => AssetBuildResult::Ok(built),
+            AssetBuildResult::Err(_) => panic!("AssetBuildResult is not Ok"),
+        }
+    }
+
+    pub fn unwrap(self) -> T {
+        match self {
+            AssetBuildResult::Ok(built) => built,
+            _ => panic!("AssetBuildresult is not Ok"),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct AssetId(u64);
 
@@ -51,14 +78,14 @@ pub trait Asset{
 pub struct TextureAsset {
     #[allow(dead_code)]
     buf: Vec<u8>,
-    pub texture: Option<Texture>,
+    pub texture: AssetBuildResult<Texture>,
 }
 
 impl TextureAsset {
     pub fn new(buf: Vec<u8>) -> Self {
         Self {
             buf,
-            texture: None,
+            texture: AssetBuildResult::NotBuilt,
         }
     }
 }
@@ -70,18 +97,24 @@ impl Asset for TextureAsset {
 
 impl TextureAsset {
     pub fn build(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        if self.texture.is_some() {
-            println!("texture already built");
-            return;
-        }
-
-        let result = Texture::from_bytes(device, queue, &self.buf, "texture");
-        match result {
-            Ok(texture) => {
-                self.texture = Some(texture);
+        match &self.texture {
+            AssetBuildResult::Ok(_) => {
+                println!("texture already built");
             }
-            Err(err) => {
-                println!("texture build error. err: {}", &err.to_string()); // build 실패한 texture는 두번 빌드 하지않게 수정
+            AssetBuildResult::Err(err) => {
+                println!("texture build already has error. {:?}", err);
+            }
+            AssetBuildResult::NotBuilt => {
+                let result = Texture::from_bytes(device, queue, &self.buf, "texture");
+                match result {
+                    Ok(texture) => {
+                        self.texture = AssetBuildResult::Ok(texture);
+                    }
+                    Err(err) => {
+                        println!("texture build error. err: {}", &err.to_string()); // build 실패한 texture는 두번 빌드 하지않게 수정
+                        self.texture = AssetBuildResult::Err(err);
+                    }
+                }
             }
         }
     }
@@ -227,7 +260,7 @@ impl<F: FileSystem> AssetManager<F> {
 
     pub fn build_textures(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
         for texture in self.textures.values_mut() {
-            if texture.texture.is_none() {
+            if !texture.texture.is_built() {
                 texture.build(device, queue);
             }
         }
