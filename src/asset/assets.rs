@@ -111,8 +111,8 @@ impl TextureAsset {
                         self.texture = AssetBuildResult::Ok(texture);
                     }
                     Err(err) => {
-                        println!("texture build error. err: {}", &err.to_string()); // build 실패한 texture는 두번 빌드 하지않게 수정
-                        self.texture = AssetBuildResult::Err(err);
+                        println!("texture build error. err: {}", &err.to_string()); 
+                        self.texture = AssetBuildResult::Err(err.context("texture build error"));
                     }
                 }
             }
@@ -139,7 +139,7 @@ impl TextAsset {
 
 pub struct ShaderAsset {
     pub buf: Vec<u8>,
-    pub module: Option<wgpu::ShaderModule>,
+    pub module: AssetBuildResult<wgpu::ShaderModule>,
 }
 
 impl Asset for ShaderAsset {
@@ -150,18 +150,18 @@ impl ShaderAsset {
     pub fn new(buf: Vec<u8>) -> Self {
         Self {
             buf,
-            module: None,
+            module: AssetBuildResult::NotBuilt,
         }
     }
 
     pub fn build(&mut self, device: &wgpu::Device) {
-        if self.module.is_some() {
+        if self.module.is_built() {
             println!("shader already built");
             return;
         }
     
         let module = device.create_shader_module(make_spirv(&self.buf));
-        self.module = Some(module);
+        self.module = AssetBuildResult::Ok(module);
     }
 }
 
@@ -268,7 +268,7 @@ impl<F: FileSystem> AssetManager<F> {
 
     pub fn build_shaders(&mut self, device: &wgpu::Device) {
         for shader in self.shaders.values_mut() {
-            if shader.module.is_none() {
+            if !shader.module.is_built() {
                 shader.build(device);
             }
         }
