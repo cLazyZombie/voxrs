@@ -1,7 +1,7 @@
-pub mod assets;
-pub mod asset_path;
+mod assets;
+mod asset_path;
+mod manager;
 
-pub use assets::AssetHandle;
 pub use assets::AssetBuildResult;
 
 pub use assets::TextureAsset;
@@ -10,4 +10,5 @@ pub use assets::ShaderAsset;
 
 pub use asset_path::AssetPath;
 
-pub use assets::AssetManager;
+pub use manager::AssetManager;
+pub use manager::AssetHandle;

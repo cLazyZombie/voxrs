@@ -1,6 +1,7 @@
 use std::{borrow::Cow, collections::hash_map::DefaultHasher, path::{Path, PathBuf}};
 use std::hash::{Hash, Hasher};
-use crate::asset::assets::AssetHash;
+
+use super::manager::AssetHash;
 
 
 pub struct AssetPath<'a> {
