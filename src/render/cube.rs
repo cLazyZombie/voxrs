@@ -19,7 +19,7 @@ pub struct CubeRenderSystem {
 }
 
 impl CubeRenderSystem {
-    pub fn new<F: FileSystem>(device: &wgpu::Device, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
+    pub fn new<F: FileSystem>(device: &wgpu::Device, queue: &wgpu::Queue, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
         const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
         const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
 
@@ -27,7 +27,7 @@ impl CubeRenderSystem {
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&VS_PATH.into()).unwrap();
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&FS_PATH.into()).unwrap();
 
-        asset_manager.build_shaders(device);
+        asset_manager.build_assets(device, queue);
 
         let vs_asset = asset_manager.get_asset::<ShaderAsset>(&vs_handle);
         let fs_asset = asset_manager.get_asset::<ShaderAsset>(&fs_handle);
@@ -205,7 +205,7 @@ impl CubeRenderSystem {
         for cube in cubes {
             // texture
             let diffuse = asset_manager.get_asset::<TextureAsset>(&cube.tex);
-            if !diffuse.texture.is_built() {
+            if diffuse.texture.need_build() {
                 log::error!("texture is not loaded");
                 continue;
             }
@@ -397,7 +397,7 @@ impl Cube {
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Option<Self> {
         let diffuse = asset_manager.get_asset::<TextureAsset>(&bp.tex);
-        if !diffuse.texture.is_built() {
+        if diffuse.texture.need_build() {
             println!("texture is not loaded");
             return None;
         }
