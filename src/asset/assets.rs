@@ -255,61 +255,48 @@ impl<F: FileSystem> AssetManager<F> {
        }
     }
 
-    pub fn get<T: Asset + Sized>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
+    pub fn get<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
         let hash = path.get_hash();
         if let Some(rc_asset) = self.assets.get(&hash) {
             let rc = Arc::clone(&rc_asset.rc);
             Some(AssetHandle::new(hash, rc))
         } else {
-            // todo: 중복코드가 있음
-            match T::asset_type() {
+            let option = match T::asset_type() {
                 AssetType::Text => self.get_text(path),
                 AssetType::Texture => self.get_texture(path),
                 AssetType::Shader => self.get_shader(path),
+            };
+
+            if let Some(asset) = option {
+                let rc_asset = RcAsset::new(asset);
+                let cloned = Arc::clone(&rc_asset.rc);
+                self.assets.insert(hash, rc_asset);
+                Some(AssetHandle::new(hash, cloned))
+            } else {
+                None
             }
         }
     }
 
-    fn get_text<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
-        let hash = path.get_hash();
-    
-        // load from io
+    fn get_text(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_text(&path.path) {
-            let text_asset = Box::new(TextAsset::new(read));
-            let rc_asset = RcAsset::new(text_asset);
-            let cloned = Arc::clone(&rc_asset.rc);
-
-            self.assets.insert(hash, rc_asset);
-            
-            Some(AssetHandle::new(hash, cloned))
+            Some(Box::new(TextAsset::new(read)))
         } else {
             None
         }
     }
 
-    fn get_texture<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
+    fn get_texture(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_binary(&path.path) {
-            let texture_asset = Box::new(TextureAsset::new(read));
-            let rc_asset = RcAsset::new(texture_asset);
-            let clonned = Arc::clone(&rc_asset.rc);
-            let hash = path.get_hash();
-            self.assets.insert(hash, rc_asset);
-
-            Some(AssetHandle::new(hash, clonned))
+            Some(Box::new(TextureAsset::new(read)))
         } else {
             None
         }
     }
 
-    fn get_shader<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
+    fn get_shader(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_binary(&path.path) {
-            let shader_asset = Box::new(ShaderAsset::new(read));
-            let rc_asset = RcAsset::new(shader_asset);
-            let clonned = Arc::clone(&rc_asset.rc);
-            let hash = path.get_hash();
-            self.assets.insert(hash, rc_asset);
-
-            Some(AssetHandle::new(hash, clonned))
+            Some(Box::new(ShaderAsset::new(read)))
         } else {
             None
         }
