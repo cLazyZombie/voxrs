@@ -64,7 +64,7 @@ impl<F: FileSystem> AssetManager<F> {
         }
     }
 
-    pub fn get_asset<T: Asset + Sized>(&self, handle: &AssetHandle<T>) -> &T {
+    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
         let rc_asset = self.assets.get(&handle.hash).unwrap();
         let asset = rc_asset.asset.as_ref();
         
