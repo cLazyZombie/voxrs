@@ -5,7 +5,7 @@ use crate::io::FileSystem;
 
 use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, assets::{Asset, AssetType}};
 pub struct AssetManager<F: FileSystem> {
-    assets: HashMap<AssetHash, RcAsset>,
+    assets: HashMap<AssetHash, ManagedAsset>,
     _marker: std::marker::PhantomData<F>,
 }
 
@@ -30,7 +30,7 @@ impl<F: FileSystem> AssetManager<F> {
             };
 
             if let Some(asset) = option {
-                let rc_asset = RcAsset::new(asset);
+                let rc_asset = ManagedAsset::new(asset);
                 let cloned = Arc::clone(&rc_asset.rc);
                 self.assets.insert(hash, rc_asset);
                 Some(AssetHandle::new(hash, cloned))
@@ -88,7 +88,7 @@ impl<F: FileSystem> AssetManager<F> {
     }
 
     pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        for RcAsset{asset, ..} in self.assets.values_mut() {
+        for ManagedAsset{asset, ..} in self.assets.values_mut() {
             if asset.need_build() {
                 asset.build(device, queue);
             }
@@ -125,12 +125,12 @@ impl<T: Asset> AssetHandle<T> {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Debug, Hash)]
 pub struct AssetHash(pub u64);
 
-struct RcAsset {
+struct ManagedAsset {
     asset: Box<dyn Asset>,
     rc: Arc<()>,
 }
 
-impl RcAsset {
+impl ManagedAsset {
     fn new(asset: Box<dyn Asset>) -> Self {
         Self {
             asset,
