@@ -19,8 +19,8 @@ impl<F: FileSystem> AssetManager<F> {
 
     pub fn get<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
         let hash = path.get_hash();
-        if let Some(rc_asset) = self.assets.get(&hash) {
-            let rc = Arc::clone(&rc_asset.rc);
+        if let Some(managed) = self.assets.get(&hash) {
+            let rc = Arc::clone(&managed.rc);
             Some(AssetHandle::new(hash, rc))
         } else {
             let option = match T::asset_type() {
@@ -30,9 +30,9 @@ impl<F: FileSystem> AssetManager<F> {
             };
 
             if let Some(asset) = option {
-                let rc_asset = ManagedAsset::new(asset);
-                let cloned = Arc::clone(&rc_asset.rc);
-                self.assets.insert(hash, rc_asset);
+                let managed= ManagedAsset::new(asset);
+                let cloned = Arc::clone(&managed.rc);
+                self.assets.insert(hash,managed);
                 Some(AssetHandle::new(hash, cloned))
             } else {
                 None
@@ -65,8 +65,8 @@ impl<F: FileSystem> AssetManager<F> {
     }
 
     pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
-        let rc_asset = self.assets.get(&handle.hash).unwrap();
-        let asset = rc_asset.asset.as_ref();
+        let managed= self.assets.get(&handle.hash).unwrap();
+        let asset = managed.asset.as_ref();
         
         assert!(asset.get_asset_type() == T::asset_type());
 
@@ -80,8 +80,8 @@ impl<F: FileSystem> AssetManager<F> {
     #[cfg(test)]
     fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
         let hash = path.get_hash();
-        if let Some(rc_asset) = self.assets.get(&hash) {
-            Some(Arc::strong_count(&rc_asset.rc) -1)
+        if let Some(managed) = self.assets.get(&hash) {
+            Some(Arc::strong_count(&managed.rc) -1)
         } else {
             None
         }
