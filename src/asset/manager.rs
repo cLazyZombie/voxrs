@@ -184,6 +184,8 @@ mod tests {
 
         let material_asset = manager.get_asset(&handle.unwrap());
         assert_eq!(material_asset.diffuse_tex, "texture.png".into());
+        assert_eq!(material_asset.vertex_shader, "shader.vert.spv".into());
+        assert_eq!(material_asset.frag_shader, "shader.frag.spv".into());
     }
 
     #[test]

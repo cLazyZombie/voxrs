@@ -1,5 +1,5 @@
 {
     "diffuse_tex": "texture.png",
-    "vertex_shader": "shader.vert",
-    "frag_shader": "shader.frag"
+    "vertex_shader": "shader.vert.spv",
+    "frag_shader": "shader.frag.spv"
 }
