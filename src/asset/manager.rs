@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use crate::io::FileSystem;
 
-use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, assets::{Asset, AssetType}};
+use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, assets::{Asset, AssetType, MaterialAsset}};
 pub struct AssetManager<F: FileSystem> {
     assets: HashMap<AssetHash, ManagedAsset>,
     _marker: std::marker::PhantomData<F>,
@@ -27,6 +27,7 @@ impl<F: FileSystem> AssetManager<F> {
                 AssetType::Text => self.get_text(path),
                 AssetType::Texture => self.get_texture(path),
                 AssetType::Shader => self.get_shader(path),
+                AssetType::Material => self.get_material(path),
             };
 
             if let Some(asset) = option {
@@ -59,6 +60,14 @@ impl<F: FileSystem> AssetManager<F> {
     fn get_shader(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_binary(&path.path) {
             Some(Box::new(ShaderAsset::new(read)))
+        } else {
+            None
+        }
+    }
+
+    fn get_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
+        if let Ok(read) = F::read_text(&path.path) {
+            Some(Box::new(MaterialAsset::new(&read)))
         } else {
             None
         }
@@ -164,6 +173,17 @@ mod tests {
 
         let texture_asset = manager.get_asset(&handle.unwrap());
         assert_eq!(texture_asset.buf, include_bytes!("../test_assets/texture.png"));
+    }
+
+    #[test]
+    fn get_material() {
+        let mut manager = AssetManager::<MockFileSystem>::new();
+        let path = "material.mat".into();
+        let handle = manager.get::<MaterialAsset>(&path);
+        assert!(handle.is_some());
+
+        let material_asset = manager.get_asset(&handle.unwrap());
+        assert_eq!(material_asset.diffuse_tex, "texture.png".into());
     }
 
     #[test]

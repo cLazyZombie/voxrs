@@ -1,11 +1,14 @@
 use wgpu::util::make_spirv;
+use serde::{Deserialize};
 use crate::texture::Texture;
+use super::AssetPath;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
     Texture,
     Text,
     Shader,
+    Material,
 }
 
 pub enum AssetBuildResult<T> {
@@ -191,5 +194,37 @@ impl ShaderAsset {
             buf,
             module: AssetBuildResult::NotBuilt,
         }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct MaterialAsset<'a> {
+    pub diffuse_tex: AssetPath<'a>,
+    pub vertex_shader: AssetPath<'a>,
+    pub frag_shader: AssetPath<'a>,
+}
+
+impl<'a> Asset for MaterialAsset<'a> {
+    fn asset_type() -> AssetType where Self: Sized {
+        AssetType::Material
+    }
+
+    fn get_asset_type(&self) -> AssetType {
+        Self::asset_type()
+    }
+
+    fn need_build(&self) -> bool {
+        false
+    }
+
+    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {
+    }
+}
+
+
+impl<'a> MaterialAsset<'a> {
+    pub fn new(s: &str) -> Self {
+        let deserialized: Self = serde_json::from_str(s).unwrap();
+        deserialized
     }
 }

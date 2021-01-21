@@ -7,3 +7,5 @@
  - test AssetManager::get("path".into())
  - async loading
  - sperated not yet built asset (for performance reason)
+
+- material + material instance

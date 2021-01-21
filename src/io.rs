@@ -46,6 +46,14 @@ pub mod tests {
                     let buf = include_bytes!("test_assets/texture.png");
                     Ok(buf.to_vec())
                 }
+                Some("shader.vert.spv") => {
+                    let buf = include_bytes!("test_assets/shader.vert.spv");
+                    Ok(buf.to_vec())
+                }
+                Some("shader.frag.spv") => {
+                    let buf = include_bytes!("test_assets/shader.frag.spv");
+                    Ok(buf.to_vec())
+                }
                 _ => panic!("not found"),
             }
         }
@@ -56,6 +64,10 @@ pub mod tests {
                     let s = include_str!("test_assets/test.txt");
                     Ok(s.to_string())
                 }   
+                Some("material.mat") => {
+                    let s = include_str!("test_assets/material.mat");
+                    Ok(s.to_string())
+                }
                 _ => panic!("not found"),
             }
         }
