@@ -31,7 +31,7 @@ impl<'a> AssetPath<'a> {
     }
 }
 
-impl<'a> From<&str> for AssetPath<'a> {
+impl From<&str> for AssetPath<'_> {
     fn from(s: &str) -> Self {
         Self::new(PathBuf::from(s))
     }

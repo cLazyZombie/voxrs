@@ -1,7 +1,7 @@
 use wgpu::util::make_spirv;
 use serde::{Deserialize};
-use crate::texture::Texture;
-use super::AssetPath;
+use crate::{io::FileSystem, texture::Texture};
+use super::{AssetHandle, AssetManager};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
@@ -197,14 +197,20 @@ impl ShaderAsset {
     }
 }
 
-#[derive(Deserialize, Debug)]
-pub struct MaterialAsset<'a> {
-    pub diffuse_tex: AssetPath<'a>,
-    pub vertex_shader: AssetPath<'a>,
-    pub frag_shader: AssetPath<'a>,
+pub struct MaterialAsset {
+    pub diffuse_tex: AssetHandle<TextureAsset>,
+    pub vertex_shader: AssetHandle<ShaderAsset>,
+    pub frag_shader: AssetHandle<ShaderAsset>,
 }
 
-impl<'a> Asset for MaterialAsset<'a> {
+#[derive(Deserialize)]
+pub struct MaterialAssetRaw {
+    diffuse_tex: String,
+    vertex_shader: String,
+    frag_shader: String,
+}
+
+impl<'a> Asset for MaterialAsset {
     fn asset_type() -> AssetType where Self: Sized {
         AssetType::Material
     }
@@ -221,10 +227,18 @@ impl<'a> Asset for MaterialAsset<'a> {
     }
 }
 
+impl MaterialAsset {
+    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
+        let raw : MaterialAssetRaw = serde_json::from_str(s).unwrap();
+        
+        let diffuse_tex = asset_manager.get::<TextureAsset>(&(&raw.diffuse_tex as &str).into()).unwrap();
+        let vertex_shader = asset_manager.get::<ShaderAsset>(&(&raw.vertex_shader as &str).into()).unwrap();
+        let frag_shader = asset_manager.get::<ShaderAsset>(&(&raw.frag_shader as &str).into()).unwrap();
 
-impl<'a> MaterialAsset<'a> {
-    pub fn new(s: &str) -> Self {
-        let deserialized: Self = serde_json::from_str(s).unwrap();
-        deserialized
+        Self {
+            diffuse_tex,
+            vertex_shader,
+            frag_shader,
+        }
     }
 }

@@ -67,7 +67,7 @@ impl<F: FileSystem> AssetManager<F> {
 
     fn get_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_text(&path.path) {
-            Some(Box::new(MaterialAsset::new(&read)))
+            Some(Box::new(MaterialAsset::new(&read, self)))
         } else {
             None
         }
@@ -105,6 +105,7 @@ impl<F: FileSystem> AssetManager<F> {
     }
 }
 
+#[derive(Debug)]
 pub struct AssetHandle<T: Asset> {
     hash: AssetHash,
     rc: Arc<()>,
@@ -183,9 +184,12 @@ mod tests {
         assert!(handle.is_some());
 
         let material_asset = manager.get_asset(&handle.unwrap());
-        assert_eq!(material_asset.diffuse_tex, "texture.png".into());
-        assert_eq!(material_asset.vertex_shader, "shader.vert.spv".into());
-        assert_eq!(material_asset.frag_shader, "shader.frag.spv".into());
+
+        let diffuse_tex = manager.get_asset(&material_asset.diffuse_tex);
+        assert_eq!(diffuse_tex.buf, include_bytes!("../test_assets/texture.png"));
+        // assert_eq!(material_asset.diffuse_tex, "texture.png".into());
+        // assert_eq!(material_asset.vertex_shader, "shader.vert.spv".into());
+        // assert_eq!(material_asset.frag_shader, "shader.frag.spv".into());
     }
 
     #[test]
