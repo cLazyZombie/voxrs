@@ -41,12 +41,8 @@ impl<'de> Deserialize<'de> for AssetPath<'_> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de> {
-        match <&str as Deserialize>::deserialize(deserializer) {
-            Ok(s) => {
-                let asset_path : AssetPath = s.into();
-                Ok(asset_path)
-            },
-            Err(err) => Err(err)
-        }
+        let s = <&str as Deserialize>::deserialize(deserializer)?;
+        let asset_path : AssetPath = s.into();
+        Ok(asset_path)
     }
 }
