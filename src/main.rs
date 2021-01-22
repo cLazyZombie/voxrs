@@ -1,4 +1,4 @@
-use voxrs::{asset::MaterialAsset, blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
+use voxrs::{asset::{AssetHandle, MaterialAsset}, blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -26,7 +26,7 @@ fn main() {
     let mut asset_manager = voxrs::asset::AssetManager::<voxrs::io::GeneralFileSystem>::new();
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
 
-    let material_handle = asset_manager.get::<MaterialAsset>(&"assets/materials/cube_material.mat".into()).unwrap();
+    let material_handle: AssetHandle<MaterialAsset> = asset_manager.get("assets/materials/cube_material.mat").unwrap();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {

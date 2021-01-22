@@ -17,17 +17,18 @@ impl<F: FileSystem> AssetManager<F> {
        }
     }
 
-    pub fn get<T: Asset>(&mut self, path: &AssetPath) -> Option<AssetHandle<T>> {
+    pub fn get<'a, T: Asset, Path: Into<AssetPath<'a>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
+        let path = path.into() as AssetPath;
         let hash = path.get_hash();
         if let Some(managed) = self.assets.get(&hash) {
             let rc = Arc::clone(&managed.rc);
             Some(AssetHandle::new(hash, rc))
         } else {
             let option = match T::asset_type() {
-                AssetType::Text => self.get_text(path),
-                AssetType::Texture => self.get_texture(path),
-                AssetType::Shader => self.get_shader(path),
-                AssetType::Material => self.get_material(path),
+                AssetType::Text => self.get_text(&path),
+                AssetType::Texture => self.get_texture(&path),
+                AssetType::Shader => self.get_shader(&path),
+                AssetType::Material => self.get_material(&path),
             };
 
             if let Some(asset) = option {
@@ -87,7 +88,8 @@ impl<F: FileSystem> AssetManager<F> {
     }
 
     #[cfg(test)]
-    fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
+    fn get_rc<'a, Path: Into<AssetPath<'a>>>(&self, path: Path) -> Option<usize> {
+        let path = path.into() as AssetPath;
         let hash = path.get_hash();
         if let Some(managed) = self.assets.get(&hash) {
             Some(Arc::strong_count(&managed.rc) -1)
@@ -157,33 +159,30 @@ mod tests {
     #[test]
     fn get_text() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path = "test.txt".into();
-        let handle = manager.get::<TextAsset>(&path);
+        let handle = manager.get("test.txt");
         assert!(handle.is_some());
 
-        let text_asset = manager.get_asset(&handle.unwrap());
+        let text_asset: &TextAsset = manager.get_asset(&handle.unwrap());
         assert_eq!(text_asset.text, "test text file\r\ntest text file");
     }
 
     #[test]
     fn get_texture() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path = "texture.png".into();
-        let handle = manager.get::<TextureAsset>(&path);
+        let handle = manager.get::<TextureAsset, _>("texture.png");
         assert!(handle.is_some());
 
-        let texture_asset = manager.get_asset(&handle.unwrap());
+        let texture_asset: &TextureAsset = manager.get_asset(&handle.unwrap());
         assert_eq!(texture_asset.buf, include_bytes!("../test_assets/texture.png"));
     }
 
     #[test]
     fn get_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path = "material.mat".into();
-        let handle = manager.get::<MaterialAsset>(&path);
+        let handle = manager.get("material.mat");
         assert!(handle.is_some());
 
-        let material_asset = manager.get_asset(&handle.unwrap());
+        let material_asset: &MaterialAsset = manager.get_asset(&handle.unwrap());
 
         let diffuse_tex = manager.get_asset(&material_asset.diffuse_tex);
         assert_eq!(diffuse_tex.buf, include_bytes!("../test_assets/texture.png"));
@@ -196,14 +195,14 @@ mod tests {
     fn get_rc_test() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let path : AssetPath = "test.txt".into();
-        assert!(manager.get_rc::<TextAsset>(&path).is_none());
+        assert!(manager.get_rc("test.txt").is_none());
 
-        let handle = manager.get::<TextAsset>(&path).unwrap();
+        let handle = manager.get::<TextAsset, _>("test.txt").unwrap();
 
-        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
+        assert_eq!(manager.get_rc(&path).unwrap(), 1);
 
         drop(handle);
 
-        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 0);
+        assert_eq!(manager.get_rc(path).unwrap(), 0);
     }
 }

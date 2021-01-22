@@ -37,6 +37,18 @@ impl From<&str> for AssetPath<'_> {
     }
 }
 
+impl From<&String> for AssetPath<'_> {
+    fn from(s: &String) -> Self {
+        Self::new(PathBuf::from(s))
+    }
+}
+
+impl From<&AssetPath<'_>> for AssetPath<'_> {
+    fn from(s: &AssetPath) -> Self {
+        Self::new(s.path.to_path_buf())
+    }
+}
+
 impl<'de> Deserialize<'de> for AssetPath<'_> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

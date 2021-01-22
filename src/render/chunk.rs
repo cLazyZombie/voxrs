@@ -1,8 +1,9 @@
+
 use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, blueprint, io::FileSystem, texture};
 use crate::math;
 use wgpu::util::{DeviceExt};
 
-pub struct CubeRenderSystem {
+pub struct ChunkRenderSystem {
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
@@ -18,10 +19,10 @@ pub struct CubeRenderSystem {
     num_indices: u32,
 }
 
-impl CubeRenderSystem {
+impl ChunkRenderSystem {
     pub fn new<F: FileSystem>(device: &wgpu::Device, queue: &wgpu::Queue, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
-        const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
-        const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
+        const VS_PATH : &str = "assets/shaders/chunk_shader.vert.spv";
+        const FS_PATH : &str = "assets/shaders/chunk_shader.frag.spv";
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH).unwrap();
@@ -37,7 +38,7 @@ impl CubeRenderSystem {
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("view projection bind group layout for cube"),
+                label: Some("view projection bind group layout for chunk"),
                 entries: &[
                     // view-projection matrix
                     wgpu::BindGroupLayoutEntry {
@@ -61,9 +62,9 @@ impl CubeRenderSystem {
             label: Some("uniform_bind_group"),
         });
 
-        // cube마다 설정할 uniform값들
+        // chunk마다 설정할 uniform값들
         let uniform_local_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
-            label: Some("local bind group layout for cube"),
+            label: Some("local bind group layout for chunk"),
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -79,7 +80,7 @@ impl CubeRenderSystem {
 
         let diffuse_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("diffuse texture bind group layout for cube"),
+                label: Some("diffuse texture bind group layout for chunk"),
                 entries: &[
                     // texture
                     wgpu::BindGroupLayoutEntry {
@@ -104,7 +105,7 @@ impl CubeRenderSystem {
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("cube render system pipeline layout"),
+                label: Some("chunk render system pipeline layout"),
                 bind_group_layouts: &[
                     &uniform_bind_group_layout, 
                     &uniform_local_bind_group_layout,
@@ -113,7 +114,7 @@ impl CubeRenderSystem {
             });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("cube render system render pipeline"),
+            label: Some("chunk render system render pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex_stage: wgpu::ProgrammableStageDescriptor {
                 module: &vs_module,
@@ -147,7 +148,7 @@ impl CubeRenderSystem {
             vertex_state: wgpu::VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint16,
                 vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                    stride: std::mem::size_of::<CubeVertex>() as wgpu::BufferAddress,
+                    stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
                     step_mode: wgpu::InputStepMode::Vertex,
                     attributes: &[
                         wgpu::VertexAttributeDescriptor {
@@ -175,9 +176,9 @@ impl CubeRenderSystem {
             alpha_to_coverage_enabled: false,
         });
 
-        let vertex_buffer = create_cube_vertexbuffer(&device);
-        let index_buffer = create_cube_indexbuffer(&device);
-        let num_indices = CUBE_INDICES.len() as u32;
+        let vertex_buffer = create_chunk_vertexbuffer(&device);
+        let index_buffer = create_chunk_indexbuffer(&device);
+        let num_indices = CHUNK_INDICES.len() as u32;
 
         Self {
             //vs_module,
@@ -196,15 +197,15 @@ impl CubeRenderSystem {
 
     pub fn prepare<F: FileSystem>(
         &self,
-        cubes: &mut Vec<blueprint::Cube>,
+        chunks: &mut Vec<blueprint::Chunk>,
         asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
-    ) -> Vec<Cube> {
-        let mut cubes_for_render = Vec::new();
+    ) -> Vec<Chunk> {
+        let mut chunks_for_render = Vec::new();
 
-        for cube in cubes {
+        for chunk in chunks {
             // material
-            let material = asset_manager.get_asset::<MaterialAsset>(&cube.material);
+            let material = asset_manager.get_asset::<MaterialAsset>(&chunk.material);
 
             // texture
             let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
@@ -231,7 +232,7 @@ impl CubeRenderSystem {
             });
 
             // local uniform buffer
-            let world_transform = math::Matrix4::translate(&cube.pos);
+            let world_transform = math::Matrix4::translate(&chunk.pos);
 
             let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("view_proj buffer"),
@@ -250,18 +251,18 @@ impl CubeRenderSystem {
                 ]
             });
 
-            cubes_for_render.push(Cube{
+            chunks_for_render.push(Chunk{
                 diffuse_bind_group,
                 local_uniform_bind_group,
             });
         }
 
-        cubes_for_render
+        chunks_for_render
     }
 
     pub fn render<'a>(
         &'a self, 
-        cubes: &'a [Cube],
+        chunks: &'a [Chunk],
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
@@ -269,9 +270,9 @@ impl CubeRenderSystem {
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..));
 
-        for cube in cubes {
-            render_pass.set_bind_group(1, &cube.local_uniform_bind_group, &[]);
-            render_pass.set_bind_group(2, &cube.diffuse_bind_group, &[]);
+        for chunk in chunks {
+            render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
+            render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
     }
@@ -279,53 +280,53 @@ impl CubeRenderSystem {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct CubeVertex {
+pub struct ChunkVertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
     pub uv: [f32; 2],
 }
 
 #[rustfmt::skip]
-pub const CUBE_VERTICES: &[CubeVertex] = &[
+pub const CHUNK_VERTICES: &[ChunkVertex] = &[
     // +y
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.], uv: [1.0, 1.0] },
 
     // -y
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // +x
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
     
     // -x
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // +z
-    CubeVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [0.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // -z
-    CubeVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 0.0] },
-    CubeVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 0.0] },
-    CubeVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 1.0] },
-    CubeVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 1.0] },
+    ChunkVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 0.0] },
+    ChunkVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 0.0] },
+    ChunkVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 1.0] },
+    ChunkVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 1.0] },
 ];
 
 #[rustfmt::skip]
-pub const CUBE_INDICES: &[u16] = &[
+pub const CHUNK_INDICES: &[u16] = &[
     0, 1, 2, 
     2, 1, 3, 
     
@@ -345,25 +346,25 @@ pub const CUBE_INDICES: &[u16] = &[
     22, 21, 23,
 ];
 
-pub fn create_cube_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
+pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("cube vetex buffer"),
-        contents: bytemuck::cast_slice(CUBE_VERTICES),
+        label: Some("chunk vetex buffer"),
+        contents: bytemuck::cast_slice(CHUNK_VERTICES),
         usage: wgpu::BufferUsage::VERTEX,
     })
 }
 
-pub fn create_cube_indexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
+pub fn create_chunk_indexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("cube index buffer"),
-        contents: bytemuck::cast_slice(CUBE_INDICES),
+        label: Some("chunk index buffer"),
+        contents: bytemuck::cast_slice(CHUNK_INDICES),
         usage: wgpu::BufferUsage::INDEX,
     })
 }
 
-pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
+pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
     wgpu::VertexBufferDescriptor {
-        stride: std::mem::size_of::<CubeVertex>() as wgpu::BufferAddress,
+        stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::InputStepMode::Vertex,
         attributes: &[
             wgpu::VertexAttributeDescriptor {
@@ -386,14 +387,14 @@ pub fn create_cube_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
     }
 }
 
-pub struct Cube {
+pub struct Chunk {
     pub diffuse_bind_group: wgpu::BindGroup,
     pub local_uniform_bind_group: wgpu::BindGroup,
 }
 
-impl Cube {
+impl Chunk {
     pub fn from_bp<F: FileSystem>(
-        bp: &blueprint::Cube,
+        bp: &blueprint::Chunk,
         asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,

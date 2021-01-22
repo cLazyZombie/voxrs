@@ -227,7 +227,7 @@ impl MaterialAsset {
     pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
         let raw : MaterialAssetRaw = serde_json::from_str(s).unwrap();
         
-        let diffuse_tex = asset_manager.get::<TextureAsset>(&(&raw.diffuse_tex as &str).into()).unwrap();
+        let diffuse_tex = asset_manager.get::<TextureAsset, _>(&raw.diffuse_tex).unwrap();
 
         Self {
             diffuse_tex,
