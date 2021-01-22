@@ -199,15 +199,11 @@ impl ShaderAsset {
 
 pub struct MaterialAsset {
     pub diffuse_tex: AssetHandle<TextureAsset>,
-    pub vertex_shader: AssetHandle<ShaderAsset>,
-    pub frag_shader: AssetHandle<ShaderAsset>,
 }
 
 #[derive(Deserialize)]
 pub struct MaterialAssetRaw {
     diffuse_tex: String,
-    vertex_shader: String,
-    frag_shader: String,
 }
 
 impl<'a> Asset for MaterialAsset {
@@ -232,13 +228,9 @@ impl MaterialAsset {
         let raw : MaterialAssetRaw = serde_json::from_str(s).unwrap();
         
         let diffuse_tex = asset_manager.get::<TextureAsset>(&(&raw.diffuse_tex as &str).into()).unwrap();
-        let vertex_shader = asset_manager.get::<ShaderAsset>(&(&raw.vertex_shader as &str).into()).unwrap();
-        let frag_shader = asset_manager.get::<ShaderAsset>(&(&raw.frag_shader as &str).into()).unwrap();
 
         Self {
             diffuse_tex,
-            vertex_shader,
-            frag_shader,
         }
     }
 }
