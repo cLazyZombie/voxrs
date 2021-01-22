@@ -1,4 +1,4 @@
-use voxrs::{asset::{TextureAsset}, blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
+use voxrs::{asset::MaterialAsset, blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -25,7 +25,8 @@ fn main() {
 
     let mut asset_manager = voxrs::asset::AssetManager::<voxrs::io::GeneralFileSystem>::new();
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
-    let texture_handle = asset_manager.get::<TextureAsset>(&"assets/texture.png".into()).unwrap();
+
+    let material_handle = asset_manager.get::<MaterialAsset>(&"assets/materials/cube_material.mat".into()).unwrap();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -80,15 +81,15 @@ fn main() {
             let mut bp = Blueprint::new(camera.clone());
             bp.add_cube(voxrs::blueprint::Cube::new(
                 Vector3::new(0.0, 0.0, 0.0),
-                texture_handle.clone(),
+                material_handle.clone(),
             ));
             bp.add_cube(voxrs::blueprint::Cube::new(
                 Vector3::new(0.0, 1.0, 0.0),
-                texture_handle.clone(),
+                material_handle.clone(),
             ));
             bp.add_cube(voxrs::blueprint::Cube::new(
                 Vector3::new(0.0, 2.0, 0.0),
-                texture_handle.clone(),
+                material_handle.clone(),
             ));
 
             match renderer.render(bp, &mut asset_manager) {

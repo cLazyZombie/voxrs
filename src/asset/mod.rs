@@ -7,6 +7,7 @@ pub use assets::AssetBuildResult;
 pub use assets::TextureAsset;
 pub use assets::TextAsset;
 pub use assets::ShaderAsset;
+pub use assets::MaterialAsset;
 
 pub use asset_path::AssetPath;
 

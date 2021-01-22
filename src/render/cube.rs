@@ -1,4 +1,4 @@
-use crate::{asset::{AssetHandle, AssetManager, TextureAsset, ShaderAsset}, blueprint, io::FileSystem, texture};
+use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, blueprint, io::FileSystem, texture};
 use crate::math;
 use wgpu::util::{DeviceExt};
 
@@ -203,8 +203,11 @@ impl CubeRenderSystem {
         let mut cubes_for_render = Vec::new();
 
         for cube in cubes {
+            // material
+            let material = asset_manager.get_asset::<MaterialAsset>(&cube.material);
+
             // texture
-            let diffuse = asset_manager.get_asset::<TextureAsset>(&cube.tex);
+            let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
             if diffuse.texture.need_build() {
                 log::error!("texture is not loaded");
                 continue;
@@ -396,7 +399,8 @@ impl Cube {
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Option<Self> {
-        let diffuse = asset_manager.get_asset::<TextureAsset>(&bp.tex);
+        let material = asset_manager.get_asset::<MaterialAsset>(&bp.material);
+        let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
         if diffuse.texture.need_build() {
             println!("texture is not loaded");
             return None;

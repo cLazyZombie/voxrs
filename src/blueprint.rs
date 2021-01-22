@@ -1,4 +1,4 @@
-use crate::{asset::{AssetHandle, TextureAsset}, camera::Camera, math::Vector3};
+use crate::{asset::{AssetHandle, MaterialAsset}, camera::Camera, math::Vector3};
 
 pub struct Blueprint {
     pub camera: Camera,
@@ -21,14 +21,14 @@ impl Blueprint {
 
 pub struct Cube {
     pub pos: Vector3,
-    pub tex: AssetHandle<TextureAsset>,
+    pub material: AssetHandle<MaterialAsset>,
 }
 
 impl Cube {
-    pub fn new(pos: Vector3, tex: AssetHandle<TextureAsset>) -> Self {
+    pub fn new(pos: Vector3, material: AssetHandle<MaterialAsset>) -> Self {
         Self {
             pos,
-            tex,
+            material,
         }
     }
 }
