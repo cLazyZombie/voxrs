@@ -33,13 +33,19 @@ impl<'a> AssetPath<'a> {
 
 impl From<&str> for AssetPath<'_> {
     fn from(s: &str) -> Self {
-        Self::new(PathBuf::from(s))
+        Self::new(s.parse().unwrap())
     }
 }
 
 impl From<&String> for AssetPath<'_> {
     fn from(s: &String) -> Self {
-        Self::new(PathBuf::from(s))
+        Self::new((s as &str).into())
+    }
+}
+
+impl From<String> for AssetPath<'_> {
+    fn from(s: String) -> Self {
+        Self::new(s.into())
     }
 }
 
@@ -56,5 +62,31 @@ impl<'de> Deserialize<'de> for AssetPath<'_> {
         let s = <&str as Deserialize>::deserialize(deserializer)?;
         let asset_path : AssetPath = s.into();
         Ok(asset_path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn asset_path_from_string() {
+        let s = "string".to_string();
+        let asset_path : AssetPath = s.into();
+        assert_eq!(asset_path.path.to_str().unwrap(), "string");
+    }
+
+    #[test]
+    fn asset_path_from_string_ref() {
+        let s = &"string".to_string();
+        let asset_path : AssetPath = s.into();
+        assert_eq!(asset_path.path.to_str().unwrap(), "string");
+    }
+
+    #[test]
+    fn asset_path_from_str_ref() {
+        let s = "str";
+        let asset_path: AssetPath = s.into();
+        assert_eq!(asset_path.path.to_str().unwrap(), "str");
     }
 }
