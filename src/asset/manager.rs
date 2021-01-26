@@ -163,7 +163,7 @@ mod tests {
         assert!(handle.is_some());
 
         let text_asset: &TextAsset = manager.get_asset(&handle.unwrap());
-        assert_eq!(text_asset.text, "test text file\r\ntest text file");
+        assert_eq!(text_asset.text, "test text file");
     }
 
     #[test]
