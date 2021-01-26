@@ -1,4 +1,5 @@
 # voxrs
+![Rust](https://github.com/cLazyZombie/voxrs/workflows/Rust/badge.svg?branch=master)
 
 ## todo
 - asset
