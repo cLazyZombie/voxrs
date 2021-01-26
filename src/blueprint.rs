@@ -39,7 +39,10 @@ impl Cube {
     }
 }
 
-pub const CHUNK_CUBE_COUNT: u32 = 16;
+/// cube count in chunk direction (x, y, z)
+pub const CHUNK_CUBE_LEN: usize = 16;
+/// total cube count in chunk
+pub const CHUNK_TOTAL_CUBE_COUNT: usize = CHUNK_CUBE_LEN * CHUNK_CUBE_LEN * CHUNK_CUBE_LEN;
 
 pub struct Chunk {
     pub pos: Vector3,

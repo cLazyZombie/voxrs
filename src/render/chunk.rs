@@ -1,8 +1,6 @@
-
-use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, blueprint, io::FileSystem, texture};
-use crate::math;
-use blueprint::CHUNK_CUBE_COUNT;
-use math::Vector3;
+use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, io::FileSystem, texture};
+use crate::math::{self, Vector3};
+use crate::blueprint::{self, CHUNK_TOTAL_CUBE_COUNT, CHUNK_CUBE_LEN};
 use wgpu::util::{DeviceExt};
 
 pub struct ChunkRenderSystem {
@@ -321,12 +319,11 @@ pub const CHUNK_INDICES: &[u32] = &[
 
 pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     let mut v = Vec::new() as Vec<ChunkVertex>;
-    let cube_count = (CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT) as usize;
-    v.reserve(CHUNK_VERTICES.len() * cube_count);
+    v.reserve(CHUNK_VERTICES.len() * CHUNK_TOTAL_CUBE_COUNT);
 
-    for z in 0..CHUNK_CUBE_COUNT {
-        for y in 0..CHUNK_CUBE_COUNT {
-            for x in 0..CHUNK_CUBE_COUNT {
+    for z in 0..CHUNK_CUBE_LEN {
+        for y in 0..CHUNK_CUBE_LEN {
+            for x in 0..CHUNK_CUBE_LEN {
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
                 v.extend(CHUNK_VERTICES.iter().map(|v| {
                     let new_position = offset + Vector3::new(v.position[0], v.position[1], v.position[2]);
@@ -346,11 +343,16 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     })
 }
 
-pub fn create_chunk_indexbuffer(cube_indices: Vec<u32>, device: &wgpu::Device) -> (wgpu::Buffer, u32) {
+/// #Returns
+///  ().o : index buffer
+///  ().1 : index count
+pub fn create_chunk_indexbuffer(cube_indices: &[u8], device: &wgpu::Device) -> (wgpu::Buffer, u32) {
     let mut v = Vec::<u32>::new();
     v.reserve(cube_indices.len() * CHUNK_INDICES.len());
-    for c in cube_indices {
-        v.extend(CHUNK_INDICES.iter().map(|idx| *idx + c* CHUNK_VERTICES.len() as u32));
+    for (cube_index, &cube_type) in cube_indices.iter().enumerate() {
+        if cube_type > 0 {
+            v.extend(CHUNK_INDICES.iter().map(|idx| *idx + (cube_index* CHUNK_VERTICES.len()) as u32));
+        }
     }
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -447,8 +449,7 @@ impl Chunk {
             ]
         });
 
-        let cube_indices = (0..(CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT)).collect();
-        let (index_buffer, num_indices) = create_chunk_indexbuffer(cube_indices, device);
+        let (index_buffer, num_indices) = create_chunk_indexbuffer(&bp.cubes, device);
 
         Some(Self {
             diffuse_bind_group,

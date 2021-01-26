@@ -1,4 +1,4 @@
-use voxrs::{blueprint::Blueprint, camera::Camera, math::Vector3, render::renderer::Renderer};
+use voxrs::{blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, math::Vector3, render::renderer::Renderer};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -92,9 +92,18 @@ fn main() {
             //     material_handle.clone(),
             // ));
 
+            let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| {
+                if v % 3 == 0 {
+                    0
+                } else {
+                    1
+                }
+            }).collect();
+
             let chunk = voxrs::blueprint::Chunk::new(
                 Vector3::new(0.0, 0.0, 0.0),
-                vec![1,10],
+                cubes,
+                //vec![1;CHUNK_TOTAL_CUBE_COUNT],
             );
             bp.add_chunk(chunk);
 
