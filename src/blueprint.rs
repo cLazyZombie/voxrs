@@ -18,6 +18,10 @@ impl Blueprint {
     pub fn add_cube(&mut self, cube: Cube) {
         self.cubes.push(cube);
     }
+
+    pub fn add_chunk(&mut self, chunk: Chunk) {
+        self.chunks.push(chunk);
+    }
 }
 
 
@@ -35,16 +39,18 @@ impl Cube {
     }
 }
 
+pub const CHUNK_CUBE_COUNT: u32 = 16;
+
 pub struct Chunk {
     pub pos: Vector3,
-    pub material: AssetHandle<MaterialAsset>,
+    pub cubes: Vec<u8>, // 0 : empty
 }
 
 impl Chunk {
-    pub fn new(pos: Vector3, material: AssetHandle<MaterialAsset>) -> Self {
+    pub fn new(pos: Vector3, cubes: Vec<u8>) -> Self {
         Self {
             pos,
-            material,
+            cubes,
         }
     }
 }

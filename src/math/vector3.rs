@@ -52,6 +52,19 @@ impl std::ops::AddAssign for Vector3 {
     }
 }
 
+impl From<&[f32]> for Vector3 {
+    fn from(slice: &[f32]) -> Self {
+        assert!(slice.len() == 3);
+        Self::new(slice[0], slice[1], slice[2])
+    }
+}
+
+impl From<&[f32;3]> for Vector3 {
+    fn from(array: &[f32;3]) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,5 +99,19 @@ mod tests {
 
         v1 += v2;
         assert_eq!(v1.as_slice(), &[5.0, 7.0, 9.0]);
+    }
+
+    #[test]
+    fn from_array() {
+        let array: [f32;3] = [1.0, 2.0, 3.0];
+        let v: Vector3 = (&array).into();
+        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn from_slice() {
+        let slice: &[f32] = &[1.0, 2.0, 3.0];
+        let v: Vector3 = slice.into();
+        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
     }
 }

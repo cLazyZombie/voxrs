@@ -1,6 +1,8 @@
 
 use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, blueprint, io::FileSystem, texture};
 use crate::math;
+use blueprint::CHUNK_CUBE_COUNT;
+use math::Vector3;
 use wgpu::util::{DeviceExt};
 
 pub struct ChunkRenderSystem {
@@ -15,18 +17,20 @@ pub struct ChunkRenderSystem {
     render_pipeline_layout: wgpu::PipelineLayout,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    material_temp: AssetHandle<MaterialAsset>,
 }
 
 impl ChunkRenderSystem {
     pub fn new<F: FileSystem>(device: &wgpu::Device, queue: &wgpu::Queue, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
-        const VS_PATH : &str = "assets/shaders/chunk_shader.vert.spv";
-        const FS_PATH : &str = "assets/shaders/chunk_shader.frag.spv";
+        const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
+        const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH).unwrap();
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH).unwrap();
+
+        const MATERIAL_PATH : &str = "assets/materials/cube_material.mat";
+        let material_handle = asset_manager.get(MATERIAL_PATH).unwrap();
 
         asset_manager.build_assets(device, queue);
 
@@ -146,7 +150,7 @@ impl ChunkRenderSystem {
                 stencil: wgpu::StencilStateDescriptor::default(),
             }),
             vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16,
+                index_format: wgpu::IndexFormat::Uint32,
                 vertex_buffers: &[wgpu::VertexBufferDescriptor {
                     stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
                     step_mode: wgpu::InputStepMode::Vertex,
@@ -177,8 +181,6 @@ impl ChunkRenderSystem {
         });
 
         let vertex_buffer = create_chunk_vertexbuffer(&device);
-        let index_buffer = create_chunk_indexbuffer(&device);
-        let num_indices = CHUNK_INDICES.len() as u32;
 
         Self {
             //vs_module,
@@ -190,8 +192,7 @@ impl ChunkRenderSystem {
             render_pipeline_layout,
             render_pipeline,
             vertex_buffer,
-            index_buffer,
-            num_indices,
+            material_temp: material_handle,
         }
     }
 
@@ -203,9 +204,9 @@ impl ChunkRenderSystem {
     ) -> Vec<Chunk> {
         let mut chunks_for_render = Vec::new();
 
-        for chunk in chunks {
+        for chunk_bp in chunks {
             // material
-            let material = asset_manager.get_asset::<MaterialAsset>(&chunk.material);
+            let material = asset_manager.get_asset::<MaterialAsset>(&self.material_temp);
 
             // texture
             let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
@@ -214,47 +215,19 @@ impl ChunkRenderSystem {
                 continue;
             }
 
-            let diffuse = diffuse.texture.as_ref().unwrap();
-
-            let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("diffuse_bind_group"),
-                layout: &self.diffuse_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&diffuse.sampler),
-                    },
-                ],
-            });
-
             // local uniform buffer
-            let world_transform = math::Matrix4::translate(&chunk.pos);
+            let chunk = Chunk::from_bp(
+                &chunk_bp,
+                asset_manager,
+                device,
+                &self.diffuse_bind_group_layout,
+                &self.uniform_local_bind_group_layout,
+                &self.material_temp,
+            );
 
-            let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("view_proj buffer"),
-                contents: bytemuck::cast_slice(&[world_transform.to_array()]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            });
-    
-            let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
-                label: Some("local_uniform_bind_group"),
-                layout: &self.uniform_local_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
-                    }
-                ]
-            });
-
-            chunks_for_render.push(Chunk{
-                diffuse_bind_group,
-                local_uniform_bind_group,
-            });
+            if let Some(chunk) = chunk {
+                chunks_for_render.push(chunk);
+            }
         }
 
         chunks_for_render
@@ -268,12 +241,12 @@ impl ChunkRenderSystem {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..));
 
         for chunk in chunks {
+            render_pass.set_index_buffer(chunk.index_buffer.slice(..));
             render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
             render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
         }
     }
 }
@@ -326,7 +299,7 @@ pub const CHUNK_VERTICES: &[ChunkVertex] = &[
 ];
 
 #[rustfmt::skip]
-pub const CHUNK_INDICES: &[u16] = &[
+pub const CHUNK_INDICES: &[u32] = &[
     0, 1, 2, 
     2, 1, 3, 
     
@@ -347,19 +320,46 @@ pub const CHUNK_INDICES: &[u16] = &[
 ];
 
 pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
+    let mut v = Vec::new() as Vec<ChunkVertex>;
+    let cube_count = (CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT) as usize;
+    v.reserve(CHUNK_VERTICES.len() * cube_count);
+
+    for z in 0..CHUNK_CUBE_COUNT {
+        for y in 0..CHUNK_CUBE_COUNT {
+            for x in 0..CHUNK_CUBE_COUNT {
+                let offset = Vector3::new(x as f32, y as f32, z as f32);
+                v.extend(CHUNK_VERTICES.iter().map(|v| {
+                    let new_position = offset + Vector3::new(v.position[0], v.position[1], v.position[2]);
+                    ChunkVertex {
+                        position: new_position.to_array(),
+                        ..*v
+                    }
+                }));
+            }
+        }
+    }
+
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("chunk vetex buffer"),
-        contents: bytemuck::cast_slice(CHUNK_VERTICES),
+        contents: bytemuck::cast_slice(&v),
         usage: wgpu::BufferUsage::VERTEX,
     })
 }
 
-pub fn create_chunk_indexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
-    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+pub fn create_chunk_indexbuffer(cube_indices: Vec<u32>, device: &wgpu::Device) -> (wgpu::Buffer, u32) {
+    let mut v = Vec::<u32>::new();
+    v.reserve(cube_indices.len() * CHUNK_INDICES.len());
+    for c in cube_indices {
+        v.extend(CHUNK_INDICES.iter().map(|idx| *idx + c* CHUNK_VERTICES.len() as u32));
+    }
+
+    let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("chunk index buffer"),
-        contents: bytemuck::cast_slice(CHUNK_INDICES),
+        contents: bytemuck::cast_slice(&v),
         usage: wgpu::BufferUsage::INDEX,
-    })
+    });
+
+    (buffer, v.len() as u32)
 }
 
 pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
@@ -390,6 +390,8 @@ pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> 
 pub struct Chunk {
     pub diffuse_bind_group: wgpu::BindGroup,
     pub local_uniform_bind_group: wgpu::BindGroup,
+    pub index_buffer: wgpu::Buffer,
+    pub num_indices: u32,
 }
 
 impl Chunk {
@@ -399,8 +401,9 @@ impl Chunk {
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
+        temp_material: &AssetHandle<MaterialAsset>,
     ) -> Option<Self> {
-        let material = asset_manager.get_asset::<MaterialAsset>(&bp.material);
+        let material = asset_manager.get_asset::<MaterialAsset>(temp_material);
         let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
         if diffuse.texture.need_build() {
             println!("texture is not loaded");
@@ -444,9 +447,14 @@ impl Chunk {
             ]
         });
 
+        let cube_indices = (0..(CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT * CHUNK_CUBE_COUNT)).collect();
+        let (index_buffer, num_indices) = create_chunk_indexbuffer(cube_indices, device);
+
         Some(Self {
             diffuse_bind_group,
             local_uniform_bind_group,
+            index_buffer,
+            num_indices,
         })
     }
 }

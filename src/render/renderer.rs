@@ -3,7 +3,7 @@ use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 use crate::{asset::AssetManager, blueprint::Blueprint, camera::Camera, io::FileSystem, math::Matrix4, texture};
-use super::cube::CubeRenderSystem;
+use super::{chunk::ChunkRenderSystem, cube::CubeRenderSystem};
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -14,6 +14,7 @@ pub struct Renderer {
     size: winit::dpi::PhysicalSize<u32>,
     depth_texture: texture::Texture,
     cube_renderer: CubeRenderSystem,
+    chunk_renderer: ChunkRenderSystem,
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
 }
@@ -63,6 +64,7 @@ impl Renderer {
         });
 
         let cube_renderer = CubeRenderSystem::new(&device, &queue, asset_manager, &view_proj_buf);
+        let chunk_renderer = ChunkRenderSystem::new(&device, &queue, asset_manager, &view_proj_buf);
 
         Self {
             surface,
@@ -73,6 +75,7 @@ impl Renderer {
             size,
             depth_texture,
             cube_renderer,
+            chunk_renderer,
             uniforms,
             view_proj_buf,
         }
@@ -82,6 +85,7 @@ impl Renderer {
         asset_manager.build_assets(&self.device, &self.queue);
         
         let cubes = self.cube_renderer.prepare(&mut bp.cubes, asset_manager, &self.device);
+        let chunks = self.chunk_renderer.prepare(&mut bp.chunks, asset_manager, &self.device);
 
         self.update_camera(&bp.camera);
 
@@ -119,6 +123,7 @@ impl Renderer {
             });
 
             self.cube_renderer.render(&cubes, &mut render_pass);
+            self.chunk_renderer.render(&chunks, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
