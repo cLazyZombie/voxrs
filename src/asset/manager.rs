@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use crate::io::FileSystem;
 
-use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, assets::{Asset, AssetType, MaterialAsset}};
+use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType, MaterialAsset}};
 pub struct AssetManager<F: FileSystem> {
     assets: HashMap<AssetHash, ManagedAsset>,
     _marker: std::marker::PhantomData<F>,
@@ -29,6 +29,7 @@ impl<F: FileSystem> AssetManager<F> {
                 AssetType::Texture => self.get_texture(&path),
                 AssetType::Shader => self.get_shader(&path),
                 AssetType::Material => self.get_material(&path),
+                AssetType::WorldBlockMaterial => self.get_world_block_material(&path),
             };
 
             if let Some(asset) = option {
@@ -69,6 +70,14 @@ impl<F: FileSystem> AssetManager<F> {
     fn get_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
         if let Ok(read) = F::read_text(&path.path) {
             Some(Box::new(MaterialAsset::new(&read, self)))
+        } else {
+            None
+        }
+    }
+
+    fn get_world_block_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
+        if let Ok(read) = F::read_text(&path.path) {
+            Some(Box::new(WorldBlockMaterialAsset::new(&read, self)))
         } else {
             None
         }
@@ -186,9 +195,18 @@ mod tests {
 
         let diffuse_tex = manager.get_asset(&material_asset.diffuse_tex);
         assert_eq!(diffuse_tex.buf, include_bytes!("../test_assets/texture.png"));
-        // assert_eq!(material_asset.diffuse_tex, "texture.png".into());
-        // assert_eq!(material_asset.vertex_shader, "shader.vert.spv".into());
-        // assert_eq!(material_asset.frag_shader, "shader.frag.spv".into());
+    }
+
+    #[test]
+    fn get_world_block_material() {
+        let mut manager = AssetManager::<MockFileSystem>::new();
+        let handle = manager.get("world_block_material.wmt");
+        assert!(handle.is_some());
+
+        let asset: &WorldBlockMaterialAsset = manager.get_asset(&handle.unwrap());
+
+        asset.material_handles.get(&1).unwrap();
+        asset.material_handles.get(&10).unwrap();
     }
 
     #[test]

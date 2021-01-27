@@ -9,6 +9,7 @@ pub enum AssetType {
     Text,
     Shader,
     Material,
+    WorldBlockMaterial,
 }
 
 pub enum AssetBuildResult<T> {

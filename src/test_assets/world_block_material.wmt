@@ -1,0 +1,6 @@
+{
+    "materials" : [
+        {"id": 1, "material": "material.mat"},
+        {"id": 10, "material": "material.mat"}
+    ]
+}
