@@ -196,13 +196,13 @@ impl ChunkRenderSystem {
 
     pub fn prepare<F: FileSystem>(
         &self,
-        chunks: &mut Vec<blueprint::Chunk>,
+        chunks_bps: &mut Vec<blueprint::Chunk>,
         asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
     ) -> Vec<Chunk> {
         let mut chunks_for_render = Vec::new();
 
-        for chunk_bp in chunks {
+        for chunk_bp in chunks_bps {
             // material
             let material = asset_manager.get_asset::<MaterialAsset>(&self.material_temp);
 
@@ -214,7 +214,7 @@ impl ChunkRenderSystem {
             }
 
             // local uniform buffer
-            let chunk = Chunk::from_bp(
+            let mut chunks = Chunk::from_bp(
                 &chunk_bp,
                 asset_manager,
                 device,
@@ -223,9 +223,7 @@ impl ChunkRenderSystem {
                 &self.material_temp,
             );
 
-            if let Some(chunk) = chunk {
-                chunks_for_render.push(chunk);
-            }
+            chunks_for_render.append(&mut chunks);
         }
 
         chunks_for_render
@@ -344,7 +342,7 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
 }
 
 /// #Returns
-///  ().o : index buffer
+///  ().0 : index buffer
 ///  ().1 : index count
 pub fn create_chunk_indexbuffer(cube_indices: &[u8], device: &wgpu::Device) -> (wgpu::Buffer, u32) {
     let mut v = Vec::<u32>::new();
@@ -404,12 +402,14 @@ impl Chunk {
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
         temp_material: &AssetHandle<MaterialAsset>,
-    ) -> Option<Self> {
+    ) -> Vec<Self> {
+        let mut chunks = Vec::new();
+
         let material = asset_manager.get_asset::<MaterialAsset>(temp_material);
         let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
         if diffuse.texture.need_build() {
             println!("texture is not loaded");
-            return None;
+            return chunks;
         }
 
         let diffuse = diffuse.texture.as_ref().unwrap();
@@ -451,11 +451,14 @@ impl Chunk {
 
         let (index_buffer, num_indices) = create_chunk_indexbuffer(&bp.cubes, device);
 
-        Some(Self {
+        let chunk = Self {
             diffuse_bind_group,
             local_uniform_bind_group,
             index_buffer,
             num_indices,
-        })
+        };
+        chunks.push(chunk);
+
+        chunks
     }
 }
