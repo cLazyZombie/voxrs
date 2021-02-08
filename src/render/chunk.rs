@@ -18,7 +18,6 @@ pub struct ChunkRenderSystem {
     render_pipeline_layout: wgpu::PipelineLayout,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    material_temp: AssetHandle<MaterialAsset>,
     world_block_mat: AssetHandle<WorldBlockMaterialAsset>,
 }
 
@@ -34,8 +33,8 @@ impl ChunkRenderSystem {
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH).unwrap();
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH).unwrap();
 
-        const MATERIAL_PATH : &str = "assets/materials/cube_material.mat";
-        let material_handle = asset_manager.get(MATERIAL_PATH).unwrap();
+        //const MATERIAL_PATH : &str = "assets/materials/cube_material.mat";
+        //let material_handle = asset_manager.get(MATERIAL_PATH).unwrap();
 
         asset_manager.build_assets(device, queue);
 
@@ -197,7 +196,6 @@ impl ChunkRenderSystem {
             render_pipeline_layout,
             render_pipeline,
             vertex_buffer,
-            material_temp: material_handle,
             world_block_mat,
         }
     }
@@ -212,14 +210,14 @@ impl ChunkRenderSystem {
 
         for chunk_bp in chunks_bps {
             // material
-            let material = asset_manager.get_asset::<MaterialAsset>(&self.material_temp);
+            //let material = asset_manager.get_asset::<MaterialAsset>(&self.material_temp);
 
             // texture
-            let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
-            if diffuse.texture.need_build() {
-                log::error!("texture is not loaded");
-                continue;
-            }
+            //let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
+            //if diffuse.texture.need_build() {
+            //    log::error!("texture is not loaded");
+            //    continue;
+            //}
 
             // local uniform buffer
             let mut chunks = Chunk::from_bp(
