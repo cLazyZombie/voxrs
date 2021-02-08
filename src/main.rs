@@ -92,13 +92,7 @@ fn main() {
             //     material_handle.clone(),
             // ));
 
-            let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| {
-                if v % 3 == 0 {
-                    0
-                } else {
-                    1
-                }
-            }).collect();
+            let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
             let chunk = voxrs::blueprint::Chunk::new(
                 Vector3::new(0.0, 0.0, 0.0),

@@ -6,7 +6,7 @@ use super::{AssetHandle, AssetManager, MaterialAsset, assets::{Asset, AssetType}
 use serde::Deserialize;
 
 pub struct WorldBlockMaterialAsset {
-    pub material_handles: HashMap<i32, AssetHandle<MaterialAsset>>,
+    pub material_handles: HashMap<u8, AssetHandle<MaterialAsset>>,
 }
 
 impl Asset for WorldBlockMaterialAsset {
@@ -44,7 +44,7 @@ impl WorldBlockMaterialAsset {
 
 #[derive(Deserialize)]
 struct WorldBlockMaterialEntity {
-    pub id: i32,
+    pub id: u8,
     pub material: String,
 }
 

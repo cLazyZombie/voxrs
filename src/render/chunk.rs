@@ -1,6 +1,9 @@
-use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, io::FileSystem, texture};
+use std::collections::HashMap;
+
+use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset, WorldBlockMaterialAsset}, blueprint::CubeMatIdx, io::FileSystem, texture};
 use crate::math::{self, Vector3};
 use crate::blueprint::{self, CHUNK_TOTAL_CUBE_COUNT, CHUNK_CUBE_LEN};
+use blueprint::CubeIdx;
 use wgpu::util::{DeviceExt};
 
 pub struct ChunkRenderSystem {
@@ -16,12 +19,16 @@ pub struct ChunkRenderSystem {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     material_temp: AssetHandle<MaterialAsset>,
+    world_block_mat: AssetHandle<WorldBlockMaterialAsset>,
 }
 
 impl ChunkRenderSystem {
     pub fn new<F: FileSystem>(device: &wgpu::Device, queue: &wgpu::Queue, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
         const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
         const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
+        const WORLD_BLOCK_MAT_PATH: &str = "assets/world_mat.wmat";
+
+        let world_block_mat: AssetHandle<WorldBlockMaterialAsset> = asset_manager.get(WORLD_BLOCK_MAT_PATH).unwrap();
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH).unwrap();
@@ -191,6 +198,7 @@ impl ChunkRenderSystem {
             render_pipeline,
             vertex_buffer,
             material_temp: material_handle,
+            world_block_mat,
         }
     }
 
@@ -220,7 +228,7 @@ impl ChunkRenderSystem {
                 device,
                 &self.diffuse_bind_group_layout,
                 &self.uniform_local_bind_group_layout,
-                &self.material_temp,
+                &self.world_block_mat,
             );
 
             chunks_for_render.append(&mut chunks);
@@ -341,16 +349,16 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     })
 }
 
+/// #Inputs
+/// cube_indices: (idx, mat_idx)
 /// #Returns
 ///  ().0 : index buffer
 ///  ().1 : index count
-pub fn create_chunk_indexbuffer(cube_indices: &[u8], device: &wgpu::Device) -> (wgpu::Buffer, u32) {
+pub fn create_chunk_indexbuffer(cube_indices: &[CubeIdx], device: &wgpu::Device) -> (wgpu::Buffer, u32) {
     let mut v = Vec::<u32>::new();
     v.reserve(cube_indices.len() * CHUNK_INDICES.len());
-    for (cube_index, &cube_type) in cube_indices.iter().enumerate() {
-        if cube_type > 0 {
-            v.extend(CHUNK_INDICES.iter().map(|idx| *idx + (cube_index* CHUNK_VERTICES.len()) as u32));
-        }
+    for &cube_idx in cube_indices {
+        v.extend(CHUNK_INDICES.iter().map(|idx| *idx + (cube_idx as usize* CHUNK_VERTICES.len()) as u32));
     }
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -401,63 +409,88 @@ impl Chunk {
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
-        temp_material: &AssetHandle<MaterialAsset>,
+        world_material: &AssetHandle<WorldBlockMaterialAsset>,
     ) -> Vec<Self> {
         let mut chunks = Vec::new();
 
-        let material = asset_manager.get_asset::<MaterialAsset>(temp_material);
-        let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
-        if diffuse.texture.need_build() {
-            println!("texture is not loaded");
-            return chunks;
-        }
-
-        let diffuse = diffuse.texture.as_ref().unwrap();
-
-        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("diffuse_bind_group"),
-            layout: diffuse_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse.sampler),
-                },
-            ],
-        });
-
-        // local uniform buffer
-        let world_transform = math::Matrix4::translate(&bp.pos);
-
-        let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("view_proj buffer"),
-            contents: bytemuck::cast_slice(&[world_transform.to_array()]),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        });
-
-        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
-            label: Some("local_uniform_bind_group"),
-            layout: uniform_local_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+        // sort by material id
+        // Vec : block location, material index
+        let mat_cubes = {
+            let mut mat_cubes: HashMap<CubeMatIdx, Vec<CubeIdx>> = HashMap::new();
+            for (idx, mat_idx) in bp.cubes.iter().enumerate() {
+                if *mat_idx == 0 {
+                    continue;
                 }
-            ]
-        });
 
-        let (index_buffer, num_indices) = create_chunk_indexbuffer(&bp.cubes, device);
-
-        let chunk = Self {
-            diffuse_bind_group,
-            local_uniform_bind_group,
-            index_buffer,
-            num_indices,
+                if let Some(cubes) = mat_cubes.get_mut(mat_idx) {
+                    cubes.push(idx as CubeIdx);
+                } else {
+                    let mut cubes = Vec::new();
+                    cubes.push(idx as CubeIdx);
+                    mat_cubes.insert(*mat_idx, cubes);
+                }
+            }
+            mat_cubes
         };
-        chunks.push(chunk);
+
+        let world_mat = asset_manager.get_asset::<WorldBlockMaterialAsset>(&world_material);
+
+        for (k, v) in mat_cubes {
+            let material = asset_manager.get_asset::<MaterialAsset>(world_mat.material_handles.get(&k).unwrap());
+            let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
+            if diffuse.texture.need_build() {
+                println!("texture is not loaded");
+                return chunks;
+            }
+
+            let diffuse = diffuse.texture.as_ref().unwrap();
+
+            let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("diffuse_bind_group"),
+                layout: diffuse_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&diffuse.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&diffuse.sampler),
+                    },
+                ],
+            });
+
+            // local uniform buffer
+            let world_transform = math::Matrix4::translate(&bp.pos);
+
+            let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("view_proj buffer"),
+                contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            });
+
+            let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
+                label: Some("local_uniform_bind_group"),
+                layout: uniform_local_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+                    }
+                ]
+            });
+
+            let (index_buffer, num_indices) = create_chunk_indexbuffer(&v, device);
+
+            let chunk = Self {
+                diffuse_bind_group,
+                local_uniform_bind_group,
+                index_buffer,
+                num_indices,
+            };
+            chunks.push(chunk);
+
+        }
 
         chunks
     }

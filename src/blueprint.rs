@@ -44,9 +44,14 @@ pub const CHUNK_CUBE_LEN: usize = 16;
 /// total cube count in chunk
 pub const CHUNK_TOTAL_CUBE_COUNT: usize = CHUNK_CUBE_LEN * CHUNK_CUBE_LEN * CHUNK_CUBE_LEN;
 
+/// which material is used in cube
+pub type CubeMatIdx = u8;
+
+pub type CubeIdx = u16;
+
 pub struct Chunk {
     pub pos: Vector3,
-    pub cubes: Vec<u8>, // 0 : empty
+    pub cubes: Vec<CubeMatIdx>, // 0 : empty
 }
 
 impl Chunk {
