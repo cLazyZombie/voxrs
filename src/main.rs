@@ -1,4 +1,4 @@
-use voxrs::{blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, math::Vector3, render::renderer::Renderer};
+use voxrs::{blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, math::Vector3, readwrite::ReadWrite, render::renderer::Renderer};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -99,6 +99,7 @@ fn main() {
                 cubes,
                 //vec![1;CHUNK_TOTAL_CUBE_COUNT],
             );
+            let chunk = ReadWrite::new(chunk);
             bp.add_chunk(chunk);
 
             match renderer.render(bp, &mut asset_manager) {

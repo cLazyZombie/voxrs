@@ -85,7 +85,7 @@ impl Renderer {
         asset_manager.build_assets(&self.device, &self.queue);
         
         let cubes = self.cube_renderer.prepare(&mut bp.cubes, asset_manager, &self.device);
-        let chunks = self.chunk_renderer.prepare(&mut bp.chunks, asset_manager, &self.device);
+        let chunks = self.chunk_renderer.prepare(&bp.chunks, asset_manager, &self.device);
 
         self.update_camera(&bp.camera);
 

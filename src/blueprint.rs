@@ -1,9 +1,9 @@
-use crate::{asset::{AssetHandle, MaterialAsset}, camera::Camera, math::Vector3};
+use crate::{asset::{AssetHandle, MaterialAsset}, camera::Camera, math::Vector3, readwrite::ReadWrite};
 
 pub struct Blueprint {
     pub camera: Camera,
     pub cubes: Vec<Cube>,
-    pub chunks: Vec<Chunk>,
+    pub chunks: Vec<ReadWrite<Chunk>>,
 }
 
 impl Blueprint {
@@ -19,7 +19,7 @@ impl Blueprint {
         self.cubes.push(cube);
     }
 
-    pub fn add_chunk(&mut self, chunk: Chunk) {
+    pub fn add_chunk(&mut self, chunk: ReadWrite<Chunk>) {
         self.chunks.push(chunk);
     }
 }
@@ -49,6 +49,7 @@ pub type CubeMatIdx = u8;
 
 pub type CubeIdx = u16;
 
+#[derive(Clone)]
 pub struct Chunk {
     pub pos: Vector3,
     pub cubes: Vec<CubeMatIdx>, // 0 : empty
