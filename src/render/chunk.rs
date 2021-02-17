@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset, WorldBlockMaterialAsset}, blueprint::CubeMatIdx, io::FileSystem, readwrite::ReadWrite, texture};
 use crate::math::{self, Vector3};
 use crate::blueprint::{self, CHUNK_TOTAL_CUBE_COUNT, CHUNK_CUBE_LEN};
-use blueprint::CubeIdx;
+use blueprint::{ChunkId, CubeIdx};
 use wgpu::util::{DeviceExt};
 
 pub struct ChunkRenderSystem {
@@ -492,4 +492,14 @@ impl Chunk {
 
         chunks
     }
+}
+
+
+/// ChunkCache
+/// cache chunk by id and reuse
+struct ChunkCache {
+    cached: HashMap<ChunkId, Chunk>,
+}
+
+impl ChunkCache {
 }
