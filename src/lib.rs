@@ -9,3 +9,4 @@ pub mod asset;
 pub mod io;
 pub mod blueprint;
 pub mod render;
+pub mod readwrite;
