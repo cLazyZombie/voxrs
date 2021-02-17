@@ -1,4 +1,10 @@
-use crate::{asset::{AssetHandle, MaterialAsset}, camera::Camera, math::Vector3, readwrite::ReadWrite};
+use crate::{camera::Camera, readwrite::ReadWrite};
+
+pub mod chunk;
+pub use chunk::Chunk;
+
+pub mod cube;
+pub use cube::Cube;
 
 pub struct Blueprint {
     pub camera: Camera,
@@ -24,21 +30,6 @@ impl Blueprint {
     }
 }
 
-
-pub struct Cube {
-    pub pos: Vector3,
-    pub material: AssetHandle<MaterialAsset>,
-}
-
-impl Cube {
-    pub fn new(pos: Vector3, material: AssetHandle<MaterialAsset>) -> Self {
-        Self {
-            pos,
-            material,
-        }
-    }
-}
-
 /// cube count in chunk direction (x, y, z)
 pub const CHUNK_CUBE_LEN: usize = 16;
 /// total cube count in chunk
@@ -49,17 +40,4 @@ pub type CubeMatIdx = u8;
 
 pub type CubeIdx = u16;
 
-#[derive(Clone)]
-pub struct Chunk {
-    pub pos: Vector3,
-    pub cubes: Vec<CubeMatIdx>, // 0 : empty
-}
-
-impl Chunk {
-    pub fn new(pos: Vector3, cubes: Vec<u8>) -> Self {
-        Self {
-            pos,
-            cubes,
-        }
-    }
-}
+pub type ChunkId = u64;
