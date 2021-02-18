@@ -26,8 +26,6 @@ fn main() {
     let mut asset_manager = voxrs::asset::AssetManager::<voxrs::io::GeneralFileSystem>::new();
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
 
-    //let material_handle: AssetHandle<MaterialAsset> = asset_manager.get("assets/materials/cube_material.mat").unwrap();
-
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             ref event,
@@ -79,28 +77,16 @@ fn main() {
         }
         Event::MainEventsCleared => {
             let mut bp = Blueprint::new(camera.clone());
-            // bp.add_cube(voxrs::blueprint::Cube::new(
-            //     Vector3::new(0.0, 0.0, 0.0),
-            //     material_handle.clone(),
-            // ));
-            // bp.add_cube(voxrs::blueprint::Cube::new(
-            //     Vector3::new(0.0, 1.0, 0.0),
-            //     material_handle.clone(),
-            // ));
-            // bp.add_cube(voxrs::blueprint::Cube::new(
-            //     Vector3::new(0.0, 2.0, 0.0),
-            //     material_handle.clone(),
-            // ));
 
             let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
             let chunk = voxrs::blueprint::Chunk::new(
                 Vector3::new(0.0, 0.0, 0.0),
                 cubes,
-                //vec![1;CHUNK_TOTAL_CUBE_COUNT],
             );
             let chunk = ReadWrite::new(chunk);
-            bp.add_chunk(chunk);
+
+            bp.add_chunk(chunk.clone_read());
 
             match renderer.render(bp, &mut asset_manager) {
                 Ok(_) => {}

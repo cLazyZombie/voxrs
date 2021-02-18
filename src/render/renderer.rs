@@ -127,6 +127,12 @@ impl Renderer {
         }
 
         self.queue.submit(iter::once(encoder.finish()));
+
+        // clear
+        {
+           self.chunk_renderer.clear(); 
+        }
+
         Ok(())
     }
 

@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
-use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset, WorldBlockMaterialAsset}, blueprint::CubeMatIdx, io::FileSystem, readwrite::ReadWrite, texture};
+use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset, WorldBlockMaterialAsset}, blueprint::{ChunkId, CubeMatIdx}, io::FileSystem, readwrite::ReadWrite, texture};
 use crate::math::{self, Vector3};
 use crate::blueprint::{self, CHUNK_TOTAL_CUBE_COUNT, CHUNK_CUBE_LEN};
 use blueprint::CubeIdx;
 use wgpu::util::{DeviceExt};
 
+use super::cache::Cache;
+
 pub struct ChunkRenderSystem {
+    cache: Cache<ChunkId, Chunk>,
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
@@ -187,8 +190,7 @@ impl ChunkRenderSystem {
         let vertex_buffer = create_chunk_vertexbuffer(&device);
 
         Self {
-            //vs_module,
-            //fs_module,
+            cache: Cache::new(),
             uniform_bind_group_layout,
             uniform_bind_group,
             uniform_local_bind_group_layout,
@@ -201,35 +203,30 @@ impl ChunkRenderSystem {
     }
 
     pub fn prepare<F: FileSystem>(
-        &self,
+        &mut self,
         chunks_bps: &[ReadWrite<blueprint::Chunk>],
         asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
-    ) -> Vec<Chunk> {
+    ) -> Vec<ChunkId> {
         let mut chunks_for_render = Vec::new();
 
         for chunk_bp in chunks_bps {
-            // material
-            //let material = asset_manager.get_asset::<MaterialAsset>(&self.material_temp);
+            // check cached
+            let cached = self.cache.refresh(chunk_bp.id);
+            if !cached {
+                let chunks = Chunk::from_bp(
+                    &chunk_bp,
+                    asset_manager,
+                    device,
+                    &self.diffuse_bind_group_layout,
+                    &self.uniform_local_bind_group_layout,
+                    &self.world_block_mat,
+                );
 
-            // texture
-            //let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
-            //if diffuse.texture.need_build() {
-            //    log::error!("texture is not loaded");
-            //    continue;
-            //}
-
-            // local uniform buffer
-            let mut chunks = Chunk::from_bp(
-                &chunk_bp,
-                asset_manager,
-                device,
-                &self.diffuse_bind_group_layout,
-                &self.uniform_local_bind_group_layout,
-                &self.world_block_mat,
-            );
-
-            chunks_for_render.append(&mut chunks);
+                self.cache.add(chunk_bp.id, chunks);
+            }
+            
+            chunks_for_render.push(chunk_bp.id);
         }
 
         chunks_for_render
@@ -237,19 +234,26 @@ impl ChunkRenderSystem {
 
     pub fn render<'a>(
         &'a self, 
-        chunks: &'a [Chunk],
+        chunks_ids: &'a [ChunkId],
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
-        for chunk in chunks {
-            render_pass.set_index_buffer(chunk.index_buffer.slice(..));
-            render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
-            render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
-            render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
+        for chunk_id in chunks_ids {
+            let chunks = self.cache.get(chunk_id).unwrap();
+            for chunk in chunks {
+                render_pass.set_index_buffer(chunk.index_buffer.slice(..));
+                render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
+                render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
+                render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
+            }
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.cache.clear_unused();
     }
 }
 
