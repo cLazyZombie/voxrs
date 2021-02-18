@@ -1878,6 +1878,7 @@ dependencies = [
  "anyhow",
  "approx",
  "bytemuck",
+ "crossbeam-channel",
  "env_logger",
  "fs_extra",
  "futures",
