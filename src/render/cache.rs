@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{collections::{HashMap, HashSet}, hash::Hash};
 
 pub struct Cache<K, V>
@@ -44,14 +42,6 @@ where
             Some(v) => Some(v.iter()),
             None => None,
         }
-    }
-
-    pub fn len(&self) -> usize {
-        self.cached.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.cached.is_empty()
     }
 
     pub fn clear_unused(&mut self) -> usize {

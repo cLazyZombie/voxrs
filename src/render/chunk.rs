@@ -234,7 +234,7 @@ impl ChunkRenderSystem {
 
     pub fn render<'a>(
         &'a self, 
-        chunks_ids: &'a [ChunkId],
+        chunks_ids: &[ChunkId],
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
