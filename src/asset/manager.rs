@@ -22,7 +22,7 @@ impl<'a, F: FileSystem> AssetManager<'a, F> {
         self.internal.lock().unwrap().get(path)
     }
 
-    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &'a T {
+    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
         self.internal.lock().unwrap().get_asset(handle)
     }
 
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn get_texture() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get::<TextureAsset, _>("texture.png");
+        let handle : Option<AssetHandle<TextureAsset>> = manager.get("texture.png");
         assert!(handle.is_some());
 
         let texture_asset: &TextureAsset = manager.get_asset(&handle.unwrap());

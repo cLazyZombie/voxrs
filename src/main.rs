@@ -1,4 +1,4 @@
-use voxrs::{blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, math::Vector3, readwrite::ReadWrite, render::renderer::Renderer};
+use voxrs::{asset::AssetManager, blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, io::GeneralFileSystem, math::Vector3, readwrite::ReadWrite, render};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -23,8 +23,10 @@ fn main() {
     );
 
 
-    let mut asset_manager = voxrs::asset::AssetManager::<voxrs::io::GeneralFileSystem>::new();
-    let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
+    let asset_manager = AssetManager::<GeneralFileSystem>::new();
+    let (sender, receiver) = crossbeam_channel::bounded(1);
+    
+    render::create_rendering_thread(receiver, &window, asset_manager.clone());
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -34,7 +36,7 @@ fn main() {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
                 camera.resize(physical_size.width, physical_size.height);
-                renderer.resize(*physical_size);
+                let _ = sender.send(render::Command::Resize(*physical_size));
             }
             WindowEvent::KeyboardInput {
                 input:
@@ -88,11 +90,8 @@ fn main() {
 
             bp.add_chunk(chunk.clone_read());
 
-            match renderer.render(bp, &mut asset_manager) {
-                Ok(_) => {}
-                Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
-                Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                Err(e) => eprintln!("{:?}", e),
+            if let Err(_) = sender.send(render::Command::Render(bp)) {
+                *control_flow = ControlFlow::Exit;
             }
             
             //window.request_redraw();

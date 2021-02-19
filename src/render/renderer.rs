@@ -1,9 +1,10 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, thread::{self, JoinHandle}};
 use std::iter;
+use crossbeam_channel::Receiver;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 use crate::{asset::AssetManager, blueprint::Blueprint, camera::Camera, io::FileSystem, math::Matrix4, texture};
-use super::{chunk::ChunkRenderSystem, cube::CubeRenderSystem};
+use super::{chunk::ChunkRenderSystem, commands::Command, cube::CubeRenderSystem};
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -188,4 +189,31 @@ impl Default for Uniforms {
             view_proj: Matrix4::identity().to_array(),
         }
     }
+}
+
+pub fn create_rendering_thread<F: FileSystem>(receiver: Receiver<Command>, window: &Window, mut asset_manager: AssetManager<'static , F>) -> JoinHandle<()> {
+    let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
+
+    let handle = thread::spawn(move || {
+        while let Ok(command) = receiver.recv() {
+            match command {
+                Command::Render(bp) => {
+                    match renderer.render(bp, &mut asset_manager) {
+                        Ok(_) => {}
+                        Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
+                        Err(wgpu::SwapChainError::OutOfMemory) => break,
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                }
+                Command::Resize(size) => {
+                    renderer.resize(size);
+                }
+                Command::Exit => {
+                    break;
+                }
+            }    
+        }
+    });
+
+    handle
 }

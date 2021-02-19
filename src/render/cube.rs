@@ -146,29 +146,7 @@ impl CubeRenderSystem {
             }),
             vertex_state: wgpu::VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                    stride: std::mem::size_of::<CubeVertex>() as wgpu::BufferAddress,
-                    step_mode: wgpu::InputStepMode::Vertex,
-                    attributes: &[
-                        wgpu::VertexAttributeDescriptor {
-                            offset: 0,
-                            shader_location: 0,
-                            format: wgpu::VertexFormat::Float3,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                            shader_location: 1,
-                            format: wgpu::VertexFormat::Float3,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            offset: (std::mem::size_of::<[f32; 3]>()
-                                + std::mem::size_of::<[f32; 3]>())
-                                as wgpu::BufferAddress,
-                            shader_location: 2,
-                            format: wgpu::VertexFormat::Float2,
-                        },
-                    ],
-                }],
+                vertex_buffers: &[create_cube_vertexbuffer_desc()],
             },
             sample_count: 1,
             sample_mask: !0,
@@ -392,7 +370,7 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn from_bp<F: FileSystem>(
+    pub fn _from_bp<F: FileSystem>(
         bp: &blueprint::Cube,
         asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,

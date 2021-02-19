@@ -158,29 +158,7 @@ impl ChunkRenderSystem {
             }),
             vertex_state: wgpu::VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint32,
-                vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                    stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
-                    step_mode: wgpu::InputStepMode::Vertex,
-                    attributes: &[
-                        wgpu::VertexAttributeDescriptor {
-                            offset: 0,
-                            shader_location: 0,
-                            format: wgpu::VertexFormat::Float3,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                            shader_location: 1,
-                            format: wgpu::VertexFormat::Float3,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            offset: (std::mem::size_of::<[f32; 3]>()
-                                + std::mem::size_of::<[f32; 3]>())
-                                as wgpu::BufferAddress,
-                            shader_location: 2,
-                            format: wgpu::VertexFormat::Float2,
-                        },
-                    ],
-                }],
+                vertex_buffers: &[create_chunk_vertexbuffer_desc()],
             },
             sample_count: 1,
             sample_mask: !0,
