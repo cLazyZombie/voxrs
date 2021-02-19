@@ -4,14 +4,14 @@ use std::hash::Hash;
 use crate::io::FileSystem;
 
 use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType, MaterialAsset}};
-pub struct AssetManager<'a, F: FileSystem> {
-    internal: Arc<Mutex<AssetManagerInternal<'a, F>>>,
+pub struct AssetManager<F: FileSystem + 'static> {
+    internal: Arc<Mutex<AssetManagerInternal<F>>>,
 }
 
-unsafe impl<'a, F: FileSystem> Send for AssetManager<'a, F> {}
-unsafe impl<'a, F: FileSystem> Sync for AssetManager<'a, F> {}
+unsafe impl<F: FileSystem + 'static> Send for AssetManager<F> {}
+unsafe impl<F: FileSystem + 'static> Sync for AssetManager<F> {}
 
-impl<'a, F: FileSystem> AssetManager<'a, F> {
+impl<F: FileSystem + 'static> AssetManager<F> {
     pub fn new() -> Self {
         Self {
             internal: Arc::new(Mutex::new(AssetManagerInternal::new())),
@@ -22,7 +22,8 @@ impl<'a, F: FileSystem> AssetManager<'a, F> {
         self.internal.lock().unwrap().get(path)
     }
 
-    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
+    /// lifetime 'a meaning: when asset handle alive, T should be valid
+    pub fn get_asset<'a, T: Asset>(&self, handle: &'a AssetHandle<T>) -> &'a T {
         self.internal.lock().unwrap().get_asset(handle)
     }
 
@@ -36,7 +37,7 @@ impl<'a, F: FileSystem> AssetManager<'a, F> {
     }
 }
 
-impl<'a, F: FileSystem> Clone for AssetManager<'a, F> {
+impl<F: FileSystem + 'static> Clone for AssetManager<F> {
     fn clone(&self) -> Self {
         Self {
             internal: self.internal.clone(),
@@ -44,12 +45,12 @@ impl<'a, F: FileSystem> Clone for AssetManager<'a, F> {
     }
 }
 
-pub struct AssetManagerInternal<'a, F: FileSystem> {
+pub struct AssetManagerInternal<F: FileSystem + 'static> {
     assets: HashMap<AssetHash, ManagedAsset>,
-    _marker: std::marker::PhantomData<&'a F>,
+    _marker: std::marker::PhantomData<F>,
 }
 
-impl<'a, F: FileSystem> AssetManagerInternal<'a, F> {
+impl<F: FileSystem + 'static> AssetManagerInternal<F> {
     pub fn new() -> Self {
         Self {
             assets: HashMap::new(),
@@ -123,7 +124,7 @@ impl<'a, F: FileSystem> AssetManagerInternal<'a, F> {
         }
     }
 
-    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &'a T {
+    pub fn get_asset<'a, T: Asset>(&self, handle: &'a AssetHandle<T>) -> &'a T {
         let managed= self.assets.get(&handle.hash).unwrap();
         let asset = managed.asset.as_ref();
         
@@ -213,7 +214,8 @@ mod tests {
         let handle = manager.get("test.txt");
         assert!(handle.is_some());
 
-        let text_asset: &TextAsset = manager.get_asset(&handle.unwrap());
+        let handle = handle.unwrap();
+        let text_asset: &TextAsset = manager.get_asset(&handle);
         assert_eq!(text_asset.text, "test text file");
     }
 
@@ -223,17 +225,18 @@ mod tests {
         let handle : Option<AssetHandle<TextureAsset>> = manager.get("texture.png");
         assert!(handle.is_some());
 
-        let texture_asset: &TextureAsset = manager.get_asset(&handle.unwrap());
+        let handle = handle.unwrap();
+
+        let texture_asset: &TextureAsset = manager.get_asset(&handle);
         assert_eq!(texture_asset.buf, include_bytes!("../test_assets/texture.png"));
     }
 
     #[test]
     fn get_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get("material.mat");
-        assert!(handle.is_some());
+        let handle = manager.get("material.mat").unwrap();
 
-        let material_asset: &MaterialAsset = manager.get_asset(&handle.unwrap());
+        let material_asset: &MaterialAsset = manager.get_asset(&handle);
 
         let diffuse_tex = manager.get_asset(&material_asset.diffuse_tex);
         assert_eq!(diffuse_tex.buf, include_bytes!("../test_assets/texture.png"));
@@ -242,10 +245,9 @@ mod tests {
     #[test]
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get("world_block_material.wmt");
-        assert!(handle.is_some());
+        let handle = manager.get("world_block_material.wmt").unwrap();
 
-        let asset: &WorldBlockMaterialAsset = manager.get_asset(&handle.unwrap());
+        let asset: &WorldBlockMaterialAsset = manager.get_asset(&handle);
 
         asset.material_handles.get(&1).unwrap();
         asset.material_handles.get(&10).unwrap();

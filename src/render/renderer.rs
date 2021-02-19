@@ -21,7 +21,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub async fn new<F: FileSystem>(window: &Window, asset_manager: &mut AssetManager<'_, F>) -> Self {
+    pub async fn new<F: FileSystem>(window: &Window, asset_manager: &mut AssetManager<F>) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
@@ -191,7 +191,7 @@ impl Default for Uniforms {
     }
 }
 
-pub fn create_rendering_thread<F: FileSystem>(receiver: Receiver<Command>, window: &Window, mut asset_manager: AssetManager<'static , F>) -> JoinHandle<()> {
+pub fn create_rendering_thread<F: FileSystem + 'static>(receiver: Receiver<Command>, window: &Window, mut asset_manager: AssetManager<F>) -> JoinHandle<()> {
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
 
     let handle = thread::spawn(move || {
