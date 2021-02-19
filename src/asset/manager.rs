@@ -202,6 +202,8 @@ impl ManagedAsset {
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
+
     use super::*;
     use crate::io::tests::MockFileSystem;
 
@@ -255,12 +257,39 @@ mod tests {
         let path : AssetPath = "test.txt".into();
         assert!(manager.get_rc("test.txt").is_none());
 
-        let handle = manager.get::<TextAsset, _>("test.txt").unwrap();
-
+        let handle1 = manager.get::<TextAsset, _>("test.txt").unwrap();
         assert_eq!(manager.get_rc(&path).unwrap(), 1);
 
-        drop(handle);
+        let handle2 = manager.get::<TextAsset, _>("test.txt").unwrap();
+        assert_eq!(manager.get_rc(&path).unwrap(), 2);
 
-        assert_eq!(manager.get_rc(path).unwrap(), 0);
+        drop(handle1);
+        assert_eq!(manager.get_rc(&path).unwrap(), 1);
+
+        drop(handle2);
+        assert_eq!(manager.get_rc(&path).unwrap(), 0);
+    }
+
+    #[test]
+    fn send_to_other_thread() {
+        let mut manager = AssetManager::<MockFileSystem>::new();
+        let handle: AssetHandle<TextAsset> = manager.get("test.txt").unwrap();
+        assert_eq!(manager.get_rc("test.txt").unwrap(), 1);
+
+        let mut clonned = manager.clone();
+        let join_handle = thread::spawn(move || {
+            let handle : AssetHandle<TextAsset> = clonned.get("test.txt").unwrap();
+            assert_eq!(clonned.get_rc("test.txt").unwrap(), 2);
+
+            let text_asset: &TextAsset = clonned.get_asset(&handle);
+            assert_eq!(text_asset.text, "test text file");
+        });
+
+        join_handle.join().unwrap();
+
+        assert_eq!(manager.get_rc("test.txt").unwrap(), 1);
+
+        drop(handle);
+        assert_eq!(manager.get_rc("test.txt").unwrap(), 0);
     }
 }
