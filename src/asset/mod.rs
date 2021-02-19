@@ -2,6 +2,7 @@ mod assets;
 mod asset_path;
 mod manager;
 mod world_block_material;
+mod handle;
 
 pub use assets::AssetBuildResult;
 
