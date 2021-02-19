@@ -1,7 +1,7 @@
 use wgpu::util::make_spirv;
 use serde::{Deserialize};
 use crate::{io::FileSystem, texture::Texture};
-use super::{AssetHandle, AssetManager};
+use super::{AssetHandle, manager::AssetManagerInternal};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
@@ -225,7 +225,7 @@ impl<'a> Asset for MaterialAsset {
 }
 
 impl MaterialAsset {
-    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
+    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManagerInternal<F>) -> Self {
         let raw : MaterialAssetRaw = serde_json::from_str(s).unwrap();
         
         let diffuse_tex = asset_manager.get::<TextureAsset, _>(&raw.diffuse_tex).unwrap();

@@ -20,7 +20,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub async fn new<F: FileSystem>(window: &Window, asset_manager: &mut AssetManager<F>) -> Self {
+    pub async fn new<F: FileSystem>(window: &Window, asset_manager: &mut AssetManager<'_, F>) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };

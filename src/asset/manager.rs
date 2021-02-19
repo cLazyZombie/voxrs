@@ -1,15 +1,55 @@
-use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+use std::{collections::HashMap, marker::PhantomData, sync::{Arc, Mutex}};
 use std::hash::Hash;
 
 use crate::io::FileSystem;
 
 use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType, MaterialAsset}};
-pub struct AssetManager<F: FileSystem> {
-    assets: HashMap<AssetHash, ManagedAsset>,
-    _marker: std::marker::PhantomData<F>,
+pub struct AssetManager<'a, F: FileSystem> {
+    internal: Arc<Mutex<AssetManagerInternal<'a, F>>>,
 }
 
-impl<F: FileSystem> AssetManager<F> {
+unsafe impl<'a, F: FileSystem> Send for AssetManager<'a, F> {}
+unsafe impl<'a, F: FileSystem> Sync for AssetManager<'a, F> {}
+
+impl<'a, F: FileSystem> AssetManager<'a, F> {
+    pub fn new() -> Self {
+        Self {
+            internal: Arc::new(Mutex::new(AssetManagerInternal::new())),
+       }
+    }
+
+    pub fn get<'b, T: Asset, Path: Into<AssetPath<'b>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
+        self.internal.lock().unwrap().get(path)
+    }
+
+    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &'a T {
+        self.internal.lock().unwrap().get_asset(handle)
+    }
+
+    #[cfg(test)]
+    fn get_rc<'b, Path: Into<AssetPath<'b>>>(&self, path: Path) -> Option<usize> {
+        self.internal.lock().unwrap().get_rc(path)
+    }
+
+    pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
+        self.internal.lock().unwrap().build_assets(device, queue)
+    }
+}
+
+impl<'a, F: FileSystem> Clone for AssetManager<'a, F> {
+    fn clone(&self) -> Self {
+        Self {
+            internal: self.internal.clone(),
+        }
+    }
+}
+
+pub struct AssetManagerInternal<'a, F: FileSystem> {
+    assets: HashMap<AssetHash, ManagedAsset>,
+    _marker: std::marker::PhantomData<&'a F>,
+}
+
+impl<'a, F: FileSystem> AssetManagerInternal<'a, F> {
     pub fn new() -> Self {
         Self {
             assets: HashMap::new(),
@@ -17,7 +57,7 @@ impl<F: FileSystem> AssetManager<F> {
        }
     }
 
-    pub fn get<'a, T: Asset, Path: Into<AssetPath<'a>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
+    pub fn get<'b, T: Asset, Path: Into<AssetPath<'b>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
         let path = path.into() as AssetPath;
         let hash = path.get_hash();
         if let Some(managed) = self.assets.get(&hash) {
@@ -83,7 +123,7 @@ impl<F: FileSystem> AssetManager<F> {
         }
     }
 
-    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &T {
+    pub fn get_asset<T: Asset>(&self, handle: &AssetHandle<T>) -> &'a T {
         let managed= self.assets.get(&handle.hash).unwrap();
         let asset = managed.asset.as_ref();
         
@@ -97,7 +137,7 @@ impl<F: FileSystem> AssetManager<F> {
     }
 
     #[cfg(test)]
-    fn get_rc<'a, Path: Into<AssetPath<'a>>>(&self, path: Path) -> Option<usize> {
+    fn get_rc<'b, Path: Into<AssetPath<'b>>>(&self, path: Path) -> Option<usize> {
         let path = path.into() as AssetPath;
         let hash = path.get_hash();
         if let Some(managed) = self.assets.get(&hash) {
