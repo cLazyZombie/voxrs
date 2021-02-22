@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet}, hash::Hash};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 pub struct Cache<K, V>
 where
@@ -8,8 +11,8 @@ where
     used: HashSet<K>,
 }
 
-impl<K, V> Cache<K, V> 
-where 
+impl<K, V> Cache<K, V>
+where
     K: Eq + Hash + Copy,
 {
     pub fn new() -> Self {
@@ -31,12 +34,12 @@ where
     /// refresh used and return alreay used
     ///
     /// return true if already used
-    /// retgurn false if new key 
+    /// retgurn false if new key
     pub fn refresh(&mut self, key: K) -> bool {
         !self.used.insert(key)
     }
 
-    pub fn get(&self, key: &K) -> Option<impl Iterator<Item=&V>> {
+    pub fn get(&self, key: &K) -> Option<impl Iterator<Item = &V>> {
         let value = self.cached.get(key);
         match value {
             Some(v) => Some(v.iter()),
@@ -45,7 +48,7 @@ where
     }
 
     pub fn clear_unused(&mut self) -> usize {
-        let cached : HashSet<_> = self.cached.iter().map(|(k, _)| *k).collect();
+        let cached: HashSet<_> = self.cached.iter().map(|(k, _)| *k).collect();
         let removed: Vec<_> = cached.difference(&self.used).collect();
 
         for &k in &removed {

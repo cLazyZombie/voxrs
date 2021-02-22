@@ -1,9 +1,18 @@
-use std::{collections::HashMap, marker::PhantomData, sync::{Arc, Mutex}};
 use std::hash::Hash;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+use tokio::runtime::Runtime;
 
 use crate::io::FileSystem;
 
-use super::{AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType, MaterialAsset}};
+use super::{
+    assets::{Asset, AssetType, MaterialAsset},
+    handle::{AssetHandle, AssetLoadError},
+    AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset,
+};
 pub struct AssetManager<F: FileSystem + 'static> {
     internal: Arc<Mutex<AssetManagerInternal<F>>>,
 }
@@ -15,21 +24,18 @@ impl<F: FileSystem + 'static> AssetManager<F> {
     pub fn new() -> Self {
         Self {
             internal: Arc::new(Mutex::new(AssetManagerInternal::new())),
-       }
+        }
     }
 
-    pub fn get<'b, T: Asset, Path: Into<AssetPath<'b>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
-        self.internal.lock().unwrap().get(path)
-    }
-
-    /// lifetime 'a meaning: when asset handle alive, T should be valid
-    pub fn get_asset<'a, T: Asset>(&self, handle: &'a AssetHandle<T>) -> &'a T {
-        self.internal.lock().unwrap().get_asset(handle)
+    // todo: remove Into...
+    pub fn get<T: Asset, Path: Into<AssetPath>>(&mut self, path: Path) -> AssetHandle<T> {
+        let cloned = self.clone(); // todo: do not clone every time
+        self.internal.lock().unwrap().get(path, cloned)
     }
 
     #[cfg(test)]
-    fn get_rc<'b, Path: Into<AssetPath<'b>>>(&self, path: Path) -> Option<usize> {
-        self.internal.lock().unwrap().get_rc(path)
+    fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
+        self.internal.lock().unwrap().get_rc::<T, _>(path)
     }
 
     pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
@@ -37,7 +43,7 @@ impl<F: FileSystem + 'static> AssetManager<F> {
     }
 }
 
-impl<F: FileSystem + 'static> Clone for AssetManager<F> {
+impl<'a, F: FileSystem + 'static> Clone for AssetManager<F> {
     fn clone(&self) -> Self {
         Self {
             internal: self.internal.clone(),
@@ -46,160 +52,301 @@ impl<F: FileSystem + 'static> Clone for AssetManager<F> {
 }
 
 pub struct AssetManagerInternal<F: FileSystem + 'static> {
-    assets: HashMap<AssetHash, ManagedAsset>,
+    text_assets: HashMap<AssetHash, AssetHandle<TextAsset>>,
+    texture_assets: HashMap<AssetHash, AssetHandle<TextureAsset>>,
+    shader_assets: HashMap<AssetHash, AssetHandle<ShaderAsset>>,
+    material_assets: HashMap<AssetHash, AssetHandle<MaterialAsset>>,
+    world_block_material_assets: HashMap<AssetHash, AssetHandle<WorldBlockMaterialAsset>>,
+
+    async_rt: Runtime,
     _marker: std::marker::PhantomData<F>,
 }
 
-impl<F: FileSystem + 'static> AssetManagerInternal<F> {
+impl<'a, F: FileSystem + 'static> AssetManagerInternal<F> {
     pub fn new() -> Self {
         Self {
-            assets: HashMap::new(),
+            text_assets: HashMap::new(),
+            texture_assets: HashMap::new(),
+            shader_assets: HashMap::new(),
+            material_assets: HashMap::new(),
+            world_block_material_assets: HashMap::new(),
+            async_rt: Runtime::new().unwrap(),
             _marker: std::marker::PhantomData,
-       }
+        }
     }
 
-    pub fn get<'b, T: Asset, Path: Into<AssetPath<'b>>>(&mut self, path: Path) -> Option<AssetHandle<T>> {
+    pub fn get<T: Asset, Path: Into<AssetPath>>(
+        &mut self,
+        path: Path,
+        manager: AssetManager<F>,
+    ) -> AssetHandle<T> {
         let path = path.into() as AssetPath;
-        let hash = path.get_hash();
-        if let Some(managed) = self.assets.get(&hash) {
-            let rc = Arc::clone(&managed.rc);
-            Some(AssetHandle::new(hash, rc))
-        } else {
-            let option = match T::asset_type() {
-                AssetType::Text => self.get_text(&path),
-                AssetType::Texture => self.get_texture(&path),
-                AssetType::Shader => self.get_shader(&path),
-                AssetType::Material => self.get_material(&path),
-                AssetType::WorldBlockMaterial => self.get_world_block_material(&path),
-            };
-
-            if let Some(asset) = option {
-                let managed= ManagedAsset::new(asset);
-                let cloned = Arc::clone(&managed.rc);
-                self.assets.insert(hash,managed);
-                Some(AssetHandle::new(hash, cloned))
-            } else {
-                None
+        match T::asset_type() {
+            AssetType::Text => {
+                let handle = self.get_text(path);
+                unsafe { std::mem::transmute::<AssetHandle<_>, AssetHandle<T>>(handle) }
+            }
+            AssetType::Texture => {
+                let handle = self.get_texture(path);
+                unsafe { std::mem::transmute::<AssetHandle<_>, AssetHandle<T>>(handle) }
+            }
+            AssetType::Shader => {
+                let handle = self.get_shader(path);
+                unsafe { std::mem::transmute::<AssetHandle<_>, AssetHandle<T>>(handle) }
+            }
+            AssetType::Material => {
+                let handle = self.get_material(path, manager);
+                unsafe { std::mem::transmute::<AssetHandle<_>, AssetHandle<T>>(handle) }
+            }
+            AssetType::WorldBlockMaterial => {
+                let handle = self.get_world_block_material(path, manager);
+                unsafe { std::mem::transmute::<AssetHandle<_>, AssetHandle<T>>(handle) }
             }
         }
     }
 
-    fn get_text(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
-        if let Ok(read) = F::read_text(&path.path) {
-            Some(Box::new(TextAsset::new(read)))
+    // todo: need refactoring get_xxx. [duplicated code]
+    fn get_text(&mut self, path: AssetPath) -> AssetHandle<TextAsset> {
+        let hash = path.get_hash();
+
+        if let Some(handle) = self.text_assets.get(&hash) {
+            handle.clone()
         } else {
-            None
+            let (handle, s) = create_asset_handle();
+            self.text_assets.insert(hash, handle.clone());
+            self.async_rt.spawn(async move {
+                let result = if let Ok(read) = F::read_text(&path) {
+                    Ok(TextAsset::new(read))
+                } else {
+                    Err(AssetLoadError::Failed)
+                };
+                let _ = s.send(result);
+            });
+
+            handle
         }
     }
 
-    fn get_texture(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
-        if let Ok(read) = F::read_binary(&path.path) {
-            Some(Box::new(TextureAsset::new(read)))
+    fn get_texture(&mut self, path: AssetPath) -> AssetHandle<TextureAsset> {
+        let hash = path.get_hash();
+
+        if let Some(handle) = self.texture_assets.get(&hash) {
+            handle.clone()
         } else {
-            None
+            let (handle, s) = create_asset_handle();
+            self.texture_assets.insert(hash, handle.clone());
+            self.async_rt.spawn(async move {
+                let result = if let Ok(read) = F::read_binary(&path) {
+                    Ok(TextureAsset::new(read))
+                } else {
+                    Err(AssetLoadError::Failed)
+                };
+                let _ = s.send(result);
+            });
+
+            handle
         }
     }
 
-    fn get_shader(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
-        if let Ok(read) = F::read_binary(&path.path) {
-            Some(Box::new(ShaderAsset::new(read)))
+    fn get_shader(&mut self, path: AssetPath) -> AssetHandle<ShaderAsset> {
+        let hash = path.get_hash();
+
+        if let Some(handle) = self.shader_assets.get(&hash) {
+            handle.clone()
         } else {
-            None
+            let (handle, s) = create_asset_handle();
+            self.shader_assets.insert(hash, handle.clone());
+            self.async_rt.spawn(async move {
+                let result = if let Ok(read) = F::read_binary(&path) {
+                    Ok(ShaderAsset::new(read))
+                } else {
+                    Err(AssetLoadError::Failed)
+                };
+                let _ = s.send(result);
+            });
+
+            handle
         }
     }
 
-    fn get_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
-        if let Ok(read) = F::read_text(&path.path) {
-            Some(Box::new(MaterialAsset::new(&read, self)))
+    fn get_material(
+        &mut self,
+        path: AssetPath,
+        mut manager: AssetManager<F>,
+    ) -> AssetHandle<MaterialAsset> {
+        let hash = path.get_hash();
+
+        if let Some(handle) = self.material_assets.get(&hash) {
+            handle.clone()
         } else {
-            None
+            let (handle, s) = create_asset_handle();
+            self.material_assets.insert(hash, handle.clone());
+
+            self.async_rt.spawn(async move {
+                let result = if let Ok(read) = F::read_text(&path) {
+                    Ok(MaterialAsset::new(&read, &mut manager))
+                } else {
+                    Err(AssetLoadError::Failed)
+                };
+                let _ = s.send(result);
+            });
+
+            handle
         }
     }
 
-    fn get_world_block_material(&mut self, path: &AssetPath) -> Option<Box<dyn Asset>> {
-        if let Ok(read) = F::read_text(&path.path) {
-            Some(Box::new(WorldBlockMaterialAsset::new(&read, self)))
+    fn get_world_block_material(
+        &mut self,
+        path: AssetPath,
+        mut manager: AssetManager<F>,
+    ) -> AssetHandle<WorldBlockMaterialAsset> {
+        let hash = path.get_hash();
+
+        if let Some(handle) = self.world_block_material_assets.get(&hash) {
+            handle.clone()
         } else {
-            None
-        }
-    }
+            let (handle, s) = create_asset_handle();
+            self.world_block_material_assets
+                .insert(hash, handle.clone());
 
-    pub fn get_asset<'a, T: Asset>(&self, handle: &'a AssetHandle<T>) -> &'a T {
-        let managed= self.assets.get(&handle.hash).unwrap();
-        let asset = managed.asset.as_ref();
-        
-        assert!(asset.get_asset_type() == T::asset_type());
+            self.async_rt.spawn(async move {
+                let result = if let Ok(read) = F::read_text(&path) {
+                    Ok(WorldBlockMaterialAsset::new(&read, &mut manager))
+                } else {
+                    Err(AssetLoadError::Failed)
+                };
 
-        let p : *const T = (asset as *const dyn Asset).cast();
+                let _ = s.send(result);
+            });
 
-        unsafe {
-            &*p
+            handle
         }
     }
 
     #[cfg(test)]
-    fn get_rc<'b, Path: Into<AssetPath<'b>>>(&self, path: Path) -> Option<usize> {
+    fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
         let path = path.into() as AssetPath;
         let hash = path.get_hash();
-        if let Some(managed) = self.assets.get(&hash) {
-            Some(Arc::strong_count(&managed.rc) -1)
-        } else {
-            None
+
+        match T::asset_type() {
+            AssetType::Text => {
+                if let Some(handle) = self.text_assets.get(&hash) {
+                    Some(handle.ref_count() - 1)
+                } else {
+                    None
+                }
+            }
+            AssetType::Texture => {
+                if let Some(handle) = self.texture_assets.get(&hash) {
+                    Some(handle.ref_count() - 1)
+                } else {
+                    None
+                }
+            }
+            AssetType::Shader => {
+                if let Some(handle) = self.shader_assets.get(&hash) {
+                    Some(handle.ref_count() - 1)
+                } else {
+                    None
+                }
+            }
+            AssetType::Material => {
+                if let Some(handle) = self.material_assets.get(&hash) {
+                    Some(handle.ref_count() - 1)
+                } else {
+                    None
+                }
+            }
+            AssetType::WorldBlockMaterial => {
+                if let Some(handle) = self.world_block_material_assets.get(&hash) {
+                    Some(handle.ref_count() - 1)
+                } else {
+                    None
+                }
+            }
         }
     }
 
     pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        for ManagedAsset{asset, ..} in self.assets.values_mut() {
-            if asset.need_build() {
-                asset.build(device, queue);
+        for handle in self.text_assets.values_mut() {
+            let _ = handle.get_asset();
+
+            if handle.is_loaded() {
+                if let Some(asset) = handle.get_asset_mut() {
+                    if asset.need_build() {
+                        asset.build(device, queue);
+                    }
+                }
+            }
+        }
+
+        for handle in self.texture_assets.values_mut() {
+            let _ = handle.get_asset();
+
+            if handle.is_loaded() {
+                if let Some(asset) = handle.get_asset_mut() {
+                    if asset.need_build() {
+                        asset.build(device, queue);
+                    }
+                }
+            }
+        }
+
+        for handle in self.shader_assets.values_mut() {
+            let _ = handle.get_asset();
+
+            if handle.is_loaded() {
+                if let Some(asset) = handle.get_asset_mut() {
+                    if asset.need_build() {
+                        asset.build(device, queue);
+                    }
+                }
+            }
+        }
+
+        for handle in self.material_assets.values_mut() {
+            let _ = handle.get_asset();
+
+            if handle.is_loaded() {
+                if let Some(asset) = handle.get_asset_mut() {
+                    if asset.need_build() {
+                        asset.build(device, queue);
+                    }
+                }
             }
         }
     }
 }
 
-#[derive(Debug)]
-pub struct AssetHandle<T: Asset> {
-    hash: AssetHash,
-    rc: Arc<()>,
-    _marker: PhantomData<T>,
-}
-
-impl<T: Asset> Clone for AssetHandle<T> {
-    fn clone(&self) -> Self {
-        Self {
-            hash: self.hash,
-            rc: Arc::clone(&self.rc),
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T: Asset> AssetHandle<T> {
-    fn new(hash: AssetHash, rc: Arc<()>) -> Self {
-        Self {
-            hash,
-            rc,
-            _marker: PhantomData,
-        }
-    }
+fn create_asset_handle<T: Asset>() -> (
+    AssetHandle<T>,
+    crossbeam_channel::Sender<Result<T, AssetLoadError>>,
+) {
+    let (s, r) = crossbeam_channel::unbounded();
+    let handle = AssetHandle::new(r);
+    (handle, s)
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Debug, Hash)]
 pub struct AssetHash(pub u64);
 
-struct ManagedAsset {
-    asset: Box<dyn Asset>,
-    rc: Arc<()>,
-}
+// struct ManagedAsset<'a, T: Asset> {
+//     asset: Option<T>,
+//     handle: AssetHandle<'a, T>,
+// }
 
-impl ManagedAsset {
-    fn new(asset: Box<dyn Asset>) -> Self {
-        Self {
-            asset,
-            rc: Arc::new(()),
-        }
-    }
-}
+// impl<'a, T: Asset> ManagedAsset<'a, T> {
+//     fn new(handle: AssetHandle<'a, T>) -> Self {
+//         Self {
+//             asset: None,
+//             handle,
+//         }
+//     }
+
+//     fn set_asset(&mut self, asset: T) {
+//         self.asset = Some(asset);
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -211,43 +358,41 @@ mod tests {
     #[test]
     fn get_text() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get("test.txt");
-        assert!(handle.is_some());
-
-        let handle = handle.unwrap();
-        let text_asset: &TextAsset = manager.get_asset(&handle);
+        let handle = manager.get::<TextAsset, _>("test.txt");
+        let text_asset = handle.get_asset().unwrap();
         assert_eq!(text_asset.text, "test text file");
     }
 
     #[test]
     fn get_texture() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle : Option<AssetHandle<TextureAsset>> = manager.get("texture.png");
-        assert!(handle.is_some());
-
-        let handle = handle.unwrap();
-
-        let texture_asset: &TextureAsset = manager.get_asset(&handle);
-        assert_eq!(texture_asset.buf, include_bytes!("../test_assets/texture.png"));
+        let handle: AssetHandle<TextureAsset> = manager.get("texture.png");
+        let texture_asset: &TextureAsset = handle.get_asset().unwrap();
+        assert_eq!(
+            texture_asset.buf,
+            include_bytes!("../test_assets/texture.png")
+        );
     }
 
     #[test]
     fn get_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get("material.mat").unwrap();
+        let handle: AssetHandle<MaterialAsset> = manager.get("material.mat");
+        let material_asset: &MaterialAsset = handle.get_asset().unwrap();
 
-        let material_asset: &MaterialAsset = manager.get_asset(&handle);
-
-        let diffuse_tex = manager.get_asset(&material_asset.diffuse_tex);
-        assert_eq!(diffuse_tex.buf, include_bytes!("../test_assets/texture.png"));
+        let diffuse_tex = material_asset.diffuse_tex.get_asset().unwrap();
+        assert_eq!(
+            diffuse_tex.buf,
+            include_bytes!("../test_assets/texture.png")
+        );
     }
 
     #[test]
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle = manager.get("world_block_material.wmt").unwrap();
+        let handle: AssetHandle<WorldBlockMaterialAsset> = manager.get("world_block_material.wmt");
 
-        let asset: &WorldBlockMaterialAsset = manager.get_asset(&handle);
+        let asset: &WorldBlockMaterialAsset = handle.get_asset().unwrap();
 
         asset.material_handles.get(&1).unwrap();
         asset.material_handles.get(&10).unwrap();
@@ -256,42 +401,42 @@ mod tests {
     #[test]
     fn get_rc_test() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path : AssetPath = "test.txt".into();
-        assert!(manager.get_rc("test.txt").is_none());
+        let path: AssetPath = "test.txt".into();
+        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt"), None);
 
-        let handle1 = manager.get::<TextAsset, _>("test.txt").unwrap();
-        assert_eq!(manager.get_rc(&path).unwrap(), 1);
+        let handle1: AssetHandle<TextAsset> = manager.get("test.txt");
+        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 1);
 
-        let handle2 = manager.get::<TextAsset, _>("test.txt").unwrap();
-        assert_eq!(manager.get_rc(&path).unwrap(), 2);
+        let handle2: AssetHandle<TextAsset> = manager.get("test.txt");
+        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 2);
 
         drop(handle1);
-        assert_eq!(manager.get_rc(&path).unwrap(), 1);
+        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 1);
 
         drop(handle2);
-        assert_eq!(manager.get_rc(&path).unwrap(), 0);
+        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 0);
     }
 
     #[test]
     fn send_to_other_thread() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<TextAsset> = manager.get("test.txt").unwrap();
-        assert_eq!(manager.get_rc("test.txt").unwrap(), 1);
+        let handle: AssetHandle<TextAsset> = manager.get("test.txt");
+        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 1);
 
         let mut clonned = manager.clone();
         let join_handle = thread::spawn(move || {
-            let handle : AssetHandle<TextAsset> = clonned.get("test.txt").unwrap();
-            assert_eq!(clonned.get_rc("test.txt").unwrap(), 2);
+            let handle: AssetHandle<TextAsset> = clonned.get("test.txt");
+            assert_eq!(clonned.get_rc::<TextAsset, _>("test.txt").unwrap(), 2);
 
-            let text_asset: &TextAsset = clonned.get_asset(&handle);
+            let text_asset: &TextAsset = handle.get_asset().unwrap();
             assert_eq!(text_asset.text, "test text file");
         });
 
         join_handle.join().unwrap();
 
-        assert_eq!(manager.get_rc("test.txt").unwrap(), 1);
+        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 1);
 
         drop(handle);
-        assert_eq!(manager.get_rc("test.txt").unwrap(), 0);
+        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 0);
     }
 }

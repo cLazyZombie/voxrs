@@ -15,7 +15,7 @@ pub struct Blueprint {
 impl Blueprint {
     pub fn new(camera: Camera) -> Self {
         Self {
-            camera, 
+            camera,
             cubes: Vec::new(),
             chunks: Vec::new(),
         }

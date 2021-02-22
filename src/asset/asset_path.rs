@@ -1,25 +1,20 @@
-use std::{borrow::Cow, collections::hash_map::DefaultHasher, path::{Path, PathBuf}};
-use std::hash::{Hash, Hasher};
-use serde::Deserialize;
 use super::manager::AssetHash;
-
+use serde::Deserialize;
+use std::hash::{Hash, Hasher};
+use std::{
+    collections::hash_map::DefaultHasher,
+    ops::Deref,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct AssetPath<'a> {
-    pub path: Cow<'a, Path>,
+pub struct AssetPath {
+    pub path: PathBuf,
 }
 
-impl<'a> AssetPath<'a> {
-    pub fn new(path: PathBuf) -> Self {
-       Self {
-           path: Cow::Owned(path),
-       } 
-    }
-
-    pub fn new_ref(path: &'a Path) -> Self {
-       Self {
-           path: Cow::Borrowed(path),
-       } 
+impl AssetPath {
+    pub fn new(path: String) -> Self {
+        Self { path: path.into() }
     }
 
     pub fn get_hash(&self) -> AssetHash {
@@ -31,36 +26,55 @@ impl<'a> AssetPath<'a> {
     }
 }
 
-impl From<&str> for AssetPath<'_> {
-    fn from(s: &str) -> Self {
-        Self::new(s.parse().unwrap())
+impl Clone for AssetPath {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+        }
     }
 }
 
-impl From<&String> for AssetPath<'_> {
+impl From<&str> for AssetPath {
+    fn from(s: &str) -> Self {
+        Self::new(s.to_string())
+    }
+}
+
+impl From<&String> for AssetPath {
     fn from(s: &String) -> Self {
         Self::new((s as &str).into())
     }
 }
 
-impl From<String> for AssetPath<'_> {
+impl From<String> for AssetPath {
     fn from(s: String) -> Self {
         Self::new(s.into())
     }
 }
 
-impl From<&AssetPath<'_>> for AssetPath<'_> {
+impl From<&AssetPath> for AssetPath {
     fn from(s: &AssetPath) -> Self {
-        Self::new(s.path.to_path_buf())
+        Self {
+            path: s.path.clone(),
+        }
     }
 }
 
-impl<'de> Deserialize<'de> for AssetPath<'_> {
+impl Deref for AssetPath {
+    type Target = Path;
+
+    fn deref(&self) -> &Self::Target {
+        &self.path
+    }
+}
+
+impl<'de> Deserialize<'de> for AssetPath {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de> {
+        D: serde::Deserializer<'de>,
+    {
         let s = <&str as Deserialize>::deserialize(deserializer)?;
-        let asset_path : AssetPath = s.into();
+        let asset_path: AssetPath = s.into();
         Ok(asset_path)
     }
 }
@@ -72,14 +86,14 @@ mod tests {
     #[test]
     fn asset_path_from_string() {
         let s = "string".to_string();
-        let asset_path : AssetPath = s.into();
+        let asset_path: AssetPath = s.into();
         assert_eq!(asset_path.path.to_str().unwrap(), "string");
     }
 
     #[test]
     fn asset_path_from_string_ref() {
         let s = &"string".to_string();
-        let asset_path : AssetPath = s.into();
+        let asset_path: AssetPath = s.into();
         assert_eq!(asset_path.path.to_str().unwrap(), "string");
     }
 

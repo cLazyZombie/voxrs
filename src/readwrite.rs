@@ -1,4 +1,7 @@
-use std::{ops::{Deref, DerefMut}, sync::Arc};
+use std::{
+    ops::{Deref, DerefMut},
+    sync::Arc,
+};
 
 /// read or read-write mode smart pointer
 pub enum ReadWrite<T>
@@ -9,23 +12,21 @@ where
     Rw(Arc<T>),
 }
 
-impl<T> ReadWrite<T> 
-where 
-    T: Clone 
+impl<T> ReadWrite<T>
+where
+    T: Clone,
 {
-    pub fn new(t : T) -> Self {
+    pub fn new(t: T) -> Self {
         ReadWrite::Rw(Arc::new(t))
     }
 
     pub fn clone_read(&self) -> Self {
         match self {
             ReadWrite::R(arc) => ReadWrite::R(Arc::clone(arc)),
-            ReadWrite::Rw(arc) => {
-                ReadWrite::R(Arc::clone(arc))
-            }
+            ReadWrite::Rw(arc) => ReadWrite::R(Arc::clone(arc)),
         }
     }
-    
+
     pub fn strong_count(&self) -> usize {
         match self {
             ReadWrite::R(arc) => Arc::strong_count(arc),
@@ -35,7 +36,7 @@ where
 }
 
 impl<T> Deref for ReadWrite<T>
-where 
+where
     T: Clone,
 {
     type Target = T;
@@ -50,7 +51,7 @@ where
 
 /// only ReadWrite::Rw can deref mut
 impl<T> DerefMut for ReadWrite<T>
-where 
+where
     T: Clone,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -60,7 +61,8 @@ where
                 // not clonned before, just use self
                 if Arc::strong_count(arc) == 1 {
                     Arc::get_mut(arc).unwrap()
-                } else { // if already clonned, clone T and write to it
+                } else {
+                    // if already clonned, clone T and write to it
                     let clonned = <T as Clone>::clone(arc);
                     *arc = Arc::new(clonned);
                     Arc::get_mut(arc).unwrap()
@@ -111,7 +113,7 @@ mod tests {
     fn write_after_clone_clone_original_value() {
         let mut rw = ReadWrite::new(MyStruct { val: 10 });
         let clonned = rw.clone_read();
-        
+
         rw.val = 100;
 
         assert_eq!(rw.strong_count(), 1);

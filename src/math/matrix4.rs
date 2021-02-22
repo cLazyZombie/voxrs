@@ -1,5 +1,5 @@
-use nalgebra_glm as glm;
 use crate::math::Vector3;
+use nalgebra_glm as glm;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix4 {
@@ -54,10 +54,22 @@ impl Matrix4 {
 
     pub fn translate(v: &Vector3) -> Self {
         Self::new(
-            1.0, 0.0, 0.0, v.x(),
-            0.0, 1.0, 0.0, v.y(),
-            0.0, 0.0, 1.0, v.z(),
-            0.0, 0.0, 0.0, 1.0,
+            1.0,
+            0.0,
+            0.0,
+            v.x(),
+            0.0,
+            1.0,
+            0.0,
+            v.y(),
+            0.0,
+            0.0,
+            1.0,
+            v.z(),
+            0.0,
+            0.0,
+            0.0,
+            1.0,
         )
     }
 }

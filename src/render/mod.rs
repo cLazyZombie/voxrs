@@ -1,8 +1,8 @@
-mod renderer;
-mod cube;
+mod cache;
 mod chunk;
 mod commands;
-mod cache;
+mod cube;
+mod renderer;
 
 pub use commands::Command;
 pub use renderer::create_rendering_thread;

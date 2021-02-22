@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use crate::io::FileSystem;
 
-use super::{AssetHandle, MaterialAsset, assets::{Asset, AssetType}, manager::AssetManagerInternal};
+use super::{
+    assets::{Asset, AssetType},
+    AssetHandle, AssetManager, MaterialAsset,
+};
 use serde::Deserialize;
 
 pub struct WorldBlockMaterialAsset {
@@ -10,7 +13,10 @@ pub struct WorldBlockMaterialAsset {
 }
 
 impl Asset for WorldBlockMaterialAsset {
-    fn asset_type() -> AssetType where Self: Sized {
+    fn asset_type() -> AssetType
+    where
+        Self: Sized,
+    {
         AssetType::WorldBlockMaterial
     }
 
@@ -22,23 +28,20 @@ impl Asset for WorldBlockMaterialAsset {
         false
     }
 
-    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {
-    }
+    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {}
 }
 
 impl WorldBlockMaterialAsset {
-    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManagerInternal<F>) -> Self {
-        let raw : WorldBlockMaterialAssetRaw = serde_json::from_str(s).unwrap();
-      
+    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
+        let raw: WorldBlockMaterialAssetRaw = serde_json::from_str(s).unwrap();
+
         let mut material_handles = HashMap::new();
         for entity in &raw.materials {
-            let material = asset_manager.get::<MaterialAsset, _>(&entity.material).unwrap();
+            let material = asset_manager.get::<MaterialAsset, _>(&entity.material);
             material_handles.insert(entity.id, material);
         }
 
-        Self {
-            material_handles
-        }
+        Self { material_handles }
     }
 }
 
@@ -50,5 +53,5 @@ struct WorldBlockMaterialEntity {
 
 #[derive(Deserialize)]
 struct WorldBlockMaterialAssetRaw {
-    pub materials: Vec<WorldBlockMaterialEntity>
+    pub materials: Vec<WorldBlockMaterialEntity>,
 }

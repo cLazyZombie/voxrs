@@ -1,6 +1,11 @@
-use crate::{asset::{AssetHandle, AssetManager, MaterialAsset, ShaderAsset, TextureAsset}, blueprint, io::FileSystem, texture};
 use crate::math;
-use wgpu::util::{DeviceExt};
+use crate::{
+    asset::{AssetHandle, AssetManager, ShaderAsset},
+    blueprint,
+    io::FileSystem,
+    texture,
+};
+use wgpu::util::DeviceExt;
 
 pub struct CubeRenderSystem {
     #[allow(dead_code)]
@@ -19,18 +24,23 @@ pub struct CubeRenderSystem {
 }
 
 impl CubeRenderSystem {
-    pub fn new<F: FileSystem>(device: &wgpu::Device, queue: &wgpu::Queue, asset_manager: &mut AssetManager<F>, view_proj_buff: &wgpu::Buffer) -> Self {
-        const VS_PATH : &str = "assets/shaders/cube_shader.vert.spv";
-        const FS_PATH : &str = "assets/shaders/cube_shader.frag.spv";
+    pub fn new<F: FileSystem>(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        asset_manager: &mut AssetManager<F>,
+        view_proj_buff: &wgpu::Buffer,
+    ) -> Self {
+        const VS_PATH: &str = "assets/shaders/cube_shader.vert.spv";
+        const FS_PATH: &str = "assets/shaders/cube_shader.frag.spv";
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH).unwrap();
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH).unwrap();
+        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH);
+        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH);
 
         asset_manager.build_assets(device, queue);
 
-        let vs_asset = asset_manager.get_asset::<ShaderAsset>(&vs_handle);
-        let fs_asset = asset_manager.get_asset::<ShaderAsset>(&fs_handle);
+        let vs_asset = vs_handle.get_asset().unwrap();
+        let fs_asset = fs_handle.get_asset().unwrap();
 
         let vs_module = vs_asset.module.as_ref().unwrap();
         let fs_module = fs_asset.module.as_ref().unwrap();
@@ -62,10 +72,10 @@ impl CubeRenderSystem {
         });
 
         // cube마다 설정할 uniform값들
-        let uniform_local_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
-            label: Some("local bind group layout for cube"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
+        let uniform_local_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("local bind group layout for cube"),
+                entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
                     ty: wgpu::BindingType::UniformBuffer {
@@ -73,9 +83,8 @@ impl CubeRenderSystem {
                         min_binding_size: None,
                     },
                     count: None,
-                }
-            ]  
-        });
+                }],
+            });
 
         let diffuse_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -106,9 +115,10 @@ impl CubeRenderSystem {
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("cube render system pipeline layout"),
                 bind_group_layouts: &[
-                    &uniform_bind_group_layout, 
+                    &uniform_bind_group_layout,
                     &uniform_local_bind_group_layout,
-                    &diffuse_bind_group_layout],
+                    &diffuse_bind_group_layout,
+                ],
                 push_constant_ranges: &[],
             });
 
@@ -172,20 +182,15 @@ impl CubeRenderSystem {
         }
     }
 
-    pub fn prepare<F: FileSystem>(
-        &self,
-        cubes: &mut Vec<blueprint::Cube>,
-        asset_manager: &mut AssetManager<F>,
-        device: &wgpu::Device,
-    ) -> Vec<Cube> {
+    pub fn prepare(&self, cubes: &mut Vec<blueprint::Cube>, device: &wgpu::Device) -> Vec<Cube> {
         let mut cubes_for_render = Vec::new();
 
         for cube in cubes {
             // material
-            let material = asset_manager.get_asset::<MaterialAsset>(&cube.material);
+            let material = cube.material.get_asset().unwrap();
 
             // texture
-            let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
+            let diffuse = material.diffuse_tex.get_asset().unwrap();
             if diffuse.texture.need_build() {
                 log::error!("texture is not loaded");
                 continue;
@@ -211,24 +216,23 @@ impl CubeRenderSystem {
             // local uniform buffer
             let world_transform = math::Matrix4::translate(&cube.pos);
 
-            let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("view_proj buffer"),
-                contents: bytemuck::cast_slice(&[world_transform.to_array()]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            });
-    
-            let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
+            let local_uniform_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("view_proj buffer"),
+                    contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+                    usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+                });
+
+            let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("local_uniform_bind_group"),
                 layout: &self.uniform_local_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
-                    }
-                ]
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+                }],
             });
 
-            cubes_for_render.push(Cube{
+            cubes_for_render.push(Cube {
                 diffuse_bind_group,
                 local_uniform_bind_group,
             });
@@ -237,11 +241,7 @@ impl CubeRenderSystem {
         cubes_for_render
     }
 
-    pub fn render<'a>(
-        &'a self, 
-        cubes: &'a [Cube],
-        render_pass: &mut wgpu::RenderPass<'a>,
-    ) {
+    pub fn render<'a>(&'a self, cubes: &'a [Cube], render_pass: &mut wgpu::RenderPass<'a>) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
@@ -370,15 +370,14 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn _from_bp<F: FileSystem>(
+    pub fn _from_bp(
         bp: &blueprint::Cube,
-        asset_manager: &mut AssetManager<F>,
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Option<Self> {
-        let material = asset_manager.get_asset::<MaterialAsset>(&bp.material);
-        let diffuse = asset_manager.get_asset::<TextureAsset>(&material.diffuse_tex);
+        let material = bp.material.get_asset().unwrap();
+        let diffuse = material.diffuse_tex.get_asset().unwrap();
         if diffuse.texture.need_build() {
             println!("texture is not loaded");
             return None;
@@ -410,15 +409,13 @@ impl Cube {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor{
+        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("local_uniform_bind_group"),
             layout: uniform_local_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
-                }
-            ]
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+            }],
         });
 
         Some(Self {

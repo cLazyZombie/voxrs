@@ -1,18 +1,17 @@
+use anyhow::Result;
 use std::fs::File;
+use std::io::prelude::*;
 use std::path::Path;
 use std::vec::Vec;
-use std::io::prelude::*;
-use anyhow::Result;
 
 pub trait FileSystem {
     fn read_binary(path: &Path) -> Result<std::vec::Vec<u8>>;
     fn read_text(path: &Path) -> Result<String>;
 }
 
-pub struct GeneralFileSystem {
-    
-}
+pub struct GeneralFileSystem {}
 
+// todo: use async
 impl FileSystem for GeneralFileSystem {
     fn read_binary(path: &Path) -> Result<Vec<u8>> {
         let mut f = File::open(path)?;
@@ -57,13 +56,13 @@ pub mod tests {
                 _ => panic!("not found"),
             }
         }
-    
+
         fn read_text(path: &Path) -> Result<String> {
             match path.to_str() {
                 Some("test.txt") => {
                     let s = include_str!("test_assets/test.txt");
                     Ok(s.to_string())
-                }   
+                }
                 Some("material.mat") => {
                     let s = include_str!("test_assets/material.mat");
                     Ok(s.to_string())

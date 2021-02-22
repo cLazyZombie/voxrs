@@ -1,4 +1,12 @@
-use voxrs::{asset::AssetManager, blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT}, camera::Camera, io::GeneralFileSystem, math::Vector3, readwrite::ReadWrite, render};
+use voxrs::{
+    asset::AssetManager,
+    blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT},
+    camera::Camera,
+    io::GeneralFileSystem,
+    math::Vector3,
+    readwrite::ReadWrite,
+    render,
+};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -7,7 +15,9 @@ use winit::{
 
 fn main() {
     //env_logger::init();
-    env_logger::builder().filter_level(log::LevelFilter::Info).init();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -22,10 +32,9 @@ fn main() {
         100.0,
     );
 
-
     let asset_manager = AssetManager::<GeneralFileSystem>::new();
     let (sender, receiver) = crossbeam_channel::bounded(1);
-    
+
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
 
     event_loop.run(move |event, _, control_flow| match event {
@@ -82,10 +91,7 @@ fn main() {
 
             let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
-            let chunk = voxrs::blueprint::Chunk::new(
-                Vector3::new(0.0, 0.0, 0.0),
-                cubes,
-            );
+            let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
             let chunk = ReadWrite::new(chunk);
 
             bp.add_chunk(chunk.clone_read());
@@ -93,7 +99,7 @@ fn main() {
             if let Err(_) = sender.send(render::Command::Render(bp)) {
                 *control_flow = ControlFlow::Exit;
             }
-            
+
             //window.request_redraw();
         }
         _ => {}

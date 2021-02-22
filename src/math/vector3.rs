@@ -59,8 +59,8 @@ impl From<&[f32]> for Vector3 {
     }
 }
 
-impl From<&[f32;3]> for Vector3 {
-    fn from(array: &[f32;3]) -> Self {
+impl From<&[f32; 3]> for Vector3 {
+    fn from(array: &[f32; 3]) -> Self {
         Self::new(array[0], array[1], array[2])
     }
 }
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn from_array() {
-        let array: [f32;3] = [1.0, 2.0, 3.0];
+        let array: [f32; 3] = [1.0, 2.0, 3.0];
         let v: Vector3 = (&array).into();
         assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
     }

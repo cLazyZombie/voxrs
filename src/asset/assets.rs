@@ -1,7 +1,7 @@
-use wgpu::util::make_spirv;
-use serde::{Deserialize};
+use super::{AssetHandle, AssetManager};
 use crate::{io::FileSystem, texture::Texture};
-use super::{AssetHandle, manager::AssetManagerInternal};
+use serde::Deserialize;
+use wgpu::util::make_spirv;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
@@ -42,11 +42,11 @@ impl<T> AssetBuildResult<T> {
 #[derive(Debug, Copy, Clone)]
 pub struct AssetId(u64);
 
-
-
 /// any concrete asset should impl Asset
-pub trait Asset{
-    fn asset_type() -> AssetType where Self: Sized;
+pub trait Asset {
+    fn asset_type() -> AssetType
+    where
+        Self: Sized;
 
     fn get_asset_type(&self) -> AssetType;
     fn need_build(&self) -> bool;
@@ -70,7 +70,10 @@ impl TextureAsset {
 
 // todo: #[derive(Asset)] 형태로 수정
 impl Asset for TextureAsset {
-    fn asset_type() -> AssetType where Self: Sized{
+    fn asset_type() -> AssetType
+    where
+        Self: Sized,
+    {
         AssetType::Texture
     }
 
@@ -99,7 +102,7 @@ impl Asset for TextureAsset {
                         self.texture = AssetBuildResult::Ok(texture);
                     }
                     Err(err) => {
-                        log::error!("texture build error. err: {}", &err.to_string()); 
+                        log::error!("texture build error. err: {}", &err.to_string());
                         self.texture = AssetBuildResult::Err(err.context("texture build error"));
                     }
                 }
@@ -124,7 +127,7 @@ impl TextureAsset {
                         self.texture = AssetBuildResult::Ok(texture);
                     }
                     Err(err) => {
-                        log::error!("texture build error. err: {}", &err.to_string()); 
+                        log::error!("texture build error. err: {}", &err.to_string());
                         self.texture = AssetBuildResult::Err(err.context("texture build error"));
                     }
                 }
@@ -139,28 +142,29 @@ pub struct TextAsset {
 }
 
 impl Asset for TextAsset {
-    fn asset_type() -> AssetType where Self: Sized{
+    fn asset_type() -> AssetType
+    where
+        Self: Sized,
+    {
         AssetType::Text
     }
 
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
-    
+
     fn need_build(&self) -> bool {
         false
     }
 
     fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {
         panic!("should not be called")
-    } 
+    }
 }
 
 impl TextAsset {
     pub fn new(s: String) -> Self {
-        Self {
-            text: s,
-        }
+        Self { text: s }
     }
 }
 
@@ -170,10 +174,13 @@ pub struct ShaderAsset {
 }
 
 impl Asset for ShaderAsset {
-    fn asset_type() -> AssetType where Self: Sized {
+    fn asset_type() -> AssetType
+    where
+        Self: Sized,
+    {
         AssetType::Shader
     }
-    
+
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
@@ -208,7 +215,10 @@ pub struct MaterialAssetRaw {
 }
 
 impl<'a> Asset for MaterialAsset {
-    fn asset_type() -> AssetType where Self: Sized {
+    fn asset_type() -> AssetType
+    where
+        Self: Sized,
+    {
         AssetType::Material
     }
 
@@ -220,18 +230,15 @@ impl<'a> Asset for MaterialAsset {
         false
     }
 
-    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {
-    }
+    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {}
 }
 
 impl MaterialAsset {
-    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManagerInternal<F>) -> Self {
-        let raw : MaterialAssetRaw = serde_json::from_str(s).unwrap();
-        
-        let diffuse_tex = asset_manager.get::<TextureAsset, _>(&raw.diffuse_tex).unwrap();
+    pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
+        let raw: MaterialAssetRaw = serde_json::from_str(s).unwrap();
 
-        Self {
-            diffuse_tex,
-        }
+        let diffuse_tex = asset_manager.get::<TextureAsset, _>(&raw.diffuse_tex);
+
+        Self { diffuse_tex }
     }
 }

@@ -2,11 +2,11 @@
 #![allow(clippy::float_cmp)]
 #![allow(clippy::new_without_default)]
 
-pub mod camera;
-pub mod math;
-pub mod texture;
 pub mod asset;
-pub mod io;
 pub mod blueprint;
-pub mod render;
+pub mod camera;
+pub mod io;
+pub mod math;
 pub mod readwrite;
+pub mod render;
+pub mod texture;

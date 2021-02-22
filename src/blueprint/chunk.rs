@@ -1,10 +1,10 @@
-use std::{sync::atomic::{AtomicU64, Ordering}};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::math::Vector3;
 
 use super::{ChunkId, CubeMatIdx};
 
-pub struct Chunk {  
+pub struct Chunk {
     pub id: ChunkId,
     pub pos: Vector3,
     pub cubes: Vec<CubeMatIdx>, // 0 : empty
