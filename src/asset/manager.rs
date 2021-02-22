@@ -20,7 +20,7 @@ pub struct AssetManager<F: FileSystem + 'static> {
 unsafe impl<F: FileSystem + 'static> Send for AssetManager<F> {}
 unsafe impl<F: FileSystem + 'static> Sync for AssetManager<F> {}
 
-impl<F: FileSystem + 'static> AssetManager<F> {
+impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     pub fn new() -> Self {
         Self {
             internal: Arc::new(Mutex::new(AssetManagerInternal::new())),
@@ -31,18 +31,18 @@ impl<F: FileSystem + 'static> AssetManager<F> {
         let cloned = self.clone(); 
         self.internal.lock().unwrap().get(path, cloned)
     }
-
+    
     #[cfg(test)]
     fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
         self.internal.lock().unwrap().get_rc::<T, _>(path)
     }
 
-    pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        self.internal.lock().unwrap().build_assets(device, queue)
+    pub fn set_wgpu(&mut self, device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) {
+        self.internal.lock().unwrap().set_wgpu(device, queue);
     }
 }
 
-impl<F: FileSystem + 'static> Clone for AssetManager<F> {
+impl<'wgpu, F: FileSystem + 'static> Clone for AssetManager<F> {
     fn clone(&self) -> Self {
         Self {
             internal: self.internal.clone(),
@@ -57,11 +57,14 @@ pub struct AssetManagerInternal<F: FileSystem + 'static> {
     material_assets: HashMap<AssetHash, AssetHandle<MaterialAsset>>,
     world_block_material_assets: HashMap<AssetHash, AssetHandle<WorldBlockMaterialAsset>>,
 
+    device: Option<Arc<wgpu::Device>>,
+    queue: Option<Arc<wgpu::Queue>>,
+
     async_rt: Runtime,
     _marker: std::marker::PhantomData<F>,
 }
 
-impl<F: FileSystem + 'static> AssetManagerInternal<F> {
+impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     pub fn new() -> Self {
         Self {
             text_assets: HashMap::new(),
@@ -69,12 +72,16 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
             shader_assets: HashMap::new(),
             material_assets: HashMap::new(),
             world_block_material_assets: HashMap::new(),
+
+            device: None,
+            queue: None,
+
             async_rt: Runtime::new().unwrap(),
             _marker: std::marker::PhantomData,
         }
     }
 
-    pub fn get<T: Asset>( &mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
+    pub fn get<T: Asset>(&mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
         match T::asset_type() {
             AssetType::Text => {
                 let handle = self.get_text(path);
@@ -122,6 +129,7 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
+
     fn get_texture(&mut self, path: &AssetPath) -> AssetHandle<TextureAsset> {
         let hash = path.get_hash();
 
@@ -131,9 +139,18 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
             let (handle, s) = create_asset_handle();
             self.texture_assets.insert(hash, handle.clone());
             let path = path.clone();
+            let (device, queue) = self.clone_wgpu();
+            
             self.async_rt.spawn(async move {
                 let result = if let Ok(read) = F::read_binary(&path) {
-                    Ok(TextureAsset::new(read))
+                    let mut texture = TextureAsset::new(read);
+
+                    if let Some(device) = device {
+                        if let Some(queue) = queue {
+                            texture.build(&device, &queue);
+                        }
+                    }
+                    Ok(texture)
                 } else {
                     Err(AssetLoadError::Failed)
                 };
@@ -153,9 +170,16 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
             let (handle, s) = create_asset_handle();
             self.shader_assets.insert(hash, handle.clone());
             let path = path.clone();
+            let (device, queue) = self.clone_wgpu();
+
             self.async_rt.spawn(async move {
                 let result = if let Ok(read) = F::read_binary(&path) {
-                    Ok(ShaderAsset::new(read))
+                    let mut shader = ShaderAsset::new(read);
+
+                    if device.is_some() && queue.is_some() {
+                        shader.build(&device.unwrap(), &queue.unwrap());
+                    }
+                    Ok(shader)
                 } else {
                     Err(AssetLoadError::Failed)
                 };
@@ -219,6 +243,24 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
+    fn clone_wgpu(&self) -> (Option<Arc<wgpu::Device>>, Option<Arc<wgpu::Queue>>) {
+        let cloned_device = if let Some(device) = &self.device {
+            let device = Arc::clone(device);
+            Some(device)
+        } else {
+            None
+        };
+        
+        let cloned_queue = if let Some(queue) = &self.queue {
+            let queue = Arc::clone(queue);
+            Some(queue)
+        } else {
+            None
+        };
+
+        (cloned_device, cloned_queue)
+    }
+
     #[cfg(test)]
     fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
         let path = path.into() as AssetPath;
@@ -263,54 +305,9 @@ impl<F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
-    pub fn build_assets(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        for handle in self.text_assets.values_mut() {
-            let _ = handle.get_asset();
-
-            if handle.is_loaded() {
-                if let Some(asset) = handle.get_asset_mut() {
-                    if asset.need_build() {
-                        asset.build(device, queue);
-                    }
-                }
-            }
-        }
-
-        for handle in self.texture_assets.values_mut() {
-            let _ = handle.get_asset();
-
-            if handle.is_loaded() {
-                if let Some(asset) = handle.get_asset_mut() {
-                    if asset.need_build() {
-                        asset.build(device, queue);
-                    }
-                }
-            }
-        }
-
-        for handle in self.shader_assets.values_mut() {
-            let _ = handle.get_asset();
-
-            if handle.is_loaded() {
-                if let Some(asset) = handle.get_asset_mut() {
-                    if asset.need_build() {
-                        asset.build(device, queue);
-                    }
-                }
-            }
-        }
-
-        for handle in self.material_assets.values_mut() {
-            let _ = handle.get_asset();
-
-            if handle.is_loaded() {
-                if let Some(asset) = handle.get_asset_mut() {
-                    if asset.need_build() {
-                        asset.build(device, queue);
-                    }
-                }
-            }
-        }
+    pub fn set_wgpu(&mut self, device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) {
+        self.device = Some(device);
+        self.queue = Some(queue);
     }
 }
 

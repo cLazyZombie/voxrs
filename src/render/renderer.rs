@@ -4,7 +4,7 @@ use crate::{
     texture,
 };
 use crossbeam_channel::Receiver;
-use std::iter;
+use std::{iter, sync::Arc};
 use std::{
     convert::TryInto,
     thread::{self, JoinHandle},
@@ -14,8 +14,8 @@ use winit::window::Window;
 
 pub struct Renderer {
     surface: wgpu::Surface,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
     swap_chain_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
@@ -51,6 +51,11 @@ impl Renderer {
             .await
             .unwrap();
 
+        let device = Arc::new(device);
+        let queue = Arc::new(queue);
+
+        asset_manager.set_wgpu(Arc::clone(&device), Arc::clone(&queue));
+
         let swap_chain_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
@@ -70,8 +75,8 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let cube_renderer = CubeRenderSystem::new(&device, &queue, asset_manager, &view_proj_buf);
-        let chunk_renderer = ChunkRenderSystem::new(&device, &queue, asset_manager, &view_proj_buf);
+        let cube_renderer = CubeRenderSystem::new(&device, asset_manager, &view_proj_buf);
+        let chunk_renderer = ChunkRenderSystem::new(&device, asset_manager, &view_proj_buf);
 
         Self {
             surface,
@@ -88,13 +93,7 @@ impl Renderer {
         }
     }
 
-    pub fn render<F: FileSystem>(
-        &mut self,
-        mut bp: Blueprint,
-        asset_manager: &mut AssetManager<F>,
-    ) -> Result<(), wgpu::SwapChainError> {
-        asset_manager.build_assets(&self.device, &self.queue);
-
+    pub fn render(&mut self, mut bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
         let cubes = self.cube_renderer.prepare(&mut bp.cubes, &self.device);
         let chunks = self.chunk_renderer.prepare(&bp.chunks, &self.device);
 
@@ -211,7 +210,7 @@ pub fn create_rendering_thread<F: FileSystem + 'static>(
     let handle = thread::spawn(move || {
         while let Ok(command) = receiver.recv() {
             match command {
-                Command::Render(bp) => match renderer.render(bp, &mut asset_manager) {
+                Command::Render(bp) => match renderer.render(bp) {
                     Ok(_) => {}
                     Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
                     Err(wgpu::SwapChainError::OutOfMemory) => break,

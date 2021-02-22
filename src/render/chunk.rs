@@ -33,7 +33,6 @@ pub struct ChunkRenderSystem {
 impl ChunkRenderSystem {
     pub fn new<F: FileSystem>(
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
         asset_manager: &mut AssetManager<F>,
         view_proj_buff: &wgpu::Buffer,
     ) -> Self {
@@ -47,11 +46,6 @@ impl ChunkRenderSystem {
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
-
-        //const MATERIAL_PATH : &str = "assets/materials/cube_material.mat";
-        //let material_handle = asset_manager.get(MATERIAL_PATH).unwrap();
-
-        asset_manager.build_assets(device, queue);
 
         let vs_asset = vs_handle.get_asset().unwrap();
         let fs_asset = fs_handle.get_asset().unwrap();

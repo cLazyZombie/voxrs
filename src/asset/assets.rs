@@ -49,8 +49,6 @@ pub trait Asset {
         Self: Sized;
 
     fn get_asset_type(&self) -> AssetType;
-    fn need_build(&self) -> bool;
-    fn build(&mut self, device: &wgpu::Device, queue: &wgpu::Queue);
 }
 
 pub struct TextureAsset {
@@ -79,35 +77,6 @@ impl Asset for TextureAsset {
 
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
-    }
-
-    fn need_build(&self) -> bool {
-        self.texture.need_build()
-    }
-
-    fn build(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        assert!(self.need_build());
-
-        match &self.texture {
-            AssetBuildResult::Ok(_) => {
-                log::warn!("texture already built");
-            }
-            AssetBuildResult::Err(err) => {
-                log::warn!("texture build already has error. {:?}", err);
-            }
-            AssetBuildResult::NotBuilt => {
-                let result = Texture::from_bytes(device, queue, &self.buf, "texture");
-                match result {
-                    Ok(texture) => {
-                        self.texture = AssetBuildResult::Ok(texture);
-                    }
-                    Err(err) => {
-                        log::error!("texture build error. err: {}", &err.to_string());
-                        self.texture = AssetBuildResult::Err(err.context("texture build error"));
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -152,14 +121,6 @@ impl Asset for TextAsset {
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
-
-    fn need_build(&self) -> bool {
-        false
-    }
-
-    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {
-        panic!("should not be called")
-    }
 }
 
 impl TextAsset {
@@ -184,16 +145,6 @@ impl Asset for ShaderAsset {
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
-
-    fn need_build(&self) -> bool {
-        self.module.need_build()
-    }
-
-    fn build(&mut self, device: &wgpu::Device, _queue: &wgpu::Queue) {
-        assert!(self.need_build());
-        let module = device.create_shader_module(make_spirv(&self.buf));
-        self.module = AssetBuildResult::Ok(module);
-    }
 }
 
 impl ShaderAsset {
@@ -202,6 +153,11 @@ impl ShaderAsset {
             buf,
             module: AssetBuildResult::NotBuilt,
         }
+    }
+
+    pub fn build(&mut self, device: &wgpu::Device, _queue: &wgpu::Queue) {
+        let module = device.create_shader_module(make_spirv(&self.buf));
+        self.module = AssetBuildResult::Ok(module);
     }
 }
 
@@ -225,12 +181,6 @@ impl<'a> Asset for MaterialAsset {
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
-
-    fn need_build(&self) -> bool {
-        false
-    }
-
-    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {}
 }
 
 impl MaterialAsset {

@@ -26,7 +26,6 @@ pub struct CubeRenderSystem {
 impl CubeRenderSystem {
     pub fn new<F: FileSystem>(
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
         asset_manager: &mut AssetManager<F>,
         view_proj_buff: &wgpu::Buffer,
     ) -> Self {
@@ -36,8 +35,6 @@ impl CubeRenderSystem {
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
-
-        asset_manager.build_assets(device, queue);
 
         let vs_asset = vs_handle.get_asset().unwrap();
         let fs_asset = fs_handle.get_asset().unwrap();

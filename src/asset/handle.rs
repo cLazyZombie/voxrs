@@ -36,13 +36,13 @@ impl<T: Asset> AssetHandle<T> {
             .as_ref()
     }
 
-    pub fn get_asset_mut(&mut self) -> Option<&mut T> {
-        let p = self.get_asset().unwrap() as *const T;
-        unsafe {
-            let v = p as *mut T;
-            Some(&mut *v)
-        }
-    }
+    // pub fn get_asset_mut(&mut self) -> Option<&mut T> {
+    //     let p = self.get_asset().unwrap() as *const T;
+    //     unsafe {
+    //         let v = p as *mut T;
+    //         Some(&mut *v)
+    //     }
+    // }
 
     pub fn is_loaded(&self) -> bool {
         self.lazy.get().is_some()

@@ -20,12 +20,6 @@ impl Asset for WorldBlockMaterialAsset {
     fn get_asset_type(&self) -> AssetType {
         Self::asset_type()
     }
-
-    fn need_build(&self) -> bool {
-        false
-    }
-
-    fn build(&mut self, _device: &wgpu::Device, _queue: &wgpu::Queue) {}
 }
 
 impl WorldBlockMaterialAsset {
