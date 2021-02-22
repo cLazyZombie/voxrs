@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use std::cell::RefCell;
+use std::sync::Arc;
 
-use crossbeam_channel::RecvError;
+use lazy_init::Lazy;
 
 use super::assets::Asset;
 
@@ -10,90 +10,98 @@ pub enum AssetLoadError{
     Failed,
 }
 
-pub struct AssetHandle<'a, T: Asset + 'static> {
-    state: RefCell<State<'a, T>>,
+pub struct AssetHandle<'a, T: Asset> {
+    recv: Arc<ReceiveType<'a, T>>,
+    lazy: Arc<Lazy<Option<&'a T>>>,
 }
 
-impl<'a, T: Asset + 'static> AssetHandle<'a, T> {
+impl<'a, T: Asset> AssetHandle<'a, T> {
     pub fn new(recv: ReceiveType<'a, T>) -> Self {
         Self {
-            state: RefCell::new(State::Processing(recv)),
+            recv: Arc::new(recv),
+            lazy: Arc::new(Lazy::new()),
         }
     }
 
     /// block until loading completed or failed
-    pub fn get_asset(&self) -> Option<&'a T> {
-        self.state.borrow_mut().get_asset()
+    pub fn get_asset(&self) -> Option<&T> {
+        self.lazy.get_or_create(|| {
+           match self.recv.recv() {
+                Ok(result) => {
+                    match result {
+                        Ok(asset) => Some(asset),
+                        Err(_) => None,
+                    }
+                }
+                Err(_) => {
+                   None
+                }
+           }
+        }).as_deref()
+    }
+
+    pub fn is_loaded(&self) -> bool {
+        self.lazy.get().is_some()
+    }
+}
+
+impl<'a, T: Asset + 'static> Clone for AssetHandle<'a, T> {
+    fn clone(&self) -> Self {
+        Self {
+            recv: Arc::clone(&self.recv),
+            lazy: Arc::clone(&self.lazy),
+        }
     }
 }
 
 pub type ResultType<'a, T> = Result<&'a T, AssetLoadError>;
 pub type ReceiveType<'a, T> = crossbeam_channel::Receiver<ResultType<'a, T>>;
 
-enum State<'a, T> 
-where
-    T: Asset + 'static
-{
-    Processing(ReceiveType<'a, T>),
-    Completed(&'a T),
-    Failed(AssetLoadError),
-}
-
-impl<'a, T> State<'a, T>
-where 
-    T: Asset + 'static
-{
-    pub fn get_asset(&mut self) -> Option<&'a T> {
-        match self {
-            State::Processing(receive_chan) => {
-                let received = receive_chan.recv();
-                self.get_asset_from_channel(received)
-            }
-            State::Completed(asset) => {
-                Some(asset)
-            }
-            State::Failed(_) => {
-                None
-            }
-        }
-    }    
-
-    fn get_asset_from_channel(&mut self, result: Result<ResultType<'a, T>, RecvError>) -> Option<&'a T> {
-        // check channel receive error
-        if result.is_err() {
-            *self = State::Failed(AssetLoadError::Failed);
-            return None
-        }
-
-        let result = result.unwrap();
-        match result {
-            Ok(asset) => {
-                *self = State::Completed(asset);
-                Some(asset)
-            }
-            Err(err) => {
-                *self = State::Failed(err);
-                None
-            }
-        }
-    }
-}
 
 #[cfg(test)]
 mod test {
+    use std::thread;
+
     use crate::asset::TextAsset;
 
     use super::*;
 
     #[test]
     fn create_asset_handle() {
-        let (sender, recv) = crossbeam_channel::unbounded();
-        let h = AssetHandle::new(recv);
+        let (s, r) = crossbeam_channel::unbounded();
+        let h = AssetHandle::<TextAsset>::new(r);
 
-        let asset = Box::leak(Box::new(TextAsset::new("text".to_string())));
-        let _ = sender.send(Ok(asset));
+        // asset is create from other thread
+        thread::spawn(move || {
+            let asset = Box::leak(Box::new(TextAsset::new("text".to_string())));
+            //let asset = TextAsset::new("text".to_string());
+            let _ = s.send(Ok(asset));
+        });
 
         let get = h.get_asset().unwrap();
         assert_eq!(get.text, "text");
+    }
+    
+    #[test]
+    fn test_clone() {
+        let (s, r) = crossbeam_channel::unbounded();
+        let h = AssetHandle::<TextAsset>::new(r);
+        let cloned_1 = h.clone();
+
+        assert_eq!(h.is_loaded(), false);
+        assert_eq!(cloned_1.is_loaded(), false);
+
+        let asset = Box::leak(Box::new(TextAsset::new("text".to_string())));
+        let _ = s.send(Ok(asset));
+
+        assert_eq!(h.get_asset().unwrap().text, "text");
+        assert_eq!(cloned_1.get_asset().unwrap().text, "text");
+        assert_eq!(h.is_loaded(), true);
+        assert_eq!(cloned_1.is_loaded(), true);
+
+        // clone after load
+        let cloned_2 = h.clone();
+        assert_eq!(cloned_2.get_asset().unwrap().text, "text");
+        assert_eq!(cloned_2.is_loaded(), true);
     }
 }
