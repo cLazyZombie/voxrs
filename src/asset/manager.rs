@@ -23,7 +23,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
         }
     }
 
-    pub fn get<T: Asset>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+    pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let cloned = self.clone(); 
         self.internal.lock().unwrap().get(path, cloned)
     }
@@ -83,7 +83,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
-    pub fn get<T: Asset>(&mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
+    pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
         match T::asset_type() {
             AssetType::Text => {
                 let handle = self.get_text(path);
