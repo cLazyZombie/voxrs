@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
 
 use crate::io::FileSystem;
 
@@ -62,6 +62,12 @@ pub struct AssetManagerInternal<F: FileSystem + 'static> {
 
 impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     pub fn new() -> Self {
+        let async_rt = Builder::new_multi_thread()
+            .worker_threads(4)
+            .thread_name("asset loader")
+            .build()
+            .unwrap();
+            
         Self {
             text_assets: HashMap::new(),
             texture_assets: HashMap::new(),
@@ -72,7 +78,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             device: None,
             queue: None,
 
-            async_rt: Runtime::new().unwrap(),
+            async_rt,
             _marker: std::marker::PhantomData,
         }
     }
