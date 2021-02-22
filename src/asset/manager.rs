@@ -8,11 +8,7 @@ use tokio::runtime::Runtime;
 
 use crate::io::FileSystem;
 
-use super::{
-    assets::{Asset, AssetType, MaterialAsset},
-    handle::{AssetHandle, AssetLoadError},
-    AssetPath, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset,
-};
+use super::{AssetPath, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType}, handle::{AssetHandle, AssetLoadError}};
 pub struct AssetManager<F: FileSystem + 'static> {
     internal: Arc<Mutex<AssetManagerInternal<F>>>,
 }
