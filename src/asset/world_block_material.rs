@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use crate::io::FileSystem;
 
-use super::{
-    assets::{Asset, AssetType},
-    AssetHandle, AssetManager, MaterialAsset,
-};
+use super::{AssetHandle, AssetManager, AssetPath, MaterialAsset, assets::{Asset, AssetType}};
 use serde::Deserialize;
 
 pub struct WorldBlockMaterialAsset {
@@ -37,7 +34,7 @@ impl WorldBlockMaterialAsset {
 
         let mut material_handles = HashMap::new();
         for entity in &raw.materials {
-            let material = asset_manager.get::<MaterialAsset, _>(&entity.material);
+            let material = asset_manager.get::<MaterialAsset>(&AssetPath::from_str(&entity.material));
             material_handles.insert(entity.id, material);
         }
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
 use crate::math::{self, Vector3};
 use crate::{
-    asset::{AssetHandle, AssetManager, ShaderAsset, WorldBlockMaterialAsset},
+    asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldBlockMaterialAsset},
     blueprint::{ChunkId, CubeMatIdx},
     io::FileSystem,
     readwrite::ReadWrite,
@@ -42,11 +42,11 @@ impl ChunkRenderSystem {
         const WORLD_BLOCK_MAT_PATH: &str = "assets/world_mat.wmat";
 
         let world_block_mat: AssetHandle<WorldBlockMaterialAsset> =
-            asset_manager.get(WORLD_BLOCK_MAT_PATH);
+            asset_manager.get(&AssetPath::from_str(WORLD_BLOCK_MAT_PATH));
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH);
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH);
+        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
+        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
 
         //const MATERIAL_PATH : &str = "assets/materials/cube_material.mat";
         //let material_handle = asset_manager.get(MATERIAL_PATH).unwrap();

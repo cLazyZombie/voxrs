@@ -1,6 +1,6 @@
 use crate::math;
 use crate::{
-    asset::{AssetHandle, AssetManager, ShaderAsset},
+    asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset},
     blueprint,
     io::FileSystem,
     texture,
@@ -34,8 +34,8 @@ impl CubeRenderSystem {
         const FS_PATH: &str = "assets/shaders/cube_shader.frag.spv";
 
         //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(VS_PATH);
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(FS_PATH);
+        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
+        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
 
         asset_manager.build_assets(device, queue);
 

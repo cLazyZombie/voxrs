@@ -17,6 +17,10 @@ impl AssetPath {
         Self { path: path.into() }
     }
 
+    pub fn from_str(s: &str) -> Self {
+        Self { path: s.into() }
+    }
+
     pub fn get_hash(&self) -> AssetHash {
         let mut s = DefaultHasher::new();
         self.path.hash(&mut s);
