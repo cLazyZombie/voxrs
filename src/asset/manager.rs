@@ -100,6 +100,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
     // todo: need refactoring get_xxx. [duplicated code]
     fn create_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+
         let hash = path.get_hash();
 
         let (handle, s) = create_asset_handle();
@@ -108,7 +109,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let path = path.clone();
 
         self.async_rt.spawn(async move {
-            let start_time = Instant::now();
+            let _logger = AssetLoadLogger::new(&path);
 
             let result;
             if let Ok(s) = F::read_text(&path).await {
@@ -116,10 +117,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             } else {
                 result = Err(AssetLoadError::Failed);
             }
-
-            let end_time = Instant::now();
-            let elapsed_time = end_time - start_time;
-            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
             let _ = s.send(result);
         });
@@ -136,7 +133,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let (device, queue) = self.clone_wgpu();
         
         self.async_rt.spawn(async move {
-            let start_time = Instant::now();
+            let _logger = AssetLoadLogger::new(&path);
 
             let result;
             if let Ok(v) = F::read_binary(&path).await {
@@ -148,10 +145,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             } else {
                 result = Err(AssetLoadError::Failed);
             }
-
-            let end_time = Instant::now();
-            let elapsed_time = end_time - start_time;
-            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
             let _ = s.send(result);
         });
@@ -168,7 +161,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let (device, queue) = self.clone_wgpu();
 
         self.async_rt.spawn(async move {
-            let start_time = Instant::now();
+            let _logger = AssetLoadLogger::new(&path);
 
             let result;
             if let Ok(v) = F::read_binary(&path).await {
@@ -180,10 +173,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             } else {
                 result = Err(AssetLoadError::Failed);
             }
-
-            let end_time = Instant::now();
-            let elapsed_time = end_time - start_time;
-            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
             let _ = s.send(result);
         });
@@ -199,7 +188,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let path = path.clone();
 
         self.async_rt.spawn(async move {
-            let start_time = Instant::now();
+            let _logger = AssetLoadLogger::new(&path);
 
             let result;
             if let Ok(s) = F::read_text(&path).await {
@@ -207,10 +196,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             } else {
                 result = Err(AssetLoadError::Failed);
             }
-
-            let end_time = Instant::now();
-            let elapsed_time = end_time - start_time;
-            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
             let _ = s.send(result);
         });
@@ -226,7 +211,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let path = path.clone();
 
         self.async_rt.spawn(async move {
-            let start_time = Instant::now();
+            let _logger = AssetLoadLogger::new(&path);
 
             let result;
             if let Ok(s) = F::read_text(&path).await {
@@ -234,10 +219,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             } else {
                 result = Err(AssetLoadError::Failed);
             }
-
-            let end_time = Instant::now();
-            let elapsed_time = end_time - start_time;
-            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
             let _ = s.send(result);
         });
@@ -312,6 +293,28 @@ fn create_asset_handle<T: Asset>() -> (
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Debug, Hash)]
 pub struct AssetHash(pub u64);
+
+struct AssetLoadLogger<'a> {
+    start: Instant,
+    asset_name: &'a AssetPath,
+}
+
+impl<'a> AssetLoadLogger<'a> {
+    fn new(asset_name: &'a AssetPath) -> Self {
+        Self {
+            start: Instant::now(),
+            asset_name,
+        }
+    }
+}
+
+impl<'a> Drop for AssetLoadLogger<'a> {
+    fn drop(&mut self) {
+        let end = Instant::now();
+        let elapsed_time = end - self.start;
+        log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), self.asset_name);
+    }
+}
 
 #[cfg(test)]
 mod tests {
