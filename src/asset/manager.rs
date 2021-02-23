@@ -1,4 +1,4 @@
-use std::{any::Any, hash::Hash, time::Instant};
+use std::{hash::Hash, time::Instant};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -104,7 +104,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let hash = path.get_hash();
 
         let (handle, s) = create_asset_handle();
-        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        let cloned = handle.as_ref().clone();
         self.text_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -127,7 +127,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_texture<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
-        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        let cloned = handle.as_ref().clone();
         self.texture_assets.insert(hash, handle);
         let path = path.clone();
         let (device, queue) = self.clone_wgpu();
@@ -155,7 +155,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_shader<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
-        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        let cloned = handle.as_ref().clone();
         self.shader_assets.insert(hash, handle);
         let path = path.clone();
         let (device, queue) = self.clone_wgpu();
@@ -183,7 +183,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
-        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        let cloned = handle.as_ref().clone();
         self.material_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -206,7 +206,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_world_block_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
-        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        let cloned = handle.as_ref().clone();
         self.world_block_material_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -260,23 +260,23 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         match T::asset_type() {
             AssetType::Text => {
                 let handle = self.text_assets.get(hash)?;
-                (handle as &dyn Any).downcast_ref()
+                Some(handle.as_ref())
             }
             AssetType::Texture => {
                 let handle = self.texture_assets.get(hash)?;
-                (handle as &dyn Any).downcast_ref()
+                Some(handle.as_ref())
             }
             AssetType::Shader => {
                 let handle = self.shader_assets.get(hash)?;
-                (handle as &dyn Any).downcast_ref()
+                Some(handle.as_ref())
             }
             AssetType::Material => {
                 let handle = self.material_assets.get(hash)?;
-                (handle as &dyn Any).downcast_ref()
+                Some(handle.as_ref())
             }
             AssetType::WorldBlockMaterial => {
                 let handle = self.world_block_material_assets.get(hash)?;
-                (handle as &dyn Any).downcast_ref()
+                Some(handle.as_ref())
             }
         }
     }

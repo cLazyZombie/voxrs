@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
+use std::{any::Any, sync::Arc};
 
 use lazy_init::Lazy;
 
@@ -10,12 +10,12 @@ pub enum AssetLoadError {
     Failed,
 }
 
-pub struct AssetHandle<T: Asset> {
+pub struct AssetHandle<T: Asset + 'static> {
     recv: Arc<ReceiveType<T>>,
     lazy: Arc<Lazy<Option<T>>>,
 }
 
-impl<T: Asset> AssetHandle<T> {
+impl<T: Asset + 'static> AssetHandle<T> {
     pub fn new(recv: ReceiveType<T>) -> Self {
         Self {
             recv: Arc::new(recv),
@@ -62,6 +62,13 @@ impl<T: Asset + 'static> Clone for AssetHandle<T> {
     }
 }
 
+/// cast &AssetHandle<T> to &AssetHandle<U>
+/// panic if T != U
+impl<T: Asset + 'static, U: Asset + 'static> AsRef<AssetHandle<U>> for AssetHandle<T> {
+    fn as_ref(&self) -> &AssetHandle<U> {
+        (self as &dyn Any).downcast_ref().unwrap()
+    }
+}
 pub type ResultType<T> = Result<T, AssetLoadError>;
 pub type ReceiveType<T> = crossbeam_channel::Receiver<ResultType<T>>;
 
@@ -69,7 +76,7 @@ pub type ReceiveType<T> = crossbeam_channel::Receiver<ResultType<T>>;
 mod test {
     use std::thread;
 
-    use crate::asset::TextAsset;
+    use crate::asset::{TextAsset, TextureAsset};
 
     use super::*;
 
@@ -111,5 +118,24 @@ mod test {
         let cloned_2 = h.clone();
         assert_eq!(cloned_2.get_asset().unwrap().text, "text");
         assert_eq!(cloned_2.is_loaded(), true);
+    }
+
+    fn convert<T: Asset + 'static>(h: &AssetHandle<TextAsset>) -> &AssetHandle<T> {
+        h.as_ref()
+    }
+    
+    #[test]
+    fn as_ref_test() {
+        let (_, r) = crossbeam_channel::unbounded();
+        let handle = AssetHandle::<TextAsset>::new(r);
+        convert::<TextAsset>(&handle);
+    }
+
+    #[test]
+    #[should_panic]
+    fn as_ref_to_other_type_should_panic() {
+        let (_, r) = crossbeam_channel::unbounded();
+        let handle = AssetHandle::<TextAsset>::new(r);
+        convert::<TextureAsset>(&handle);
     }
 }
