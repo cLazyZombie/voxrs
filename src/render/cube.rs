@@ -1,4 +1,4 @@
-use crate::math;
+use crate::{math, safecloner::SafeCloner};
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset},
     blueprint,
@@ -179,7 +179,7 @@ impl CubeRenderSystem {
         }
     }
 
-    pub fn prepare(&self, cubes: &mut Vec<blueprint::Cube>, device: &wgpu::Device) -> Vec<Cube> {
+    pub fn prepare(&self, cubes: &mut Vec<SafeCloner<blueprint::Cube>>, device: &wgpu::Device) -> Vec<Cube> {
         let mut cubes_for_render = Vec::new();
 
         for cube in cubes {

@@ -13,3 +13,12 @@ impl Cube {
         Self { pos, material }
     }
 }
+
+impl Clone for Cube {
+    fn clone(&self) -> Self {
+        Self {
+            pos: self.pos,
+            material: self.material.clone(),
+        }
+    }
+}

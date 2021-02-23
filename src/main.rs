@@ -4,7 +4,7 @@ use voxrs::{
     camera::Camera,
     io::GeneralFileSystem,
     math::Vector3,
-    readwrite::ReadWrite,
+    safecloner::SafeCloner,
     render,
 };
 use winit::{
@@ -92,7 +92,7 @@ fn main() {
             let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
             let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
-            let chunk = ReadWrite::new(chunk);
+            let chunk = SafeCloner::new(chunk);
 
             bp.add_chunk(chunk.clone_read());
 

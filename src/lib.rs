@@ -7,6 +7,6 @@ pub mod blueprint;
 pub mod camera;
 pub mod io;
 pub mod math;
-pub mod readwrite;
+pub mod safecloner;
 pub mod render;
 pub mod texture;

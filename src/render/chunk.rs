@@ -6,7 +6,7 @@ use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldBlockMaterialAsset},
     blueprint::{ChunkId, CubeMatIdx},
     io::FileSystem,
-    readwrite::ReadWrite,
+    safecloner::SafeCloner,
     texture,
 };
 use blueprint::CubeIdx;
@@ -188,7 +188,7 @@ impl ChunkRenderSystem {
 
     pub fn prepare(
         &mut self,
-        chunks_bps: &[ReadWrite<blueprint::Chunk>],
+        chunks_bps: &[SafeCloner<blueprint::Chunk>],
         device: &wgpu::Device,
     ) -> Vec<ChunkId> {
         let mut chunks_for_render = Vec::new();

@@ -1,4 +1,4 @@
-use crate::{camera::Camera, readwrite::ReadWrite};
+use crate::{camera::Camera, safecloner::SafeCloner};
 
 pub mod chunk;
 pub use chunk::Chunk;
@@ -8,8 +8,8 @@ pub use cube::Cube;
 
 pub struct Blueprint {
     pub camera: Camera,
-    pub cubes: Vec<Cube>,
-    pub chunks: Vec<ReadWrite<Chunk>>,
+    pub cubes: Vec<SafeCloner<Cube>>,
+    pub chunks: Vec<SafeCloner<Chunk>>,
 }
 
 impl Blueprint {
@@ -21,11 +21,11 @@ impl Blueprint {
         }
     }
 
-    pub fn add_cube(&mut self, cube: Cube) {
+    pub fn add_cube(&mut self, cube: SafeCloner<Cube>) {
         self.cubes.push(cube);
     }
 
-    pub fn add_chunk(&mut self, chunk: ReadWrite<Chunk>) {
+    pub fn add_chunk(&mut self, chunk: SafeCloner<Chunk>) {
         self.chunks.push(chunk);
     }
 }
