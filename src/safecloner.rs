@@ -57,7 +57,7 @@ where
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
-            SafeCloner::R(_) => panic!("ReadWrite::R can not modified"),
+            SafeCloner::R(_) => panic!("SafeCloner::R can not modified"),
             SafeCloner::Rw(arc) => {
                 // not clonned before, just use self
                 if Arc::strong_count(arc) == 1 {
@@ -112,32 +112,32 @@ mod tests {
 
     #[test]
     fn write_after_clone() {
-        let mut sc = SafeCloner::new(MyStruct { val: 10 });
-        let cloned = sc.clone_read();
-        assert_eq!(sc.strong_count(), 2);
+        let mut rw = SafeCloner::new(MyStruct { val: 10 });
+        let cloned = rw.clone_read();
+        assert_eq!(rw.strong_count(), 2);
         assert_eq!(cloned.strong_count(), 2);
 
-        sc.val = 100;
+        rw.val = 100;
 
-        assert_eq!(sc.strong_count(), 1);
+        assert_eq!(rw.strong_count(), 1);
         assert_eq!(cloned.strong_count(), 1);
 
-        assert_eq!(sc.val, 100);
+        assert_eq!(rw.val, 100);
         assert_eq!(cloned.val, 10);
 
-        sc.val = 200;
+        rw.val = 200;
 
-        assert_eq!(sc.strong_count(), 1);
+        assert_eq!(rw.strong_count(), 1);
         assert_eq!(cloned.strong_count(), 1);
 
-        assert_eq!(sc.val, 200);
+        assert_eq!(rw.val, 200);
         assert_eq!(cloned.val, 10);
     }
 
     #[test]
     fn can_pass_between_threads() {
-        let sc = SafeCloner::new(MyStruct { val: 10 });
-        let clonned = sc.clone_read();
+        let rw = SafeCloner::new(MyStruct { val: 10 });
+        let clonned = rw.clone_read();
 
         let handle = thread::spawn(move || {
             assert_eq!(clonned.val, 10);
