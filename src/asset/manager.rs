@@ -29,7 +29,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     }
     
     #[cfg(test)]
-    fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
+    fn get_rc<T: Asset + 'static>(&self, path: &AssetPath) -> Option<usize> {
         self.internal.lock().unwrap().get_rc::<T>(path)
     }
 
@@ -84,187 +84,165 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     }
 
     pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
+        let hash = path.get_hash();
+        if let Some(handle) = self.get_handle(&hash) {
+            return handle.clone()
+        }
+        
         match T::asset_type() {
-            AssetType::Text => self.get_text(path),
-            AssetType::Texture => self.get_texture(path),
-            AssetType::Shader => self.get_shader(path),
-            AssetType::Material => self.get_material(path, manager),
-            AssetType::WorldBlockMaterial => self.get_world_block_material(path, manager),
+            AssetType::Text => self.create_text(path),
+            AssetType::Texture => self.create_texture(path),
+            AssetType::Shader => self.create_shader(path),
+            AssetType::Material => self.create_material(path, manager),
+            AssetType::WorldBlockMaterial => self.create_world_block_material(path, manager),
         }
     }
 
     // todo: need refactoring get_xxx. [duplicated code]
-    fn get_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+    fn create_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
 
-        if let Some(handle) = self.text_assets.get(&hash) {
-            let cloned = (handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            cloned
-        } else {
-            let (handle, s) = create_asset_handle();
-            let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            self.text_assets.insert(hash, handle);
-            let path = path.clone();
-            self.async_rt.spawn(async move {
-                let start_time = Instant::now();
+        let (handle, s) = create_asset_handle();
+        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        self.text_assets.insert(hash, handle);
+        let path = path.clone();
 
-                let result;
-                if let Ok(s) = F::read_text(&path).await {
-                    result = Ok(TextAsset::new(s));
-                } else {
-                    result = Err(AssetLoadError::Failed);
-                }
+        self.async_rt.spawn(async move {
+            let start_time = Instant::now();
 
-                let end_time = Instant::now();
-                let elapsed_time = end_time - start_time;
-                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+            let result;
+            if let Ok(s) = F::read_text(&path).await {
+                result = Ok(TextAsset::new(s));
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
 
-                let _ = s.send(result);
-            });
+            let end_time = Instant::now();
+            let elapsed_time = end_time - start_time;
+            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
-            cloned
-        }
+            let _ = s.send(result);
+        });
+
+        cloned
     }
 
-
-    fn get_texture<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+    fn create_texture<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
+        let (handle, s) = create_asset_handle();
+        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        self.texture_assets.insert(hash, handle);
+        let path = path.clone();
+        let (device, queue) = self.clone_wgpu();
+        
+        self.async_rt.spawn(async move {
+            let start_time = Instant::now();
 
-        if let Some(handle) = self.texture_assets.get(&hash) {
-            let cloned = (handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            cloned
-        } else {
-            let (handle, s) = create_asset_handle();
-            let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            self.texture_assets.insert(hash, handle);
-            let path = path.clone();
-            let (device, queue) = self.clone_wgpu();
-            
-            self.async_rt.spawn(async move {
-                let start_time = Instant::now();
-
-                let result;
-                if let Ok(v) = F::read_binary(&path).await {
-                    let mut texture = TextureAsset::new(v);
-                    if device.is_some() && queue.is_some() {
-                        texture.build(&device.unwrap(), &queue.unwrap());
-                    }
-                    result = Ok(texture);
-                } else {
-                    result = Err(AssetLoadError::Failed);
+            let result;
+            if let Ok(v) = F::read_binary(&path).await {
+                let mut texture = TextureAsset::new(v);
+                if device.is_some() && queue.is_some() {
+                    texture.build(&device.unwrap(), &queue.unwrap());
                 }
+                result = Ok(texture);
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
 
-                let end_time = Instant::now();
-                let elapsed_time = end_time - start_time;
-                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+            let end_time = Instant::now();
+            let elapsed_time = end_time - start_time;
+            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
-                let _ = s.send(result);
-            });
+            let _ = s.send(result);
+        });
 
-            cloned
-        }
+        cloned
     }
 
-    fn get_shader<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+    fn create_shader<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
+        let (handle, s) = create_asset_handle();
+        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        self.shader_assets.insert(hash, handle);
+        let path = path.clone();
+        let (device, queue) = self.clone_wgpu();
 
-        if let Some(handle) = self.shader_assets.get(&hash) {
-            let cloned = (handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            cloned
-        } else {
-            let (handle, s) = create_asset_handle();
-            let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            self.shader_assets.insert(hash, handle);
-            let path = path.clone();
-            let (device, queue) = self.clone_wgpu();
+        self.async_rt.spawn(async move {
+            let start_time = Instant::now();
 
-            self.async_rt.spawn(async move {
-                let start_time = Instant::now();
-
-                let result;
-                if let Ok(v) = F::read_binary(&path).await {
-                    let mut shader = ShaderAsset::new(v);
-                    if device.is_some() && queue.is_some() {
-                        shader.build(&device.unwrap(), &queue.unwrap());
-                    }
-                    result = Ok(shader);
-                } else {
-                    result = Err(AssetLoadError::Failed);
+            let result;
+            if let Ok(v) = F::read_binary(&path).await {
+                let mut shader = ShaderAsset::new(v);
+                if device.is_some() && queue.is_some() {
+                    shader.build(&device.unwrap(), &queue.unwrap());
                 }
+                result = Ok(shader);
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
 
-                let end_time = Instant::now();
-                let elapsed_time = end_time - start_time;
-                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+            let end_time = Instant::now();
+            let elapsed_time = end_time - start_time;
+            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
-                let _ = s.send(result);
-            });
+            let _ = s.send(result);
+        });
 
-            cloned
-        }
+        cloned
     }
 
-    fn get_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
+    fn create_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
         let hash = path.get_hash();
+        let (handle, s) = create_asset_handle();
+        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        self.material_assets.insert(hash, handle);
+        let path = path.clone();
 
-        if let Some(handle) = self.material_assets.get(&hash) {
-            let cloned = (handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            cloned
-        } else {
-            let (handle, s) = create_asset_handle();
-            let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            self.material_assets.insert(hash, handle);
-            let path = path.clone();
-            self.async_rt.spawn(async move {
-                let start_time = Instant::now();
+        self.async_rt.spawn(async move {
+            let start_time = Instant::now();
 
-                let result;
-                if let Ok(s) = F::read_text(&path).await {
-                    result = Ok(MaterialAsset::new(&s, &mut manager));
-                } else {
-                    result = Err(AssetLoadError::Failed);
-                }
+            let result;
+            if let Ok(s) = F::read_text(&path).await {
+                result = Ok(MaterialAsset::new(&s, &mut manager));
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
 
-                let end_time = Instant::now();
-                let elapsed_time = end_time - start_time;
-                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+            let end_time = Instant::now();
+            let elapsed_time = end_time - start_time;
+            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
-                let _ = s.send(result);
-            });
+            let _ = s.send(result);
+        });
 
-            cloned
-        }
+        cloned
     }
 
-    fn get_world_block_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
+    fn create_world_block_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
         let hash = path.get_hash();
+        let (handle, s) = create_asset_handle();
+        let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
+        self.world_block_material_assets.insert(hash, handle);
+        let path = path.clone();
 
-        if let Some(handle) = self.world_block_material_assets.get(&hash) {
-            let cloned = (handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            cloned
-        } else {
-            let (handle, s) = create_asset_handle();
-            let cloned = (&handle as &dyn Any).downcast_ref::<AssetHandle<T>>().unwrap().clone();
-            self.world_block_material_assets.insert(hash, handle);
-            let path = path.clone();
-            self.async_rt.spawn(async move {
-                let start_time = Instant::now();
+        self.async_rt.spawn(async move {
+            let start_time = Instant::now();
 
-                let result;
-                if let Ok(s) = F::read_text(&path).await {
-                    result = Ok(WorldBlockMaterialAsset::new(&s, &mut manager));
-                } else {
-                    result = Err(AssetLoadError::Failed);
-                }
+            let result;
+            if let Ok(s) = F::read_text(&path).await {
+                result = Ok(WorldBlockMaterialAsset::new(&s, &mut manager));
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
 
-                let end_time = Instant::now();
-                let elapsed_time = end_time - start_time;
-                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+            let end_time = Instant::now();
+            let elapsed_time = end_time - start_time;
+            log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
-                let _ = s.send(result);
-            });
+            let _ = s.send(result);
+        });
 
-            cloned
-        }
+        cloned
     }
 
     fn clone_wgpu(&self) -> (Option<Arc<wgpu::Device>>, Option<Arc<wgpu::Queue>>) {
@@ -286,51 +264,40 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     }
 
     #[cfg(test)]
-    fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
+    fn get_rc<T: Asset + 'static>(&self, path: &AssetPath) -> Option<usize> {
         let hash = path.get_hash();
-
-        match T::asset_type() {
-            AssetType::Text => {
-                if let Some(handle) = self.text_assets.get(&hash) {
-                    Some(handle.ref_count())
-                } else {
-                    None
-                }
-            }
-            AssetType::Texture => {
-                if let Some(handle) = self.texture_assets.get(&hash) {
-                    Some(handle.ref_count())
-                } else {
-                    None
-                }
-            }
-            AssetType::Shader => {
-                if let Some(handle) = self.shader_assets.get(&hash) {
-                    Some(handle.ref_count())
-                } else {
-                    None
-                }
-            }
-            AssetType::Material => {
-                if let Some(handle) = self.material_assets.get(&hash) {
-                    Some(handle.ref_count())
-                } else {
-                    None
-                }
-            }
-            AssetType::WorldBlockMaterial => {
-                if let Some(handle) = self.world_block_material_assets.get(&hash) {
-                    Some(handle.ref_count())
-                } else {
-                    None
-                }
-            }
-        }
+        let handle = self.get_handle::<T>(&hash)?;
+        Some(handle.ref_count())
     }
 
     pub fn set_wgpu(&mut self, device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) {
         self.device = Some(device);
         self.queue = Some(queue);
+    }
+
+    fn get_handle<T: Asset + 'static>(&self, hash: &AssetHash) -> Option<&AssetHandle<T>> {
+        match T::asset_type() {
+            AssetType::Text => {
+                let handle = self.text_assets.get(hash)?;
+                (handle as &dyn Any).downcast_ref()
+            }
+            AssetType::Texture => {
+                let handle = self.texture_assets.get(hash)?;
+                (handle as &dyn Any).downcast_ref()
+            }
+            AssetType::Shader => {
+                let handle = self.shader_assets.get(hash)?;
+                (handle as &dyn Any).downcast_ref()
+            }
+            AssetType::Material => {
+                let handle = self.material_assets.get(hash)?;
+                (handle as &dyn Any).downcast_ref()
+            }
+            AssetType::WorldBlockMaterial => {
+                let handle = self.world_block_material_assets.get(hash)?;
+                (handle as &dyn Any).downcast_ref()
+            }
+        }
     }
 }
 
