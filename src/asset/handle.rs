@@ -53,7 +53,7 @@ impl<T: Asset> AssetHandle<T> {
     }
 }
 
-impl<'a, T: Asset + 'static> Clone for AssetHandle<T> {
+impl<T: Asset + 'static> Clone for AssetHandle<T> {
     fn clone(&self) -> Self {
         Self {
             recv: Arc::clone(&self.recv),
