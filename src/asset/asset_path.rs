@@ -70,6 +70,12 @@ impl From<&AssetPath> for AssetPath {
     }
 }
 
+impl AsRef<Path> for &AssetPath {
+    fn as_ref(&self) -> &Path {
+        &self.path
+    }
+}
+
 impl Deref for AssetPath {
     type Target = Path;
 

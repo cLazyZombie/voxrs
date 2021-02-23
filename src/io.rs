@@ -1,19 +1,21 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::vec::Vec;
 
+#[async_trait]
 pub trait FileSystem {
-    fn read_binary(path: &Path) -> Result<std::vec::Vec<u8>>;
-    fn read_text(path: &Path) -> Result<String>;
+    async fn read_binary(path: &Path) -> Result<std::vec::Vec<u8>>;
+    async fn read_text(path: &Path) -> Result<String>;
 }
 
 pub struct GeneralFileSystem {}
 
-// todo: use async
+#[async_trait]
 impl FileSystem for GeneralFileSystem {
-    fn read_binary(path: &Path) -> Result<Vec<u8>> {
+    async fn read_binary(path: &Path) -> Result<Vec<u8>> {
         let mut f = File::open(path)?;
 
         let mut v = Vec::new();
@@ -22,7 +24,7 @@ impl FileSystem for GeneralFileSystem {
         Ok(v)
     }
 
-    fn read_text(path: &Path) -> Result<String> {
+    async fn read_text(path: &Path) -> Result<String> {
         let mut f = File::open(path)?;
 
         let mut s = String::new();
@@ -38,8 +40,9 @@ pub mod tests {
 
     pub struct MockFileSystem {}
 
+    #[async_trait]
     impl FileSystem for MockFileSystem {
-        fn read_binary(path: &Path) -> Result<Vec<u8>> {
+        async fn read_binary(path: &Path) -> Result<Vec<u8>> {
             match path.to_str() {
                 Some("texture.png") => {
                     let buf = include_bytes!("test_assets/texture.png");
@@ -57,7 +60,7 @@ pub mod tests {
             }
         }
 
-        fn read_text(path: &Path) -> Result<String> {
+        async fn read_text(path: &Path) -> Result<String> {
             match path.to_str() {
                 Some("test.txt") => {
                     let s = include_str!("test_assets/test.txt");

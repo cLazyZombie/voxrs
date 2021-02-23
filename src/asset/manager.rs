@@ -107,11 +107,13 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let path = path.clone();
             self.async_rt.spawn(async move {
                 let start_time = Instant::now();
-                let result = if let Ok(read) = F::read_text(&path) {
-                    Ok(TextAsset::new(read))
+
+                let result;
+                if let Ok(s) = F::read_text(&path).await {
+                    result = Ok(TextAsset::new(s));
                 } else {
-                    Err(AssetLoadError::Failed)
-                };
+                    result = Err(AssetLoadError::Failed);
+                }
 
                 let end_time = Instant::now();
                 let elapsed_time = end_time - start_time;
@@ -140,18 +142,17 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             
             self.async_rt.spawn(async move {
                 let start_time = Instant::now();
-                let result = if let Ok(read) = F::read_binary(&path) {
-                    let mut texture = TextureAsset::new(read);
 
-                    if let Some(device) = device {
-                        if let Some(queue) = queue {
-                            texture.build(&device, &queue);
-                        }
+                let result;
+                if let Ok(v) = F::read_binary(&path).await {
+                    let mut texture = TextureAsset::new(v);
+                    if device.is_some() && queue.is_some() {
+                        texture.build(&device.unwrap(), &queue.unwrap());
                     }
-                    Ok(texture)
+                    result = Ok(texture);
                 } else {
-                    Err(AssetLoadError::Failed)
-                };
+                    result = Err(AssetLoadError::Failed);
+                }
 
                 let end_time = Instant::now();
                 let elapsed_time = end_time - start_time;
@@ -179,16 +180,17 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
             self.async_rt.spawn(async move {
                 let start_time = Instant::now();
-                let result = if let Ok(read) = F::read_binary(&path) {
-                    let mut shader = ShaderAsset::new(read);
 
+                let result;
+                if let Ok(v) = F::read_binary(&path).await {
+                    let mut shader = ShaderAsset::new(v);
                     if device.is_some() && queue.is_some() {
                         shader.build(&device.unwrap(), &queue.unwrap());
                     }
-                    Ok(shader)
+                    result = Ok(shader);
                 } else {
-                    Err(AssetLoadError::Failed)
-                };
+                    result = Err(AssetLoadError::Failed);
+                }
 
                 let end_time = Instant::now();
                 let elapsed_time = end_time - start_time;
@@ -214,11 +216,13 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let path = path.clone();
             self.async_rt.spawn(async move {
                 let start_time = Instant::now();
-                let result = if let Ok(read) = F::read_text(&path) {
-                    Ok(MaterialAsset::new(&read, &mut manager))
+
+                let result;
+                if let Ok(s) = F::read_text(&path).await {
+                    result = Ok(MaterialAsset::new(&s, &mut manager));
                 } else {
-                    Err(AssetLoadError::Failed)
-                };
+                    result = Err(AssetLoadError::Failed);
+                }
 
                 let end_time = Instant::now();
                 let elapsed_time = end_time - start_time;
@@ -244,11 +248,13 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let path = path.clone();
             self.async_rt.spawn(async move {
                 let start_time = Instant::now();
-                let result = if let Ok(read) = F::read_text(&path) {
-                    Ok(WorldBlockMaterialAsset::new(&read, &mut manager))
+
+                let result;
+                if let Ok(s) = F::read_text(&path).await {
+                    result = Ok(WorldBlockMaterialAsset::new(&s, &mut manager));
                 } else {
-                    Err(AssetLoadError::Failed)
-                };
+                    result = Err(AssetLoadError::Failed);
+                }
 
                 let end_time = Instant::now();
                 let elapsed_time = end_time - start_time;
