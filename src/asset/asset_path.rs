@@ -1,6 +1,6 @@
 use super::manager::AssetHash;
 use serde::Deserialize;
-use std::hash::{Hash, Hasher};
+use std::{fmt::Display, hash::{Hash, Hasher}};
 use std::{
     collections::hash_map::DefaultHasher,
     ops::Deref,
@@ -27,6 +27,12 @@ impl AssetPath {
         let hash_value = s.finish();
 
         AssetHash(hash_value)
+    }
+}
+
+impl Display for AssetPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.path.as_os_str())
     }
 }
 

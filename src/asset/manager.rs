@@ -1,4 +1,4 @@
-use std::{any::Any, hash::Hash};
+use std::{any::Any, hash::Hash, time::Instant};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -106,11 +106,17 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             self.text_assets.insert(hash, handle);
             let path = path.clone();
             self.async_rt.spawn(async move {
+                let start_time = Instant::now();
                 let result = if let Ok(read) = F::read_text(&path) {
                     Ok(TextAsset::new(read))
                 } else {
                     Err(AssetLoadError::Failed)
                 };
+
+                let end_time = Instant::now();
+                let elapsed_time = end_time - start_time;
+                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+
                 let _ = s.send(result);
             });
 
@@ -133,6 +139,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let (device, queue) = self.clone_wgpu();
             
             self.async_rt.spawn(async move {
+                let start_time = Instant::now();
                 let result = if let Ok(read) = F::read_binary(&path) {
                     let mut texture = TextureAsset::new(read);
 
@@ -145,6 +152,11 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
                 } else {
                     Err(AssetLoadError::Failed)
                 };
+
+                let end_time = Instant::now();
+                let elapsed_time = end_time - start_time;
+                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+
                 let _ = s.send(result);
             });
 
@@ -166,6 +178,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let (device, queue) = self.clone_wgpu();
 
             self.async_rt.spawn(async move {
+                let start_time = Instant::now();
                 let result = if let Ok(read) = F::read_binary(&path) {
                     let mut shader = ShaderAsset::new(read);
 
@@ -176,6 +189,11 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
                 } else {
                     Err(AssetLoadError::Failed)
                 };
+
+                let end_time = Instant::now();
+                let elapsed_time = end_time - start_time;
+                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+
                 let _ = s.send(result);
             });
 
@@ -195,11 +213,17 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             self.material_assets.insert(hash, handle);
             let path = path.clone();
             self.async_rt.spawn(async move {
+                let start_time = Instant::now();
                 let result = if let Ok(read) = F::read_text(&path) {
                     Ok(MaterialAsset::new(&read, &mut manager))
                 } else {
                     Err(AssetLoadError::Failed)
                 };
+
+                let end_time = Instant::now();
+                let elapsed_time = end_time - start_time;
+                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
+
                 let _ = s.send(result);
             });
 
@@ -219,11 +243,16 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             self.world_block_material_assets.insert(hash, handle);
             let path = path.clone();
             self.async_rt.spawn(async move {
+                let start_time = Instant::now();
                 let result = if let Ok(read) = F::read_text(&path) {
                     Ok(WorldBlockMaterialAsset::new(&read, &mut manager))
                 } else {
                     Err(AssetLoadError::Failed)
                 };
+
+                let end_time = Instant::now();
+                let elapsed_time = end_time - start_time;
+                log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), path);
 
                 let _ = s.send(result);
             });
