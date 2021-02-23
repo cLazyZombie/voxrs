@@ -49,7 +49,7 @@ impl<T: Asset> AssetHandle<T> {
     }
 
     pub fn ref_count(&self) -> usize {
-        Arc::strong_count(&self.lazy)
+        Arc::strong_count(&self.lazy) -1 // manager hold original handle. so do not count original
     }
 }
 

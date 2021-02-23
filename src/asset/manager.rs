@@ -29,8 +29,8 @@ impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     }
     
     #[cfg(test)]
-    fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
-        self.internal.lock().unwrap().get_rc::<T, _>(path)
+    fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
+        self.internal.lock().unwrap().get_rc::<T>(path)
     }
 
     pub fn set_wgpu(&mut self, device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) {
@@ -264,42 +264,41 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     }
 
     #[cfg(test)]
-    fn get_rc<T: Asset, Path: Into<AssetPath>>(&self, path: Path) -> Option<usize> {
-        let path = path.into() as AssetPath;
+    fn get_rc<T: Asset>(&self, path: &AssetPath) -> Option<usize> {
         let hash = path.get_hash();
 
         match T::asset_type() {
             AssetType::Text => {
                 if let Some(handle) = self.text_assets.get(&hash) {
-                    Some(handle.ref_count() - 1)
+                    Some(handle.ref_count())
                 } else {
                     None
                 }
             }
             AssetType::Texture => {
                 if let Some(handle) = self.texture_assets.get(&hash) {
-                    Some(handle.ref_count() - 1)
+                    Some(handle.ref_count())
                 } else {
                     None
                 }
             }
             AssetType::Shader => {
                 if let Some(handle) = self.shader_assets.get(&hash) {
-                    Some(handle.ref_count() - 1)
+                    Some(handle.ref_count())
                 } else {
                     None
                 }
             }
             AssetType::Material => {
                 if let Some(handle) = self.material_assets.get(&hash) {
-                    Some(handle.ref_count() - 1)
+                    Some(handle.ref_count())
                 } else {
                     None
                 }
             }
             AssetType::WorldBlockMaterial => {
                 if let Some(handle) = self.world_block_material_assets.get(&hash) {
-                    Some(handle.ref_count() - 1)
+                    Some(handle.ref_count())
                 } else {
                     None
                 }
@@ -379,31 +378,33 @@ mod tests {
     fn get_rc_test() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let path: AssetPath = "test.txt".into();
-        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt"), None);
+        assert_eq!(manager.get_rc::<TextAsset>(&path), None);
 
-        let handle1: AssetHandle<TextAsset> = manager.get(&AssetPath::from_str("test.txt"));
-        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 1);
+        let handle1: AssetHandle<TextAsset> = manager.get(&path);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
 
-        let handle2: AssetHandle<TextAsset> = manager.get(&AssetPath::from_str("test.txt"));
-        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 2);
+        let handle2: AssetHandle<TextAsset> = manager.get(&path);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 2);
 
         drop(handle1);
-        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 1);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
 
         drop(handle2);
-        assert_eq!(manager.get_rc::<TextAsset, _>(&path).unwrap(), 0);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 0);
     }
 
     #[test]
     fn send_to_other_thread() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<TextAsset> = manager.get(&AssetPath::from_str("test.txt"));
-        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 1);
+        let path : AssetPath = "test.txt".into();
+        let handle: AssetHandle<TextAsset> = manager.get(&path);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
 
         let mut clonned = manager.clone();
+        let clonned_path = path.clone();
         let join_handle = thread::spawn(move || {
-            let handle: AssetHandle<TextAsset> = clonned.get(&AssetPath::from_str("test.txt"));
-            assert_eq!(clonned.get_rc::<TextAsset, _>("test.txt").unwrap(), 2);
+            let handle: AssetHandle<TextAsset> = clonned.get(&clonned_path);
+            assert_eq!(clonned.get_rc::<TextAsset>(&clonned_path).unwrap(), 2);
 
             let text_asset: &TextAsset = handle.get_asset().unwrap();
             assert_eq!(text_asset.text, "test text file");
@@ -411,9 +412,9 @@ mod tests {
 
         join_handle.join().unwrap();
 
-        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 1);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
 
         drop(handle);
-        assert_eq!(manager.get_rc::<TextAsset, _>("test.txt").unwrap(), 0);
+        assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 0);
     }
 }
