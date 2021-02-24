@@ -10,7 +10,9 @@ use crate::{
     texture,
 };
 use blueprint::CubeIdx;
+
 use wgpu::util::DeviceExt;
+
 
 use super::cache::Cache;
 
@@ -61,8 +63,9 @@ impl ChunkRenderSystem {
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStage::VERTEX,
-                        ty: wgpu::BindingType::UniformBuffer {
-                            dynamic: false,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
                             min_binding_size: None,
                         },
                         count: None,
@@ -71,12 +74,16 @@ impl ChunkRenderSystem {
             });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("uniform_bind_group"),
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(view_proj_buff.slice(..)),
+                resource: wgpu::BindingResource::Buffer{
+                    buffer: view_proj_buff,
+                    offset: 0,
+                    size: None,
+                },
             }],
-            label: Some("uniform_bind_group"),
         });
 
         // chunk마다 설정할 uniform값들
@@ -86,8 +93,9 @@ impl ChunkRenderSystem {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer {
-                        dynamic: false,
+                    ty: wgpu::BindingType::Buffer{
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
                         min_binding_size: None,
                     },
                     count: None,
@@ -102,9 +110,9 @@ impl ChunkRenderSystem {
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::SampledTexture {
-                            dimension: wgpu::TextureViewDimension::D2,
-                            component_type: wgpu::TextureComponentType::Uint,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float{ filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
                             multisampled: false,
                         },
                         count: None,
@@ -113,7 +121,7 @@ impl ChunkRenderSystem {
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler { comparison: false },
+                        ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
                         count: None,
                     },
                 ],
@@ -133,42 +141,45 @@ impl ChunkRenderSystem {
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("chunk render system render pipeline"),
             layout: Some(&render_pipeline_layout),
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
+            vertex: wgpu::VertexState {
                 module: &vs_module,
                 entry_point: "main",
+                buffers: &[create_chunk_vertexbuffer_desc()],
             },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: Some(wgpu::IndexFormat::Uint32),
                 front_face: wgpu::FrontFace::Cw,
                 cull_mode: wgpu::CullMode::Back,
-                clamp_depth: false,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-            }),
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-            color_states: &[wgpu::ColorStateDescriptor {
-                format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                alpha_blend: wgpu::BlendDescriptor::REPLACE,
-                color_blend: wgpu::BlendDescriptor::REPLACE,
-                write_mask: wgpu::ColorWrite::ALL,
-            }],
-            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                polygon_mode: wgpu::PolygonMode::Fill,
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
                 format: texture::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilStateDescriptor::default(),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState {
+                    constant: 0,
+                    slope_scale: 0.0,
+                    clamp: 0.0,
+                },
+                clamp_depth: false,
             }),
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint32,
-                vertex_buffers: &[create_chunk_vertexbuffer_desc()],
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
             },
-            sample_count: 1,
-            sample_mask: !0,
-            alpha_to_coverage_enabled: false,
+            fragment: Some(wgpu::FragmentState {
+                module: &fs_module,
+                entry_point: "main",
+                targets: &[wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    alpha_blend: wgpu::BlendState::REPLACE,
+                    color_blend: wgpu::BlendState::REPLACE,
+                    write_mask: wgpu::ColorWrite::ALL,
+                }],
+            }),
         });
 
         let vertex_buffer = create_chunk_vertexbuffer(&device);
@@ -222,7 +233,7 @@ impl ChunkRenderSystem {
         for chunk_id in chunks_ids {
             let chunks = self.cache.get(chunk_id).unwrap();
             for chunk in chunks {
-                render_pass.set_index_buffer(chunk.index_buffer.slice(..));
+                render_pass.set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
                 render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
                 render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
@@ -358,22 +369,22 @@ pub fn create_chunk_indexbuffer(
     (buffer, v.len() as u32)
 }
 
-pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
-    wgpu::VertexBufferDescriptor {
-        stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
+pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    wgpu::VertexBufferLayout {
+        array_stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::InputStepMode::Vertex,
         attributes: &[
-            wgpu::VertexAttributeDescriptor {
+            wgpu::VertexAttribute{
                 offset: 0,
                 shader_location: 0,
                 format: wgpu::VertexFormat::Float3,
             },
-            wgpu::VertexAttributeDescriptor {
+            wgpu::VertexAttribute{
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
                 format: wgpu::VertexFormat::Float3,
             },
-            wgpu::VertexAttributeDescriptor {
+            wgpu::VertexAttribute{
                 offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
                     as wgpu::BufferAddress,
                 shader_location: 2,
@@ -467,7 +478,11 @@ impl Chunk {
                 layout: uniform_local_bind_group_layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer(local_uniform_buffer.slice(..)),
+                    resource: wgpu::BindingResource::Buffer{
+                        buffer: &local_uniform_buffer,
+                        offset: 0,
+                        size: None,
+                    },
                 }],
             });
 

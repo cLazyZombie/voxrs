@@ -8,7 +8,6 @@ pub use cube::Cube;
 
 pub struct Blueprint {
     pub camera: Camera,
-    pub cubes: Vec<SafeCloner<Cube>>,
     pub chunks: Vec<SafeCloner<Chunk>>,
 }
 
@@ -16,13 +15,8 @@ impl Blueprint {
     pub fn new(camera: Camera) -> Self {
         Self {
             camera,
-            cubes: Vec::new(),
             chunks: Vec::new(),
         }
-    }
-
-    pub fn add_cube(&mut self, cube: SafeCloner<Cube>) {
-        self.cubes.push(cube);
     }
 
     pub fn add_chunk(&mut self, chunk: SafeCloner<Chunk>) {

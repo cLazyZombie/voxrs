@@ -1,4 +1,4 @@
-use super::{chunk::ChunkRenderSystem, commands::Command, cube::CubeRenderSystem};
+use super::{chunk::ChunkRenderSystem, commands::Command};
 use crate::{
     asset::AssetManager, blueprint::Blueprint, camera::Camera, io::FileSystem, math::Matrix4,
     texture,
@@ -20,7 +20,6 @@ pub struct Renderer {
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
     depth_texture: texture::Texture,
-    cube_renderer: CubeRenderSystem,
     chunk_renderer: ChunkRenderSystem,
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
@@ -33,7 +32,7 @@ impl Renderer {
         let surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::Default,
+                power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
             })
             .await
@@ -42,9 +41,9 @@ impl Renderer {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    label: Some("main device"),
+                    features: wgpu::Features::default(),
                     limits: wgpu::Limits::default(),
-                    shader_validation: true,
                 },
                 None,
             )
@@ -57,7 +56,7 @@ impl Renderer {
         asset_manager.set_wgpu(Arc::clone(&device), Arc::clone(&queue));
 
         let swap_chain_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
@@ -75,7 +74,6 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let cube_renderer = CubeRenderSystem::new(&device, asset_manager, &view_proj_buf);
         let chunk_renderer = ChunkRenderSystem::new(&device, asset_manager, &view_proj_buf);
 
         Self {
@@ -86,15 +84,13 @@ impl Renderer {
             swap_chain,
             size,
             depth_texture,
-            cube_renderer,
             chunk_renderer,
             uniforms,
             view_proj_buf,
         }
     }
 
-    pub fn render(&mut self, mut bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
-        let cubes = self.cube_renderer.prepare(&mut bp.cubes, &self.device);
+    pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
         let chunks = self.chunk_renderer.prepare(&bp.chunks, &self.device);
 
         self.update_camera(&bp.camera);
@@ -109,6 +105,7 @@ impl Renderer {
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("main render pass"),
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
                     resolve_target: None,
@@ -132,7 +129,6 @@ impl Renderer {
                 }),
             });
 
-            self.cube_renderer.render(&cubes, &mut render_pass);
             self.chunk_renderer.render(&chunks, &mut render_pass);
         }
 

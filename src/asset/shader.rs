@@ -1,4 +1,4 @@
-use wgpu::util::make_spirv;
+use wgpu::{ShaderFlags, ShaderModuleDescriptor, util::make_spirv};
 
 use super::{AssetBuildResult, assets::{Asset, AssetType}};
 
@@ -30,7 +30,12 @@ impl ShaderAsset {
     }
 
     pub fn build(&mut self, device: &wgpu::Device, _queue: &wgpu::Queue) {
-        let module = device.create_shader_module(make_spirv(&self.buf));
+        let shader_source = make_spirv(&self.buf);
+        let module = device.create_shader_module( &ShaderModuleDescriptor {
+            label: None,
+            source: shader_source,
+            flags: ShaderFlags::VALIDATION,
+        });
         self.module = AssetBuildResult::Ok(module);
     }
 }

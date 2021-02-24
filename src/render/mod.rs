@@ -1,7 +1,7 @@
 mod cache;
 mod chunk;
 mod commands;
-mod cube;
+//mod cube;
 mod renderer;
 
 pub use commands::Command;
