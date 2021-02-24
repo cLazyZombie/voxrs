@@ -10,3 +10,4 @@ pub mod math;
 pub mod safecloner;
 pub mod render;
 pub mod texture;
+pub mod ecs;

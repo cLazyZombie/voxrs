@@ -46,6 +46,14 @@ impl std::ops::Add for Vector3 {
     }
 }
 
+impl std::ops::Mul<f32> for Vector3 {
+    type Output = Vector3;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::Output { v: self.v * rhs }
+    }
+}
+
 impl std::ops::AddAssign for Vector3 {
     fn add_assign(&mut self, rhs: Self) {
         self.v += rhs.v;
@@ -113,5 +121,12 @@ mod tests {
         let slice: &[f32] = &[1.0, 2.0, 3.0];
         let v: Vector3 = slice.into();
         assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn mul_to_f32() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let v2: Vector3 = v * 3.0;
+        assert_eq!(v2.as_slice(), &[3.0, 6.0, 9.0]);
     }
 }

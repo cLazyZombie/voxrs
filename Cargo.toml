@@ -23,6 +23,7 @@ lazy-init = "0.5"
 tokio = { version = "1.2", features = ["full"] }
 async-trait = "0.1"
 legion = "0.3"
+derive_more = "0.99"
 
 [build-dependencies]
 anyhow = "1.0"
