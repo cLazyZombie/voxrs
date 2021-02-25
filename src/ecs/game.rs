@@ -2,11 +2,7 @@ use legion::*;
 
 use crate::{blueprint::Blueprint, math::Vector3};
 
-use super::{
-    components::CameraComp,
-    resources::{ElapsedTimeRes, KeyInput},
-    systems::camera,
-};
+use super::{Clock, components::CameraComp, resources::{ElapsedTimeRes, KeyInput}, systems::camera};
 
 pub struct Game {
     world: World,
@@ -14,6 +10,8 @@ pub struct Game {
     tick_schedule: Schedule,
     render_schedule: Schedule,
     _camera: Entity,
+
+    clock: Clock,
 }
 
 impl Game {
@@ -31,7 +29,6 @@ impl Game {
             100.0,
         );
 
-        // init camera
         let camera = world.push((camera,));
 
         let tick_schedule = Schedule::builder()
@@ -42,12 +39,15 @@ impl Game {
             .add_system(camera::camera_render_system())
             .build();
 
+        let clock = Clock::new();
+
         Self {
             world,
             res,
             tick_schedule,
             render_schedule,
             _camera: camera,
+            clock,
         }
     }
 
@@ -63,11 +63,13 @@ impl Game {
         }
     }
 
-    pub fn tick(&mut self, elapsed_time: f32) {
+    pub fn tick(&mut self) {
+        let interval = self.clock.tick().as_secs_f32();
+
         // change res
         {
             let mut elapsed = self.res.get_mut_or_default::<ElapsedTimeRes>();
-            *elapsed = elapsed_time.into();
+            *elapsed = interval.into();
         }
 
         self.tick_schedule.execute(&mut self.world, &mut self.res);

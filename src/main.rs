@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use voxrs::{
     asset::AssetManager,
     blueprint::CHUNK_TOTAL_CUBE_COUNT,
@@ -32,9 +30,6 @@ fn main() {
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
 
-    // todo: move to game ecs
-    let mut prev_tick: Option<Instant> = None;
-
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             ref event,
@@ -55,20 +50,7 @@ fn main() {
             game.set_input(key_input);
             key_input = None;
 
-            // calc tick
-            let elapsed_time;
-            if let Some(prev) = prev_tick {
-                let now = Instant::now();
-                let interval = now - prev;
-                elapsed_time = interval.as_secs_f32();
-
-                prev_tick = Some(now);
-            } else {
-                elapsed_time = 0.0;
-                prev_tick = Some(Instant::now());
-            }
-
-            game.tick(elapsed_time);
+            game.tick();
 
             let mut bp = game.render();
 
