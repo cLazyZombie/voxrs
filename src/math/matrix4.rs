@@ -90,6 +90,18 @@ impl std::ops::Mul for Matrix4 {
     }
 }
 
+
+impl Default for Matrix4 {
+    fn default() -> Self {
+        Self::new(
+            0.0, 0.0, 0.0, 0.0, 
+            0.0, 0.0, 0.0, 0.0, 
+            0.0, 0.0, 0.0, 0.0, 
+            0.0, 0.0, 0.0, 0.0, 
+        )
+    }
+}
+
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {

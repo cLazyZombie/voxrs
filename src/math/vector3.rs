@@ -73,6 +73,12 @@ impl From<&[f32; 3]> for Vector3 {
     }
 }
 
+impl Default for Vector3 {
+    fn default() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,3 +1,6 @@
+mod camera;
+pub use camera::CameraComp;
+
 use derive_more::{From, Deref, AddAssign};
 
 use crate::math::Vector3;

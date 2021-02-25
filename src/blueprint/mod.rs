@@ -1,5 +1,6 @@
 mod blueprint;
 pub use blueprint::Blueprint;
+pub use blueprint::Camera;
 
 pub mod chunk;
 pub use chunk::Chunk;

@@ -1,14 +1,16 @@
+use std::time::Instant;
+
 use voxrs::{
     asset::AssetManager,
-    blueprint::{Blueprint, CHUNK_TOTAL_CUBE_COUNT},
-    camera::Camera,
+    blueprint::CHUNK_TOTAL_CUBE_COUNT,
+    ecs::{game::Game, resources::KeyInput},
     io::GeneralFileSystem,
     math::Vector3,
-    safecloner::SafeCloner,
     render,
+    safecloner::SafeCloner,
 };
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
@@ -22,20 +24,17 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut camera = Camera::new(
-        Vector3::new(3.5, 3.5, -10.0),
-        Vector3::new(0.5, 0.5, 10.0),
-        Vector3::new(0.0, 1.0, 0.0),
-        window.inner_size().width as f32 / window.inner_size().height as f32,
-        45.0,
-        0.1,
-        100.0,
-    );
+    let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
+    let mut game = Game::new(aspect);
+    let mut key_input: Option<KeyInput> = None;
 
     let asset_manager = AssetManager::<GeneralFileSystem>::new();
     let (sender, receiver) = crossbeam_channel::bounded(1);
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
+
+    let mut prev_tick: Option<Instant> = None;
+    let mut resized: Option<(u32, u32)> = None;
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -44,50 +43,42 @@ fn main() {
         } if window_id == window.id() => match event {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
-                camera.resize(physical_size.width, physical_size.height);
+                resized = Some((physical_size.width, physical_size.height));
                 let _ = sender.send(render::Command::Resize(*physical_size));
             }
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
-                ..
-            } => {
-                let is_pressed = *state == ElementState::Pressed;
-                match *keycode {
-                    VirtualKeyCode::W | VirtualKeyCode::Up if is_pressed => {
-                        camera.move_camera(Vector3::new(0.0, 0.0, 0.1));
-                    }
-                    VirtualKeyCode::S | VirtualKeyCode::Down if is_pressed => {
-                        camera.move_camera(Vector3::new(0.0, 0.0, -0.1));
-                    }
-                    VirtualKeyCode::A | VirtualKeyCode::Left if is_pressed => {
-                        camera.move_camera(Vector3::new(-0.1, 0.0, 0.0));
-                    }
-                    VirtualKeyCode::D | VirtualKeyCode::Right if is_pressed => {
-                        camera.move_camera(Vector3::new(0.1, 0.0, 0.0));
-                    }
-
-                    _ => {}
-                }
+            WindowEvent::KeyboardInput { input, .. } => {
+                key_input = Some((*input).into());
             }
             _ => {}
         },
-        Event::RedrawRequested(_) => {
-            // renderer.update_camera();
-
-            // match renderer.render() {
-            //     Ok(_) => {}
-            //     Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
-            //     Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-            //     Err(e) => eprintln!("{:?}", e),
-            // };
-        }
+        Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
-            let mut bp = Blueprint::new(camera.clone());
+            if let Some(resize) = resized {
+                game.resize(resize.0, resize.1);
+                resized = None;
+            }
+
+            game.set_input(key_input);
+            key_input = None;
+
+            // calc tick
+            let elapsed_time;
+            if let Some(prev) = prev_tick {
+                let now = Instant::now();
+                let interval = now - prev;
+                elapsed_time = interval.as_secs_f32();
+
+                prev_tick = Some(now);
+            } else {
+                elapsed_time = 0.0;
+                prev_tick = Some(Instant::now());
+            }
+
+            game.tick(elapsed_time);
+
+            let mut bp = game.render();
+
+            //let mut bp = Blueprint::new(camera.clone());
 
             let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
