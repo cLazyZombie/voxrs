@@ -22,7 +22,7 @@ crossbeam-channel = "0.5"
 lazy-init = "0.5"
 tokio = { version = "1.2", features = ["full"] }
 async-trait = "0.1"
-legion = "0.3"
+legion = "0.4"
 derive_more = "0.99"
 
 [build-dependencies]
