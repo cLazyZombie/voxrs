@@ -1,7 +1,7 @@
 use legion::system;
 use winit::event::{ElementState, VirtualKeyCode};
 
-use crate::{blueprint::Blueprint, math::prelude::*};
+use crate::{blueprint::Blueprint, math::*};
 
 use crate::ecs::{
     components::CameraComp,
@@ -14,7 +14,7 @@ pub fn camera_move(
     #[resource] elapsed_time: &ElapsedTimeRes,
     #[resource] key_input: &Option<KeyInput>,
 ) {
-    const MOVE_SPEED: f32 = 10.0;
+    const MOVE_SPEED: f32 = 20.0;
 
     let elapsed_time: f32 = **elapsed_time;
     if let Some(key_input) = key_input {
@@ -28,13 +28,13 @@ pub fn camera_move(
                     camera.move_camera(Vector3::new(0.0, 0.0, 1.0) * elapsed_time * MOVE_SPEED);
                 }
                 VirtualKeyCode::S | VirtualKeyCode::Down => {
-                    camera.move_camera(Vector3::new(0.0, 0.0, -0.1) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(Vector3::new(0.0, 0.0, -1.0) * elapsed_time * MOVE_SPEED);
                 }
                 VirtualKeyCode::A | VirtualKeyCode::Left => {
-                    camera.move_camera(Vector3::new(-0.1, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(Vector3::new(-1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
                 }
                 VirtualKeyCode::D | VirtualKeyCode::Right => {
-                    camera.move_camera(Vector3::new(0.1, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
                 }
                 _ => {}
             }

@@ -16,7 +16,6 @@ use winit::{
 };
 
 fn main() {
-    //env_logger::init();
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .init();
@@ -33,8 +32,8 @@ fn main() {
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
 
+    // todo: move to game ecs
     let mut prev_tick: Option<Instant> = None;
-    let mut resized: Option<(u32, u32)> = None;
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -43,7 +42,7 @@ fn main() {
         } if window_id == window.id() => match event {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
-                resized = Some((physical_size.width, physical_size.height));
+                game.resize(physical_size.width, physical_size.height);
                 let _ = sender.send(render::Command::Resize(*physical_size));
             }
             WindowEvent::KeyboardInput { input, .. } => {
@@ -53,11 +52,6 @@ fn main() {
         },
         Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
-            if let Some(resize) = resized {
-                game.resize(resize.0, resize.1);
-                resized = None;
-            }
-
             game.set_input(key_input);
             key_input = None;
 
@@ -78,8 +72,6 @@ fn main() {
 
             let mut bp = game.render();
 
-            //let mut bp = Blueprint::new(camera.clone());
-
             let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
             let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
@@ -90,7 +82,6 @@ fn main() {
             if let Err(_) = sender.send(render::Command::Render(bp)) {
                 *control_flow = ControlFlow::Exit;
             }
-
             //window.request_redraw();
         }
         _ => {}

@@ -2,7 +2,7 @@ mod blueprint;
 pub use blueprint::Blueprint;
 pub use blueprint::Camera;
 
-pub mod chunk;
+mod chunk;
 pub use chunk::Chunk;
 
 /// cube count in chunk direction (x, y, z)
