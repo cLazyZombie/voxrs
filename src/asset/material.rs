@@ -9,7 +9,7 @@ pub struct MaterialAsset {
 }
 
 #[derive(Deserialize)]
-pub struct MaterialAssetRaw {
+struct MaterialAssetRaw {
     diffuse_tex: String,
 }
 

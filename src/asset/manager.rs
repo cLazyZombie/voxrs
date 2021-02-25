@@ -95,6 +95,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             AssetType::Shader => self.create_shader(path),
             AssetType::Material => self.create_material(path, manager),
             AssetType::WorldBlockMaterial => self.create_world_block_material(path, manager),
+            AssetType::WorldBlock => todo!(),
         }
     }
 
@@ -277,6 +278,9 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             AssetType::WorldBlockMaterial => {
                 let handle = self.world_block_material_assets.get(hash)?;
                 Some(handle.as_ref())
+            }
+            AssetType::WorldBlock => {
+                todo!()
             }
         }
     }

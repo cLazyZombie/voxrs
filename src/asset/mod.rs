@@ -8,6 +8,7 @@ mod text;
 mod shader;
 mod material;
 mod world_block_material;
+mod world_block;
 
 pub use assets::AssetBuildResult;
 
@@ -21,3 +22,4 @@ pub use text::TextAsset;
 pub use shader::ShaderAsset;
 pub use material::MaterialAsset;
 pub use world_block_material::WorldBlockMaterialAsset;
+pub use world_block::WorldBlockAsset;

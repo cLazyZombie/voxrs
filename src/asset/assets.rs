@@ -5,6 +5,7 @@ pub enum AssetType {
     Shader,
     Material,
     WorldBlockMaterial,
+    WorldBlock,
 }
 
 pub enum AssetBuildResult<T> {
