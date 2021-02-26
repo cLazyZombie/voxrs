@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{any::Any, sync::Arc};
 
 use lazy_init::LazyTransform;

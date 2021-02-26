@@ -7,7 +7,6 @@ use super::{
 
 #[derive(Asset)]
 pub struct TextureAsset {
-    #[allow(dead_code)]
     pub buf: Vec<u8>,
     pub texture: AssetBuildResult<Texture>,
 }

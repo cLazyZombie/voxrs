@@ -2,7 +2,6 @@ use super::assets::{Asset, AssetType};
 
 #[derive(Asset)]
 pub struct TextAsset {
-    #[allow(dead_code)]
     pub text: String,
 }
 

@@ -1,3 +1,5 @@
+#![allow(dead_code)] // todo: remove
+
 use serde::Deserialize;
 
 use crate::io::FileSystem;
@@ -38,7 +40,6 @@ struct WorldBlockAssetRaw {
 /// block count in x, y, z
 /// each should be multiple of CHUNK_CUBE_LEN
 #[derive(Deserialize)]
-#[allow(dead_code)] // todo: remove
 pub struct WorldSize {
     x: i32,
     y: i32,
@@ -46,7 +47,6 @@ pub struct WorldSize {
 }
 
 #[derive(Deserialize)]
-#[allow(dead_code)] // todo: remove
 pub struct WorldChunk {
     blocks: Vec<u8>, // CUBE_CHUNK_LEN ^ 3 (== CHUNK_TOTAL_CUBE_COUNT)
 }

@@ -20,10 +20,8 @@ pub struct ChunkRenderSystem {
     cache: Cache<ChunkId, Chunk>,
     #[allow(dead_code)]
     uniform_bind_group_layout: wgpu::BindGroupLayout,
-    #[allow(dead_code)]
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
-    #[allow(dead_code)]
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
     #[allow(dead_code)]
     render_pipeline_layout: wgpu::PipelineLayout,
