@@ -2223,8 +2223,18 @@ dependencies = [
  "serde_json",
  "shaderc",
  "tokio",
+ "voxrs_derive",
  "wgpu",
  "winit",
+]
+
+[[package]]
+name = "voxrs_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

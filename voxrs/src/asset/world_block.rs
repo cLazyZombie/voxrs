@@ -2,20 +2,8 @@ use serde::Deserialize;
 
 use super::assets::{Asset, AssetType};
 
+#[derive(Asset)]
 pub struct WorldBlockAsset {}
-
-impl Asset for WorldBlockAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::WorldBlock
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
-    }
-}
 
 #[derive(Deserialize)]
 struct WorldBlockAssetRaw {

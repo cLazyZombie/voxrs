@@ -1,22 +1,9 @@
 use super::assets::{Asset, AssetType};
 
-
+#[derive(Asset)]
 pub struct TextAsset {
     #[allow(dead_code)]
     pub text: String,
-}
-
-impl Asset for TextAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::Text
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
-    }
 }
 
 impl TextAsset {

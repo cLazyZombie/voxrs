@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "voxrs",
+    "voxrs_derive",
 ]

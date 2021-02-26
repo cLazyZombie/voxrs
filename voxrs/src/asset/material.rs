@@ -1,9 +1,12 @@
 use serde::Deserialize;
 
+use super::{
+    assets::{Asset, AssetType},
+    AssetHandle, AssetManager, TextureAsset,
+};
 use crate::io::FileSystem;
-use super::{AssetHandle, AssetManager, TextureAsset, assets::{Asset, AssetType}};
 
-
+#[derive(Asset)]
 pub struct MaterialAsset {
     pub diffuse_tex: AssetHandle<TextureAsset>,
 }
@@ -11,19 +14,6 @@ pub struct MaterialAsset {
 #[derive(Deserialize)]
 struct MaterialAssetRaw {
     diffuse_tex: String,
-}
-
-impl Asset for MaterialAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::Material
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
-    }
 }
 
 impl MaterialAsset {

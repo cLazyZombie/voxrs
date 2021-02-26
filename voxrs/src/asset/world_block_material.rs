@@ -2,24 +2,15 @@ use std::collections::HashMap;
 
 use crate::io::FileSystem;
 
-use super::{AssetHandle, AssetManager, AssetPath, MaterialAsset, assets::{Asset, AssetType}};
+use super::{
+    assets::{Asset, AssetType},
+    AssetHandle, AssetManager, AssetPath, MaterialAsset,
+};
 use serde::Deserialize;
 
+#[derive(Asset)]
 pub struct WorldBlockMaterialAsset {
     pub material_handles: HashMap<u8, AssetHandle<MaterialAsset>>,
-}
-
-impl Asset for WorldBlockMaterialAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::WorldBlockMaterial
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
-    }
 }
 
 impl WorldBlockMaterialAsset {
@@ -28,7 +19,8 @@ impl WorldBlockMaterialAsset {
 
         let mut material_handles = HashMap::new();
         for entity in &raw.materials {
-            let material = asset_manager.get::<MaterialAsset>(&AssetPath::from_str(&entity.material));
+            let material =
+                asset_manager.get::<MaterialAsset>(&AssetPath::from_str(&entity.material));
             material_handles.insert(entity.id, material);
         }
 

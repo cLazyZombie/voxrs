@@ -1,24 +1,14 @@
-use wgpu::{ShaderFlags, ShaderModuleDescriptor, util::make_spirv};
+use wgpu::{util::make_spirv, ShaderFlags, ShaderModuleDescriptor};
 
-use super::{AssetBuildResult, assets::{Asset, AssetType}};
+use super::{
+    assets::{Asset, AssetType},
+    AssetBuildResult,
+};
 
-
+#[derive(Asset)]
 pub struct ShaderAsset {
     pub buf: Vec<u8>,
     pub module: AssetBuildResult<wgpu::ShaderModule>,
-}
-
-impl Asset for ShaderAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::Shader
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
-    }
 }
 
 impl ShaderAsset {
@@ -31,7 +21,7 @@ impl ShaderAsset {
 
     pub fn build(&mut self, device: &wgpu::Device, _queue: &wgpu::Queue) {
         let shader_source = make_spirv(&self.buf);
-        let module = device.create_shader_module( &ShaderModuleDescriptor {
+        let module = device.create_shader_module(&ShaderModuleDescriptor {
             label: None,
             source: shader_source,
             flags: ShaderFlags::VALIDATION,

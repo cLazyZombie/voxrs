@@ -1,8 +1,11 @@
 use crate::texture::Texture;
 
-use super::{AssetBuildResult, assets::{Asset, AssetType}};
+use super::{
+    assets::{Asset, AssetType},
+    AssetBuildResult,
+};
 
-
+#[derive(Asset)]
 pub struct TextureAsset {
     #[allow(dead_code)]
     pub buf: Vec<u8>,
@@ -15,20 +18,6 @@ impl TextureAsset {
             buf,
             texture: AssetBuildResult::NotBuilt,
         }
-    }
-}
-
-// todo: #[derive(Asset)] 형태로 수정
-impl Asset for TextureAsset {
-    fn asset_type() -> AssetType
-    where
-        Self: Sized,
-    {
-        AssetType::Texture
-    }
-
-    fn get_asset_type(&self) -> AssetType {
-        Self::asset_type()
     }
 }
 

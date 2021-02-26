@@ -3,6 +3,9 @@
 #![allow(clippy::float_cmp)]
 #![allow(clippy::new_without_default)]
 
+#[macro_use]
+extern crate voxrs_derive;
+
 pub mod asset;
 pub mod blueprint;
 //pub mod camera;
