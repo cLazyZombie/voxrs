@@ -2,7 +2,7 @@
 
 use std::{any::Any, sync::Arc};
 
-use lazy_init::Lazy;
+use lazy_init::LazyTransform;
 
 use super::assets::Asset;
 
@@ -11,22 +11,20 @@ pub enum AssetLoadError {
 }
 
 pub struct AssetHandle<T: Asset + 'static> {
-    recv: Arc<ReceiveType<T>>,
-    lazy: Arc<Lazy<Option<T>>>,
+    lazy_asset: Arc<LazyTransform<ReceiveType<T>, Option<T>>>,
 }
 
 impl<T: Asset + 'static> AssetHandle<T> {
     pub fn new(recv: ReceiveType<T>) -> Self {
         Self {
-            recv: Arc::new(recv),
-            lazy: Arc::new(Lazy::new()),
+            lazy_asset: Arc::new(LazyTransform::new(recv)),
         }
     }
 
     /// block until loading completed or failed
     pub fn get_asset(&self) -> Option<&T> {
-        self.lazy
-            .get_or_create(|| match self.recv.recv() {
+        self.lazy_asset
+            .get_or_create(|recv| match recv.recv() {
                 Ok(result) => match result {
                     Ok(asset) => Some(asset),
                     Err(_) => None,
@@ -45,19 +43,18 @@ impl<T: Asset + 'static> AssetHandle<T> {
     // }
 
     pub fn is_loaded(&self) -> bool {
-        self.lazy.get().is_some()
+        self.lazy_asset.get().is_some()
     }
 
     pub fn ref_count(&self) -> usize {
-        Arc::strong_count(&self.lazy) -1 // manager hold original handle. so do not count original
+        Arc::strong_count(&self.lazy_asset) -1 // manager hold original handle. so do not count original
     }
 }
 
 impl<T: Asset + 'static> Clone for AssetHandle<T> {
     fn clone(&self) -> Self {
         Self {
-            recv: Arc::clone(&self.recv),
-            lazy: Arc::clone(&self.lazy),
+            lazy_asset: Arc::clone(&self.lazy_asset),
         }
     }
 }

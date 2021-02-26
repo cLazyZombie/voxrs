@@ -139,6 +139,7 @@ impl Renderer {
         Ok(())
     }
 
+    // todo: crash when minimized (new_size == (0, 0))
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
         self.swap_chain_desc.width = new_size.width;
