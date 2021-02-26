@@ -74,6 +74,10 @@ pub mod tests {
                     let s = include_str!("test_assets/world_block_material.wmt");
                     Ok(s.to_string())
                 }
+                Some("world_block.wb") => {
+                    let s = include_str!("test_assets/world_block.wb");
+                    Ok(s.to_string())
+                }
                 _ => panic!("not found"),
             }
         }

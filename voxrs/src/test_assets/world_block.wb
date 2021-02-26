@@ -1,0 +1,11 @@
+{
+    "world_size": { "x": 32, "y": 32, "z": 32 },
+    "block_size": 0.5,
+    "block_material": "world_block_material.wmt",
+    "world_chunk": [
+        { "blocks": [1, 2, 3, 4] },
+        { "blocks": [1, 2, 3, 4] },
+        { "blocks": [1, 2, 3, 4] },
+        { "blocks": [1, 2, 3, 4] }
+    ]
+}
