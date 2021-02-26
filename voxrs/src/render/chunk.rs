@@ -18,13 +18,9 @@ use super::cache::Cache;
 
 pub struct ChunkRenderSystem {
     cache: Cache<ChunkId, Chunk>,
-    #[allow(dead_code)]
-    uniform_bind_group_layout: wgpu::BindGroupLayout,
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
-    #[allow(dead_code)]
-    render_pipeline_layout: wgpu::PipelineLayout,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     world_block_mat: AssetHandle<WorldBlockMaterialAsset>,
@@ -184,11 +180,9 @@ impl ChunkRenderSystem {
 
         Self {
             cache: Cache::new(),
-            uniform_bind_group_layout,
             uniform_bind_group,
             uniform_local_bind_group_layout,
             diffuse_bind_group_layout,
-            render_pipeline_layout,
             render_pipeline,
             vertex_buffer,
             world_block_mat,
