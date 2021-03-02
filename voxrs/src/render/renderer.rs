@@ -94,7 +94,12 @@ impl Renderer {
     }
 
     pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
-        let chunks = self.chunk_renderer.prepare(&bp.chunks, bp.block_size, &self.device);
+        let chunks = self.chunk_renderer.prepare(
+            &bp.chunks,
+            &bp.world_block_mat_handle.unwrap(),
+            bp.block_size,
+            &self.device,
+        );
 
         self.update_camera(&bp.camera);
 

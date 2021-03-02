@@ -22,7 +22,6 @@ pub struct ChunkRenderSystem {
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    world_block_mat: AssetHandle<WorldBlockMaterialAsset>,
 }
 
 impl ChunkRenderSystem {
@@ -33,12 +32,7 @@ impl ChunkRenderSystem {
     ) -> Self {
         const VS_PATH: &str = "assets/shaders/cube_shader.vert.spv";
         const FS_PATH: &str = "assets/shaders/cube_shader.frag.spv";
-        const WORLD_BLOCK_MAT_PATH: &str = "assets/world_mat.wmat";
 
-        let world_block_mat: AssetHandle<WorldBlockMaterialAsset> =
-            asset_manager.get(&AssetPath::from_str(WORLD_BLOCK_MAT_PATH));
-
-        //let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::new(VS_PATH.into())).unwrap();
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
 
@@ -187,13 +181,13 @@ impl ChunkRenderSystem {
             diffuse_bind_group_layout,
             render_pipeline,
             vertex_buffer,
-            world_block_mat,
         }
     }
 
     pub fn prepare(
         &mut self,
         chunks_bps: &[SafeCloner<blueprint::Chunk>],
+        world_material: &AssetHandle<WorldBlockMaterialAsset>,
         block_size: f32,
         device: &wgpu::Device,
     ) -> Vec<ChunkId> {
@@ -209,7 +203,7 @@ impl ChunkRenderSystem {
                     device,
                     &self.diffuse_bind_group_layout,
                     &self.uniform_local_bind_group_layout,
-                    &self.world_block_mat,
+                    world_material,
                 );
 
                 self.cache.add(chunk_bp.id, chunks);

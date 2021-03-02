@@ -413,7 +413,7 @@ mod tests {
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle: AssetHandle<WorldBlockMaterialAsset> =
-            manager.get(&AssetPath::from_str("world_block_material.wmt"));
+            manager.get(&AssetPath::from_str("world_material.wmt"));
 
         let asset: &WorldBlockMaterialAsset = handle.get_asset().unwrap();
 

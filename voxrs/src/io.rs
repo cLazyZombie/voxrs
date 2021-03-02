@@ -70,8 +70,8 @@ pub mod tests {
                     let s = include_str!("test_assets/material.mat");
                     Ok(s.to_string())
                 }
-                Some("world_block_material.wmt") => {
-                    let s = include_str!("test_assets/world_block_material.wmt");
+                Some("world_material.wmt") => {
+                    let s = include_str!("test_assets/world_material.wmt");
                     Ok(s.to_string())
                 }
                 Some("world_block.wb") => {

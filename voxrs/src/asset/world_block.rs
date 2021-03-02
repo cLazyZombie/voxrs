@@ -15,7 +15,7 @@ use super::{
 pub struct WorldBlockAsset {
     pub world_size: WorldSize,
     pub block_size: BlockSize,
-    pub block_material: AssetHandle<WorldBlockMaterialAsset>,
+    pub world_material: AssetHandle<WorldBlockMaterialAsset>,
     pub world_chunk: Vec<WorldChunk>, // x, y, z order
 }
 
@@ -27,7 +27,7 @@ impl WorldBlockAsset {
         Self {
             world_size: raw.world_size,
             block_size: raw.block_size,
-            block_material: asset_manager.get(&AssetPath::from_str(&raw.block_material)),
+            world_material: asset_manager.get(&AssetPath::from_str(&raw.world_material)),
             world_chunk: raw.world_chunk,
         }
     }
@@ -59,7 +59,7 @@ fn chunk_idx_to_world_pos(world_size: &WorldSize, block_size: f32, idx: i32) -> 
 struct WorldBlockAssetRaw {
     world_size: WorldSize,
     block_size: BlockSize,
-    block_material: String,
+    world_material: String,
     world_chunk: Vec<WorldChunk>,
 }
 
