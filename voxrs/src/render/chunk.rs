@@ -435,13 +435,8 @@ impl Chunk {
                 .unwrap()
                 .get_asset()
                 .unwrap();
-            let diffuse = material.diffuse_tex.get_asset().unwrap();
-            if diffuse.texture.need_build() {
-                println!("texture is not loaded");
-                return chunks;
-            }
-
-            let diffuse = diffuse.texture.as_ref().unwrap();
+            let diffuse_asset = material.diffuse_tex.get_asset().unwrap();
+            let diffuse = diffuse_asset.texture.as_ref().unwrap();
 
             let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("diffuse_bind_group"),

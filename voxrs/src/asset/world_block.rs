@@ -14,7 +14,7 @@ use super::{
 #[derive(Asset)]
 pub struct WorldBlockAsset {
     pub world_size: WorldSize,
-    pub block_size: f32,
+    pub block_size: BlockSize,
     pub block_material: AssetHandle<WorldBlockMaterialAsset>,
     pub world_chunk: Vec<WorldChunk>, // x, y, z order
 }
@@ -33,7 +33,7 @@ impl WorldBlockAsset {
     }
 
     pub fn get_world_pos(&self, idx: i32) -> Vector3 {
-        chunk_idx_to_world_pos(&self.world_size, self.block_size, idx)
+        chunk_idx_to_world_pos(&self.world_size, self.block_size.to_f32(), idx)
     }
 }
 
@@ -58,13 +58,42 @@ fn chunk_idx_to_world_pos(world_size: &WorldSize, block_size: f32, idx: i32) -> 
 #[derive(Deserialize)]
 struct WorldBlockAssetRaw {
     world_size: WorldSize,
-    block_size: f32,
+    block_size: BlockSize,
     block_material: String,
     world_chunk: Vec<WorldChunk>,
 }
 
+#[derive(Deserialize)]
+pub enum BlockSize {
+    Xs, // 0.25
+    S, // 0.5
+    M, // 1
+    L, // 2
+    Xl, // 4
+}
+
+impl BlockSize {
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            &BlockSize::Xs => 0.25,
+            &BlockSize::S => 0.5,
+            &BlockSize::M => 1.0,
+            &BlockSize::L => 2.0,
+            &BlockSize::Xl => 4.0,
+        }
+    }
+}
+
 impl WorldBlockAssetRaw {
     fn validate(&self) {
+        // check world size
+        let chunk_len = (CHUNK_CUBE_LEN as f32 * self.block_size.to_f32()) as i32;
+        
+        assert_eq!(self.world_size.x % chunk_len, 0);
+        assert_eq!(self.world_size.y % chunk_len, 0);
+        assert_eq!(self.world_size.z % chunk_len, 0);
+
+        // check cube counts in chunk
         for chunk in &self.world_chunk {
             assert_eq!(chunk.blocks.len(), CHUNK_TOTAL_CUBE_COUNT);
         }

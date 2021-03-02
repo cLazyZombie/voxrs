@@ -15,10 +15,6 @@ pub enum AssetBuildResult<T> {
 }
 
 impl<T> AssetBuildResult<T> {
-    pub fn need_build(&self) -> bool {
-        matches!(self, AssetBuildResult::NotBuilt)
-    }
-
     pub fn as_ref(&self) -> AssetBuildResult<&T> {
         match self {
             AssetBuildResult::NotBuilt => AssetBuildResult::NotBuilt,
