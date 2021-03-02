@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub struct WorldBlockRes {
-    _handle: AssetHandle<WorldBlockAsset>,
+    pub handle: AssetHandle<WorldBlockAsset>,
     pub chunks: Vec<SafeCloner<Chunk>>,
 }
 
@@ -23,7 +23,7 @@ impl WorldBlockRes {
         }
 
         Self {
-            _handle: handle,
+            handle,
             chunks,
         }
     }

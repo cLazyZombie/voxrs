@@ -17,12 +17,14 @@ pub struct Camera {
 
 pub struct Blueprint {
     pub camera: Camera,
+    pub block_size: f32,
     pub chunks: Vec<SafeCloner<Chunk>>,
 }
 
 impl Blueprint {
     pub fn new() -> Self {
         Self {
+            block_size: 1.0,
             camera: Camera::default(),
             chunks: Vec::new(),
         }
@@ -34,5 +36,9 @@ impl Blueprint {
 
     pub fn add_chunk(&mut self, chunk: SafeCloner<Chunk>) {
         self.chunks.push(chunk);
+    }
+
+    pub fn set_block_size(&mut self, block_size: f32) {
+        self.block_size = block_size;
     }
 }

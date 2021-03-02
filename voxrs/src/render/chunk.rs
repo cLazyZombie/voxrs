@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
-use crate::math::{self, Vector3};
+use crate::math::*;
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldBlockMaterialAsset},
     blueprint::{ChunkId, CubeMatIdx},
@@ -194,6 +194,7 @@ impl ChunkRenderSystem {
     pub fn prepare(
         &mut self,
         chunks_bps: &[SafeCloner<blueprint::Chunk>],
+        block_size: f32,
         device: &wgpu::Device,
     ) -> Vec<ChunkId> {
         let mut chunks_for_render = Vec::new();
@@ -204,6 +205,7 @@ impl ChunkRenderSystem {
             if !cached {
                 let chunks = Chunk::from_bp(
                     &chunk_bp,
+                    block_size,
                     device,
                     &self.diffuse_bind_group_layout,
                     &self.uniform_local_bind_group_layout,
@@ -399,6 +401,7 @@ pub struct Chunk {
 impl Chunk {
     pub fn from_bp(
         bp: &blueprint::Chunk,
+        block_size: f32,
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
@@ -454,7 +457,9 @@ impl Chunk {
             });
 
             // local uniform buffer
-            let world_transform = math::Matrix4::translate(&bp.pos);
+            let translate = Matrix4::translate(&bp.pos);
+            let scale = Matrix4::uniform_scale(block_size);
+            let world_transform = translate * scale;
 
             let local_uniform_buffer =
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
