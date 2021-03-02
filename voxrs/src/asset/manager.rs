@@ -1,14 +1,19 @@
-use std::{hash::Hash, time::Instant};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
+use std::{hash::Hash, time::Instant};
 
 use tokio::runtime::{Builder, Runtime};
 
 use crate::io::FileSystem;
 
-use super::{AssetPath, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset, WorldBlockMaterialAsset, assets::{Asset, AssetType}, handle::{AssetHandle, AssetLoadError}};
+use super::{
+    assets::{Asset, AssetType},
+    handle::{AssetHandle, AssetLoadError},
+    AssetPath, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset,
+    WorldBlockMaterialAsset,
+};
 pub struct AssetManager<F: FileSystem + 'static> {
     internal: Arc<Mutex<AssetManagerInternal<F>>>,
 }
@@ -24,10 +29,10 @@ impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     }
 
     pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
-        let cloned = self.clone(); 
+        let cloned = self.clone();
         self.internal.lock().unwrap().get(path, cloned)
     }
-    
+
     #[cfg(test)]
     fn get_rc<T: Asset + 'static>(&self, path: &AssetPath) -> Option<usize> {
         self.internal.lock().unwrap().get_rc::<T>(path)
@@ -68,7 +73,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             .thread_name("asset loader")
             .build()
             .unwrap();
-            
+
         Self {
             text_assets: HashMap::new(),
             texture_assets: HashMap::new(),
@@ -85,12 +90,16 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
-    pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath, manager: AssetManager<F>) -> AssetHandle<T> {
+    pub fn get<T: Asset + 'static>(
+        &mut self,
+        path: &AssetPath,
+        manager: AssetManager<F>,
+    ) -> AssetHandle<T> {
         let hash = path.get_hash();
         if let Some(handle) = self.get_handle(&hash) {
-            return handle.clone()
+            return handle.clone();
         }
-        
+
         match T::asset_type() {
             AssetType::Text => self.create_text(path),
             AssetType::Texture => self.create_texture(path),
@@ -103,7 +112,6 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
     // todo: need refactoring get_xxx. [duplicated code]
     fn create_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
-
         let hash = path.get_hash();
 
         let (handle, sender) = create_asset_handle();
@@ -134,7 +142,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         self.texture_assets.insert(hash, handle);
         let path = path.clone();
         let (device, queue) = self.clone_wgpu();
-        
+
         self.async_rt.spawn(async move {
             let _logger = AssetLoadLogger::new(&path);
 
@@ -183,7 +191,11 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         cloned_handle
     }
 
-    fn create_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
+    fn create_material<T: Asset + 'static>(
+        &mut self,
+        path: &AssetPath,
+        mut manager: AssetManager<F>,
+    ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
         let cloned_handle = handle.as_ref().clone();
@@ -206,7 +218,11 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         cloned_handle
     }
 
-    fn create_world_block_material<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
+    fn create_world_block_material<T: Asset + 'static>(
+        &mut self,
+        path: &AssetPath,
+        mut manager: AssetManager<F>,
+    ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
         let cloned_handle = handle.as_ref().clone();
@@ -229,14 +245,18 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         cloned_handle
     }
 
-    fn create_world_block<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
+    fn create_world_block<T: Asset + 'static>(
+        &mut self,
+        path: &AssetPath,
+        mut manager: AssetManager<F>,
+    ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, sender) = create_asset_handle();
         let cloned_handle = handle.as_ref().clone();
         self.world_block_assets.insert(hash, handle);
         let path = path.clone();
 
-        self.async_rt.spawn( async move {
+        self.async_rt.spawn(async move {
             let _logger = AssetLoadLogger::new(&path);
 
             let result;
@@ -259,7 +279,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         } else {
             None
         };
-        
+
         let cloned_queue = if let Some(queue) = &self.queue {
             let queue = Arc::clone(queue);
             Some(queue)
@@ -342,7 +362,11 @@ impl<'a> Drop for AssetLoadLogger<'a> {
     fn drop(&mut self) {
         let end = Instant::now();
         let elapsed_time = end - self.start;
-        log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), self.asset_name);
+        log::info!(
+            "[Asset] [{}ms] load {}",
+            elapsed_time.as_millis(),
+            self.asset_name
+        );
     }
 }
 
@@ -388,7 +412,8 @@ mod tests {
     #[test]
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<WorldBlockMaterialAsset> = manager.get(&AssetPath::from_str("world_block_material.wmt"));
+        let handle: AssetHandle<WorldBlockMaterialAsset> =
+            manager.get(&AssetPath::from_str("world_block_material.wmt"));
 
         let asset: &WorldBlockMaterialAsset = handle.get_asset().unwrap();
 
@@ -418,7 +443,7 @@ mod tests {
     #[test]
     fn send_to_other_thread() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let path : AssetPath = "test.txt".into();
+        let path: AssetPath = "test.txt".into();
         let handle: AssetHandle<TextAsset> = manager.get(&path);
         assert_eq!(manager.get_rc::<TextAsset>(&path).unwrap(), 1);
 

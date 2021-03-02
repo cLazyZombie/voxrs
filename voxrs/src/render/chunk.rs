@@ -13,7 +13,6 @@ use blueprint::CubeIdx;
 
 use wgpu::util::DeviceExt;
 
-
 use super::cache::Cache;
 
 pub struct ChunkRenderSystem {
@@ -72,7 +71,7 @@ impl ChunkRenderSystem {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer{
+                resource: wgpu::BindingResource::Buffer {
                     buffer: view_proj_buff,
                     offset: 0,
                     size: None,
@@ -87,7 +86,7 @@ impl ChunkRenderSystem {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::Buffer{
+                    ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
@@ -105,7 +104,7 @@ impl ChunkRenderSystem {
                         binding: 0,
                         visibility: wgpu::ShaderStage::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float{ filterable: true },
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
                             view_dimension: wgpu::TextureViewDimension::D2,
                             multisampled: false,
                         },
@@ -115,7 +114,10 @@ impl ChunkRenderSystem {
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                        ty: wgpu::BindingType::Sampler {
+                            filtering: true,
+                            comparison: false,
+                        },
                         count: None,
                     },
                 ],
@@ -225,7 +227,8 @@ impl ChunkRenderSystem {
         for chunk_id in chunks_ids {
             let chunks = self.cache.get(chunk_id).unwrap();
             for chunk in chunks {
-                render_pass.set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                render_pass
+                    .set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
                 render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
                 render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
@@ -366,17 +369,17 @@ pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         array_stride: std::mem::size_of::<ChunkVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::InputStepMode::Vertex,
         attributes: &[
-            wgpu::VertexAttribute{
+            wgpu::VertexAttribute {
                 offset: 0,
                 shader_location: 0,
                 format: wgpu::VertexFormat::Float3,
             },
-            wgpu::VertexAttribute{
+            wgpu::VertexAttribute {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
                 format: wgpu::VertexFormat::Float3,
             },
-            wgpu::VertexAttribute{
+            wgpu::VertexAttribute {
                 offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
                     as wgpu::BufferAddress,
                 shader_location: 2,
@@ -470,7 +473,7 @@ impl Chunk {
                 layout: uniform_local_bind_group_layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer{
+                    resource: wgpu::BindingResource::Buffer {
                         buffer: &local_uniform_buffer,
                         offset: 0,
                         size: None,

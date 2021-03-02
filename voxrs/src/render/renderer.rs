@@ -1,11 +1,17 @@
 use super::{chunk::ChunkRenderSystem, commands::Command};
-use crate::{asset::AssetManager, blueprint::{Blueprint, Camera}, io::FileSystem, math::Matrix4, texture};
+use crate::{
+    asset::AssetManager,
+    blueprint::{Blueprint, Camera},
+    io::FileSystem,
+    math::Matrix4,
+    texture,
+};
 use crossbeam_channel::Receiver;
-use std::{iter, sync::Arc};
 use std::{
     convert::TryInto,
     thread::{self, JoinHandle},
 };
+use std::{iter, sync::Arc};
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
@@ -178,11 +184,7 @@ pub struct Uniforms {
 
 impl Uniforms {
     pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera
-            .view_proj_mat
-            .as_slice()
-            .try_into()
-            .unwrap();
+        self.view_proj = camera.view_proj_mat.as_slice().try_into().unwrap();
     }
 }
 

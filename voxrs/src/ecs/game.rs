@@ -1,8 +1,18 @@
 use legion::*;
 
-use crate::{asset::{AssetManager, AssetPath}, blueprint::Blueprint, io::FileSystem, math::Vector3};
+use crate::{
+    asset::{AssetManager, AssetPath},
+    blueprint::Blueprint,
+    io::FileSystem,
+    math::Vector3,
+};
 
-use super::{Clock, components::CameraComp, resources::{ElapsedTimeRes, KeyInput, WorldBlockRes}, systems::{camera, world_block_render}};
+use super::{
+    components::CameraComp,
+    resources::{ElapsedTimeRes, KeyInput, WorldBlockRes},
+    systems::{camera, world_block_render},
+    Clock,
+};
 
 pub struct Game {
     world: World,
@@ -19,7 +29,8 @@ impl Game {
         let mut world = World::default();
         let mut res = Resources::default();
 
-        let world_block_res = WorldBlockRes::new(&AssetPath::from_str("assets/world_01.wb"), asset_manager);
+        let world_block_res =
+            WorldBlockRes::new(&AssetPath::from_str("assets/world_01.wb"), asset_manager);
         res.insert(world_block_res);
 
         let camera = CameraComp::new(

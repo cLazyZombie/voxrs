@@ -25,7 +25,7 @@ fn main() {
     let (sender, receiver) = crossbeam_channel::bounded(1);
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
-    
+
     let mut game = Game::new(aspect, &mut asset_manager);
 
     event_loop.run(move |event, _, control_flow| match event {

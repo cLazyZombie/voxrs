@@ -1,6 +1,5 @@
-use crate::math::*;
 use crate::blueprint::Camera;
-
+use crate::math::*;
 
 pub struct CameraComp {
     eye: Vector3,

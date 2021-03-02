@@ -1,5 +1,5 @@
-use crate::safecloner::SafeCloner;
 use crate::math::*;
+use crate::safecloner::SafeCloner;
 
 use super::Chunk;
 

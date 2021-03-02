@@ -6,9 +6,7 @@ pub struct Clock {
 
 impl Clock {
     pub fn new() -> Self {
-        Self {
-            prev: None,
-        }
+        Self { prev: None }
     }
     pub fn tick(&mut self) -> Duration {
         if let Some(prev) = self.prev {

@@ -45,7 +45,7 @@ impl<T: Asset + 'static> AssetHandle<T> {
     }
 
     pub fn ref_count(&self) -> usize {
-        Arc::strong_count(&self.lazy_asset) -1 // manager hold original handle. so do not count original
+        Arc::strong_count(&self.lazy_asset) - 1 // manager hold original handle. so do not count original
     }
 }
 
@@ -118,7 +118,7 @@ mod test {
     fn convert<T: Asset + 'static>(h: &AssetHandle<TextAsset>) -> &AssetHandle<T> {
         h.as_ref()
     }
-    
+
     #[test]
     fn as_ref_test() {
         let (_, r) = crossbeam_channel::unbounded();

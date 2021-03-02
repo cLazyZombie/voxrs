@@ -1,7 +1,7 @@
 mod camera;
 pub use camera::CameraComp;
 
-use derive_more::{From, Deref, AddAssign};
+use derive_more::{AddAssign, Deref, From};
 
 use crate::math::Vector3;
 
@@ -17,6 +17,6 @@ mod tests {
 
     #[test]
     fn test_position() {
-        let _pos : Position = Vector3::new(1.0, 1.0, 1.0).into();
+        let _pos: Position = Vector3::new(1.0, 1.0, 1.0).into();
     }
 }

@@ -1,6 +1,5 @@
+use derive_more::{Deref, DerefMut, From};
 use winit::event::KeyboardInput;
-use derive_more::{From, DerefMut, Deref};
-
 
 #[derive(From, DerefMut, Deref, Copy, Clone)]
 pub struct ElapsedTimeRes(f32);

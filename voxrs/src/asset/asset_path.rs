@@ -1,10 +1,13 @@
 use super::manager::AssetHash;
 use serde::Deserialize;
-use std::{fmt::Display, hash::{Hash, Hasher}};
 use std::{
     collections::hash_map::DefaultHasher,
     ops::Deref,
     path::{Path, PathBuf},
+};
+use std::{
+    fmt::Display,
+    hash::{Hash, Hasher},
 };
 
 #[derive(Debug, PartialEq, Eq)]
