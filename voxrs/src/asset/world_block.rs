@@ -2,8 +2,9 @@
 
 use serde::Deserialize;
 
-use crate::blueprint::CHUNK_TOTAL_CUBE_COUNT;
+use crate::blueprint::{CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
 use crate::io::FileSystem;
+use crate::math::*;
 
 use super::{
     assets::{Asset, AssetType},
@@ -30,6 +31,28 @@ impl WorldBlockAsset {
             world_chunk: raw.world_chunk,
         }
     }
+
+    pub fn get_world_pos(&self, idx: i32) -> Vector3 {
+        chunk_idx_to_world_pos(&self.world_size, self.block_size, idx)
+    }
+}
+
+fn chunk_idx_to_world_pos(world_size: &WorldSize, block_size: f32, idx: i32) -> Vector3 {
+    let chunk_count = (
+        (world_size.x as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
+        (world_size.y as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
+        (world_size.z as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
+    );
+
+    let chunk_x = idx % chunk_count.0;
+    let chunk_y = (idx / chunk_count.0) % chunk_count.1;
+    let chunk_z = idx / (chunk_count.0 * chunk_count.1);
+
+    Vector3::new(
+        chunk_x as f32 * block_size * CHUNK_CUBE_LEN as f32,
+        chunk_y as f32 * block_size * CHUNK_CUBE_LEN as f32,
+        chunk_z as f32 * block_size * CHUNK_CUBE_LEN as f32,
+    )
 }
 
 #[derive(Deserialize)]
@@ -57,8 +80,19 @@ pub struct WorldSize {
     z: i32,
 }
 
+impl WorldSize {
+    pub fn chunk_count(&self) -> (i32, i32, i32) {
+        (
+            self.x / CHUNK_CUBE_LEN as i32,
+            self.y / CHUNK_CUBE_LEN as i32,
+            self.z / CHUNK_CUBE_LEN as i32,
+        )
+    }
+}
+
 #[derive(Deserialize)]
 pub struct WorldChunk {
+    pub idx: i32,        // chunk index (x, y, z order)
     pub blocks: Vec<u8>, // CUBE_CHUNK_LEN ^ 3 (== CHUNK_TOTAL_CUBE_COUNT)
 }
 
@@ -68,7 +102,36 @@ mod tests {
 
     #[test]
     fn deserialize_world_chunk() {
-        let s = r#"{ "blocks": [1, 2, 3, 4] }"#;
-        let _world_chunk: WorldChunk = serde_json::from_str(s).unwrap();
+        let s = r#"{ "idx": 1, "blocks": [1, 2, 3, 4] }"#;
+        let world_chunk: WorldChunk = serde_json::from_str(s).unwrap();
+        assert_eq!(world_chunk.idx, 1);
+    }
+
+    #[test]
+    fn test_chunk_idx_to_world_pos() {
+        let world_size = WorldSize {
+            x: 32,
+            y: 64,
+            z: 128,
+        };
+        let block_size = 0.5;
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 0);
+        assert_eq!(world_pos, Vector3::new(0.0, 0.0, 0.0));
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 1);
+        assert_eq!(world_pos, Vector3::new(8.0, 0.0, 0.0));
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 4);
+        assert_eq!(world_pos, Vector3::new(0.0, 8.0, 0.0));
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 31);
+        assert_eq!(world_pos, Vector3::new(24.0, 56.0, 0.0));
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 32);
+        assert_eq!(world_pos, Vector3::new(0.0, 0.0, 8.0));
+
+        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 4 * 8 * 16 - 1);
+        assert_eq!(world_pos, Vector3::new(24.0, 56.0, 120.0));
     }
 }

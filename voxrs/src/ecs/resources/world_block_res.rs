@@ -2,7 +2,6 @@ use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset},
     blueprint::Chunk,
     io::FileSystem,
-    math::Vector3,
     safecloner::SafeCloner,
 };
 
@@ -18,7 +17,7 @@ impl WorldBlockRes {
 
         let mut chunks = Vec::new();
         for chunk_asset in &asset.world_chunk {
-            let pos = Vector3::new(0.0, 0.0, 0.0);
+            let pos = asset.get_world_pos(chunk_asset.idx);
             let chunk = SafeCloner::new(Chunk::new(pos, chunk_asset.blocks.clone()));
             chunks.push(chunk);
         }

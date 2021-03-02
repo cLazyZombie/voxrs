@@ -1,5 +1,5 @@
 use nalgebra_glm as glm;
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3 {
     v: glm::Vec3,
 }
