@@ -11,7 +11,6 @@ pub mod blueprint;
 //pub mod camera;
 pub mod ecs;
 pub mod io;
-pub mod math;
 pub mod render;
 pub mod safecloner;
 pub mod texture;

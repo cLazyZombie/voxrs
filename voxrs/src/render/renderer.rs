@@ -3,7 +3,6 @@ use crate::{
     asset::AssetManager,
     blueprint::{Blueprint, Camera},
     io::FileSystem,
-    math::Matrix4,
     texture,
 };
 use crossbeam_channel::Receiver;
@@ -14,6 +13,7 @@ use std::{
 use std::{iter, sync::Arc};
 use wgpu::util::DeviceExt;
 use winit::window::Window;
+use voxrs_math::*;
 
 pub struct Renderer {
     surface: wgpu::Surface,

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
-use crate::math::*;
+use voxrs_math::*;
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset},
     blueprint::{ChunkId, CubeMatIdx},

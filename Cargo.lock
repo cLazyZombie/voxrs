@@ -2224,6 +2224,7 @@ dependencies = [
  "shaderc",
  "tokio",
  "voxrs_derive",
+ "voxrs_math",
  "wgpu",
  "winit",
 ]
@@ -2235,6 +2236,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "voxrs_math"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "nalgebra-glm",
 ]
 
 [[package]]

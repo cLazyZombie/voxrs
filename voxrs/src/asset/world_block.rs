@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::blueprint::{CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
 use crate::io::FileSystem;
-use crate::math::*;
+use voxrs_math::*;
 
 use super::{
     assets::{Asset, AssetType},

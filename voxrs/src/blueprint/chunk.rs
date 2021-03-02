@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::math::Vector3;
+use voxrs_math::*;
 
 use super::{ChunkId, CubeMatIdx};
 

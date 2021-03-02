@@ -1,5 +1,6 @@
-use crate::math::Vector3;
 use nalgebra_glm as glm;
+
+use crate::Vector3;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix4 {

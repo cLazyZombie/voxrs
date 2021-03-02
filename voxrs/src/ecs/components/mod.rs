@@ -3,7 +3,7 @@ pub use camera::CameraComp;
 
 use derive_more::{AddAssign, Deref, From};
 
-use crate::math::Vector3;
+use voxrs_math::*;
 
 #[derive(From, Deref, AddAssign, Debug, Copy, Clone)]
 pub struct Position(pub Vector3);

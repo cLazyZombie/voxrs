@@ -4,8 +4,8 @@ use crate::{
     asset::{AssetManager, AssetPath},
     blueprint::Blueprint,
     io::FileSystem,
-    math::Vector3,
 };
+use voxrs_math::*;
 
 use super::{
     components::CameraComp,
