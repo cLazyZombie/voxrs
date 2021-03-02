@@ -12,7 +12,7 @@ use super::{
     assets::{Asset, AssetType},
     handle::{AssetHandle, AssetLoadError},
     AssetPath, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset,
-    WorldBlockMaterialAsset,
+    WorldMaterialAsset,
 };
 pub struct AssetManager<F: FileSystem + 'static> {
     internal: Arc<Mutex<AssetManagerInternal<F>>>,
@@ -56,7 +56,7 @@ pub struct AssetManagerInternal<F: FileSystem + 'static> {
     texture_assets: HashMap<AssetHash, AssetHandle<TextureAsset>>,
     shader_assets: HashMap<AssetHash, AssetHandle<ShaderAsset>>,
     material_assets: HashMap<AssetHash, AssetHandle<MaterialAsset>>,
-    world_block_material_assets: HashMap<AssetHash, AssetHandle<WorldBlockMaterialAsset>>,
+    world_material_assets: HashMap<AssetHash, AssetHandle<WorldMaterialAsset>>,
     world_block_assets: HashMap<AssetHash, AssetHandle<WorldBlockAsset>>,
 
     device: Option<Arc<wgpu::Device>>,
@@ -79,7 +79,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             texture_assets: HashMap::new(),
             shader_assets: HashMap::new(),
             material_assets: HashMap::new(),
-            world_block_material_assets: HashMap::new(),
+            world_material_assets: HashMap::new(),
             world_block_assets: HashMap::new(),
 
             device: None,
@@ -105,7 +105,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             AssetType::Texture => self.create_texture(path),
             AssetType::Shader => self.create_shader(path),
             AssetType::Material => self.create_material(path, manager),
-            AssetType::WorldBlockMaterial => self.create_world_block_material(path, manager),
+            AssetType::WorldMaterial => self.create_world_block_material(path, manager),
             AssetType::WorldBlock => self.create_world_block(path, manager),
         }
     }
@@ -226,7 +226,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle();
         let cloned_handle = handle.as_ref().clone();
-        self.world_block_material_assets.insert(hash, handle);
+        self.world_material_assets.insert(hash, handle);
         let path = path.clone();
 
         self.async_rt.spawn(async move {
@@ -234,7 +234,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
             let result;
             if let Ok(s) = F::read_text(&path).await {
-                result = Ok(WorldBlockMaterialAsset::new(&s, &mut manager));
+                result = Ok(WorldMaterialAsset::new(&s, &mut manager));
             } else {
                 result = Err(AssetLoadError::Failed);
             }
@@ -320,8 +320,8 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
                 let handle = self.material_assets.get(hash)?;
                 Some(handle.as_ref())
             }
-            AssetType::WorldBlockMaterial => {
-                let handle = self.world_block_material_assets.get(hash)?;
+            AssetType::WorldMaterial => {
+                let handle = self.world_material_assets.get(hash)?;
                 Some(handle.as_ref())
             }
             AssetType::WorldBlock => {
@@ -412,10 +412,10 @@ mod tests {
     #[test]
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<WorldBlockMaterialAsset> =
+        let handle: AssetHandle<WorldMaterialAsset> =
             manager.get(&AssetPath::from_str("world_material.wmt"));
 
-        let asset: &WorldBlockMaterialAsset = handle.get_asset().unwrap();
+        let asset: &WorldMaterialAsset = handle.get_asset().unwrap();
 
         asset.material_handles.get(&1).unwrap();
         asset.material_handles.get(&10).unwrap();

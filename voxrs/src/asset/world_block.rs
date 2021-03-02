@@ -8,14 +8,14 @@ use crate::math::*;
 
 use super::{
     assets::{Asset, AssetType},
-    AssetHandle, AssetManager, AssetPath, WorldBlockMaterialAsset,
+    AssetHandle, AssetManager, AssetPath, WorldMaterialAsset,
 };
 
 #[derive(Asset)]
 pub struct WorldBlockAsset {
     pub world_size: WorldSize,
     pub block_size: BlockSize,
-    pub world_material: AssetHandle<WorldBlockMaterialAsset>,
+    pub world_material: AssetHandle<WorldMaterialAsset>,
     pub world_chunk: Vec<WorldChunk>, // x, y, z order
 }
 

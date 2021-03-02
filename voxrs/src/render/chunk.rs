@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
 use crate::math::*;
 use crate::{
-    asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldBlockMaterialAsset},
+    asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset},
     blueprint::{ChunkId, CubeMatIdx},
     io::FileSystem,
     safecloner::SafeCloner,
@@ -187,7 +187,7 @@ impl ChunkRenderSystem {
     pub fn prepare(
         &mut self,
         chunks_bps: &[SafeCloner<blueprint::Chunk>],
-        world_material: &AssetHandle<WorldBlockMaterialAsset>,
+        world_material: &AssetHandle<WorldMaterialAsset>,
         block_size: f32,
         device: &wgpu::Device,
     ) -> Vec<ChunkId> {
@@ -399,7 +399,7 @@ impl Chunk {
         device: &wgpu::Device,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
-        world_material: &AssetHandle<WorldBlockMaterialAsset>,
+        world_material: &AssetHandle<WorldMaterialAsset>,
     ) -> Vec<Self> {
         let mut chunks = Vec::new();
 

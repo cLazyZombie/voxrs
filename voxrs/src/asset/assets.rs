@@ -4,7 +4,7 @@ pub enum AssetType {
     Text,
     Shader,
     Material,
-    WorldBlockMaterial,
+    WorldMaterial,
     WorldBlock,
 }
 

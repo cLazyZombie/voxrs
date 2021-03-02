@@ -1,4 +1,4 @@
-use crate::{asset::{AssetHandle, WorldBlockMaterialAsset}, math::*};
+use crate::{asset::{AssetHandle, WorldMaterialAsset}, math::*};
 use crate::safecloner::SafeCloner;
 
 use super::Chunk;
@@ -18,7 +18,7 @@ pub struct Camera {
 pub struct Blueprint {
     pub camera: Camera,
     pub block_size: f32,
-    pub world_block_mat_handle: Option<AssetHandle<WorldBlockMaterialAsset>>,
+    pub world_block_mat_handle: Option<AssetHandle<WorldMaterialAsset>>,
     pub chunks: Vec<SafeCloner<Chunk>>,
 }
 
@@ -36,7 +36,7 @@ impl Blueprint {
         self.camera = camera;
     }
 
-    pub fn set_world_mat(&mut self, handle: AssetHandle<WorldBlockMaterialAsset>) {
+    pub fn set_world_mat(&mut self, handle: AssetHandle<WorldMaterialAsset>) {
         self.world_block_mat_handle = Some(handle);
     }
 

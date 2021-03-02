@@ -9,13 +9,13 @@ use super::{
 use serde::Deserialize;
 
 #[derive(Asset)]
-pub struct WorldBlockMaterialAsset {
+pub struct WorldMaterialAsset {
     pub material_handles: HashMap<u8, AssetHandle<MaterialAsset>>,
 }
 
-impl WorldBlockMaterialAsset {
+impl WorldMaterialAsset {
     pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
-        let raw: WorldBlockMaterialAssetRaw = serde_json::from_str(s).unwrap();
+        let raw: WorldMaterialAssetRaw = serde_json::from_str(s).unwrap();
 
         let mut material_handles = HashMap::new();
         for entity in &raw.materials {
@@ -29,12 +29,12 @@ impl WorldBlockMaterialAsset {
 }
 
 #[derive(Deserialize)]
-struct WorldBlockMaterialEntity {
+struct WorldMaterialEntity {
     pub id: u8,
     pub material: String,
 }
 
 #[derive(Deserialize)]
-struct WorldBlockMaterialAssetRaw {
-    pub materials: Vec<WorldBlockMaterialEntity>,
+struct WorldMaterialAssetRaw {
+    pub materials: Vec<WorldMaterialEntity>,
 }
