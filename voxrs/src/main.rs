@@ -1,11 +1,8 @@
 use voxrs::{
     asset::AssetManager,
-    blueprint::CHUNK_TOTAL_CUBE_COUNT,
     ecs::{game::Game, resources::KeyInput},
     io::GeneralFileSystem,
-    math::Vector3,
     render,
-    safecloner::SafeCloner,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -22,13 +19,14 @@ fn main() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
-    let mut game = Game::new(aspect);
     let mut key_input: Option<KeyInput> = None;
 
-    let asset_manager = AssetManager::<GeneralFileSystem>::new();
+    let mut asset_manager = AssetManager::<GeneralFileSystem>::new();
     let (sender, receiver) = crossbeam_channel::bounded(1);
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
+    
+    let mut game = Game::new(aspect, &mut asset_manager);
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -52,14 +50,14 @@ fn main() {
 
             game.tick();
 
-            let mut bp = game.render();
+            let bp = game.render();
 
-            let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
+            //let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
 
-            let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
-            let chunk = SafeCloner::new(chunk);
+            //let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
+            //let chunk = SafeCloner::new(chunk);
 
-            bp.add_chunk(chunk.clone_read());
+            //bp.add_chunk(chunk.clone_read());
 
             if let Err(_) = sender.send(render::Command::Render(bp)) {
                 *control_flow = ControlFlow::Exit;

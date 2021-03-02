@@ -1,8 +1,8 @@
 use legion::*;
 
-use crate::{blueprint::Blueprint, math::Vector3};
+use crate::{asset::{AssetManager, AssetPath}, blueprint::Blueprint, io::FileSystem, math::Vector3};
 
-use super::{Clock, components::CameraComp, resources::{ElapsedTimeRes, KeyInput}, systems::camera};
+use super::{Clock, components::CameraComp, resources::{ElapsedTimeRes, KeyInput, WorldBlockRes}, systems::{camera, world_block_render}};
 
 pub struct Game {
     world: World,
@@ -15,9 +15,12 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(aspect: f32) -> Self {
+    pub fn new<F: FileSystem>(aspect: f32, asset_manager: &mut AssetManager<F>) -> Self {
         let mut world = World::default();
-        let res = Resources::default();
+        let mut res = Resources::default();
+
+        let world_block_res = WorldBlockRes::new(&AssetPath::from_str("assets/world_01.wb"), asset_manager);
+        res.insert(world_block_res);
 
         let camera = CameraComp::new(
             Vector3::new(3.5, 3.5, -10.0),
@@ -37,6 +40,7 @@ impl Game {
 
         let render_schedule = Schedule::builder()
             .add_system(camera::camera_render_system())
+            .add_system(world_block_render::world_block_render_system())
             .build();
 
         let clock = Clock::new();

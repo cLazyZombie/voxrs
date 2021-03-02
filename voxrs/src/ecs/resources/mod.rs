@@ -13,3 +13,6 @@ impl Default for ElapsedTimeRes {
 
 #[derive(From, Deref, Copy, Clone)]
 pub struct KeyInput(KeyboardInput);
+
+mod world_block_res;
+pub use world_block_res::WorldBlockRes;

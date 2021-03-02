@@ -3,6 +3,7 @@
 use serde::Deserialize;
 
 use crate::io::FileSystem;
+use crate::blueprint::CHUNK_TOTAL_CUBE_COUNT;
 
 use super::{
     assets::{Asset, AssetType},
@@ -20,6 +21,8 @@ pub struct WorldBlockAsset {
 impl WorldBlockAsset {
     pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
         let raw: WorldBlockAssetRaw = serde_json::from_str(s).unwrap();
+        raw.validate();
+        
         Self {
             world_size: raw.world_size,
             block_size: raw.block_size,
@@ -37,6 +40,14 @@ struct WorldBlockAssetRaw {
     world_chunk: Vec<WorldChunk>,
 }
 
+impl WorldBlockAssetRaw {
+    fn validate(&self) {
+        for chunk in &self.world_chunk {
+            assert_eq!(chunk.blocks.len(), CHUNK_TOTAL_CUBE_COUNT);
+        }
+    }
+}
+
 /// block count in x, y, z
 /// each should be multiple of CHUNK_CUBE_LEN
 #[derive(Deserialize)]
@@ -48,7 +59,7 @@ pub struct WorldSize {
 
 #[derive(Deserialize)]
 pub struct WorldChunk {
-    blocks: Vec<u8>, // CUBE_CHUNK_LEN ^ 3 (== CHUNK_TOTAL_CUBE_COUNT)
+    pub blocks: Vec<u8>, // CUBE_CHUNK_LEN ^ 3 (== CHUNK_TOTAL_CUBE_COUNT)
 }
 
 #[cfg(test)]
