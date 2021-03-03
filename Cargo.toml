@@ -2,5 +2,6 @@
 members = [
     "voxrs",
     "voxrs_math",
+    "voxrs_types",
     "voxrs_derive",
 ]

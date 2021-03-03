@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 voxrs_derive = { version = "0.1", path = "../voxrs_derive"}
 voxrs_math = { version = "0.1", path = "../voxrs_math" }
+voxrs_types = { version = "0.1", path = "../voxrs_types" }
 wgpu = "0.7"
 winit = "0.24"
 env_logger = "0.8"
