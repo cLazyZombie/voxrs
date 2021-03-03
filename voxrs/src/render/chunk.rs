@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
+use crate::{asset::WorldBlockVis, blueprint::{self, CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT}};
+use enumflags2::BitFlags;
 use voxrs_math::*;
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset},
@@ -246,7 +247,7 @@ pub struct ChunkVertex {
 }
 
 #[rustfmt::skip]
-pub const CHUNK_VERTICES: &[ChunkVertex] = &[
+pub const CUBE_VERTICES: &[ChunkVertex] = &[
     // +y
     ChunkVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
     ChunkVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
@@ -286,34 +287,56 @@ pub const CHUNK_VERTICES: &[ChunkVertex] = &[
 
 #[rustfmt::skip]
 pub const CHUNK_INDICES: &[u32] = &[
+    // +y
     0, 1, 2, 
     2, 1, 3, 
     
+    // -y
     4, 5, 6, 
     6, 5, 7, 
     
+    // +x
     8, 9, 10, 
     10, 9, 11, 
     
+    // -x
     12, 13, 14, 
     14, 13, 15, 
     
+    // +z
     16, 17, 18, 
     18, 17, 19, 
     
+    // -z
     20, 21, 22, 
     22, 21, 23,
 ];
 
+fn cube_indices_in_dir(vis: BitFlags<WorldBlockVis>) -> Vec<u32> {
+    let mut indices = Vec::new();
+
+    for dir in vis.iter() {
+        match dir {
+            WorldBlockVis::XPos => indices.extend(&[8, 9, 10, 10, 9, 11]),
+            WorldBlockVis::XNeg => indices.extend(&[12, 13, 14, 14, 13, 15]),
+            WorldBlockVis::YPos => indices.extend(&[0, 1, 2, 2, 1, 3]),
+            WorldBlockVis::YNeg => indices.extend(&[4, 5, 6, 6, 5, 7]),
+            WorldBlockVis::ZPos => indices.extend(&[16, 17, 18, 18, 17, 19]),
+            WorldBlockVis::ZNeg => indices.extend(&[20, 21, 22, 22, 21, 23]),
+        }
+    }
+    indices
+}
+
 pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     let mut v = Vec::new() as Vec<ChunkVertex>;
-    v.reserve(CHUNK_VERTICES.len() * CHUNK_TOTAL_CUBE_COUNT);
+    v.reserve(CUBE_VERTICES.len() * CHUNK_TOTAL_CUBE_COUNT);
 
     for z in 0..CHUNK_CUBE_LEN {
         for y in 0..CHUNK_CUBE_LEN {
             for x in 0..CHUNK_CUBE_LEN {
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                v.extend(CHUNK_VERTICES.iter().map(|v| {
+                v.extend(CUBE_VERTICES.iter().map(|v| {
                     let new_position =
                         offset + Vector3::new(v.position[0], v.position[1], v.position[2]);
                     ChunkVertex {
@@ -340,15 +363,23 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
 pub fn create_chunk_indexbuffer(
     cube_indices: &[CubeIdx],
     device: &wgpu::Device,
-) -> (wgpu::Buffer, u32) {
+    vis: &[BitFlags<WorldBlockVis>],
+) -> (wgpu::Buffer, u32) 
+{
     let mut v = Vec::<u32>::new();
     v.reserve(cube_indices.len() * CHUNK_INDICES.len());
     for &cube_idx in cube_indices {
+        let indices = cube_indices_in_dir(vis[cube_idx as usize]);
         v.extend(
-            CHUNK_INDICES
+                indices
                 .iter()
-                .map(|idx| *idx + (cube_idx as usize * CHUNK_VERTICES.len()) as u32),
+                .map(|idx| *idx + (cube_idx as usize * CUBE_VERTICES.len()) as u32),
         );
+        // v.extend(
+        //     CHUNK_INDICES
+        //         .iter()
+        //         .map(|idx| *idx + (cube_idx as usize * CHUNK_VERTICES.len()) as u32),
+        // );
     }
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -475,7 +506,7 @@ impl Chunk {
                 }],
             });
 
-            let (index_buffer, num_indices) = create_chunk_indexbuffer(&v, device);
+            let (index_buffer, num_indices) = create_chunk_indexbuffer(&v, device, &bp.vis);
 
             let chunk = Self {
                 diffuse_bind_group,

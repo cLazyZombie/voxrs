@@ -18,13 +18,14 @@ impl WorldBlockRes {
         let mut chunks = Vec::new();
         for chunk_asset in &asset.world_chunk {
             let pos = asset.get_world_pos(chunk_asset.idx);
-            let chunk = SafeCloner::new(Chunk::new(pos, chunk_asset.blocks.clone()));
+            let chunk = SafeCloner::new(Chunk::new(
+                pos,
+                chunk_asset.blocks.clone(),
+                chunk_asset.vis.clone(),
+            ));
             chunks.push(chunk);
         }
 
-        Self {
-            handle,
-            chunks,
-        }
+        Self { handle, chunks }
     }
 }

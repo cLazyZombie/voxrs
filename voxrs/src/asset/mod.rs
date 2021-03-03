@@ -22,4 +22,5 @@ pub use shader::ShaderAsset;
 pub use text::TextAsset;
 pub use texture::TextureAsset;
 pub use world_block::WorldBlockAsset;
+pub use world_block::WorldBlockVis;
 pub use world_material::WorldMaterialAsset;
