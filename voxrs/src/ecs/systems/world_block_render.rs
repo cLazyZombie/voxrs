@@ -12,6 +12,8 @@ pub fn world_block_render(
     bp.set_block_size(asset.block_size.to_f32());
 
     for chunk in &world_block_res.chunks {
-        bp.add_chunk(chunk.clone_read());
+        if let Some(chunk) = chunk {
+            bp.add_chunk(chunk.clone_read());
+        }
     }
 }

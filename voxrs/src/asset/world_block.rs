@@ -18,7 +18,7 @@ pub struct WorldBlockAsset {
     pub block_counts: BlockCounts,
     pub block_size: BlockSize,
     pub world_material: AssetHandle<WorldMaterialAsset>,
-    pub world_chunk: Vec<WorldChunk>, // x, y, z order. None if all empty chunk
+    pub world_chunks: Vec<Option<WorldChunk>>, // x, y, z order. None if all empty chunk
 }
 
 impl WorldBlockAsset {
@@ -28,17 +28,21 @@ impl WorldBlockAsset {
 
         // create world chdunk from asset
         let mut world_chunks = Vec::new();
-        world_chunks.reserve(raw.world_chunk.len());
-        for idx in 0..raw.world_chunk.len() {
-            let world_chunk = WorldChunk::new(idx, &raw.world_chunk);
-            world_chunks.push(world_chunk);
+        let (chunk_x, chunk_y, chunk_z) = raw.block_counts.chunk_count();
+        let chunk_count = (chunk_x * chunk_y * chunk_z) as usize;
+        world_chunks.resize_with(chunk_count, Default::default);
+
+        for idx in 0..raw.world_chunks.len() {
+            let world_chunk = WorldChunk::new(idx, &raw.world_chunks);
+            let chunk_idx = world_chunk.idx as usize;
+            world_chunks[chunk_idx] = Some(world_chunk);
         }
 
         Self {
             block_counts: raw.block_counts,
             block_size: raw.block_size,
             world_material: asset_manager.get(&AssetPath::from_str(&raw.world_material)),
-            world_chunk: world_chunks,
+            world_chunks,
         }
     }
 
@@ -203,7 +207,7 @@ struct WorldBlockAssetRaw {
     block_counts: BlockCounts,
     block_size: BlockSize,
     world_material: String,
-    world_chunk: Vec<WorldChunkRaw>,
+    world_chunks: Vec<WorldChunkRaw>,
 }
 
 #[derive(Deserialize)]
@@ -237,7 +241,7 @@ impl WorldBlockAssetRaw {
         assert_eq!(self.block_counts.z % chunk_len, 0);
 
         // check cube counts in chunk
-        for chunk in &self.world_chunk {
+        for chunk in &self.world_chunks {
             assert_eq!(chunk.blocks.len(), CHUNK_TOTAL_CUBE_COUNT);
         }
     }
