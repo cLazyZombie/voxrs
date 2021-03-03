@@ -14,10 +14,11 @@ use super::{
 
 #[derive(Asset)]
 pub struct WorldBlockAsset {
-    pub world_size: WorldSize,
+    /// cube count in x, y, z
+    pub block_counts: BlockCounts,
     pub block_size: BlockSize,
     pub world_material: AssetHandle<WorldMaterialAsset>,
-    pub world_chunk: Vec<WorldChunk>, // x, y, z order
+    pub world_chunk: Vec<WorldChunk>, // x, y, z order. None if all empty chunk
 }
 
 impl WorldBlockAsset {
@@ -34,7 +35,7 @@ impl WorldBlockAsset {
         }
 
         Self {
-            world_size: raw.world_size,
+            block_counts: raw.block_counts,
             block_size: raw.block_size,
             world_material: asset_manager.get(&AssetPath::from_str(&raw.world_material)),
             world_chunk: world_chunks,
@@ -42,16 +43,12 @@ impl WorldBlockAsset {
     }
 
     pub fn get_world_pos(&self, idx: i32) -> Vector3 {
-        chunk_idx_to_world_pos(&self.world_size, self.block_size.to_f32(), idx)
+        chunk_idx_to_world_pos(&self.block_counts, self.block_size.to_f32(), idx)
     }
 }
 
-fn chunk_idx_to_world_pos(world_size: &WorldSize, block_size: f32, idx: i32) -> Vector3 {
-    let chunk_count = (
-        (world_size.x as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
-        (world_size.y as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
-        (world_size.z as f32 / CHUNK_CUBE_LEN as f32 / block_size) as i32,
-    );
+fn chunk_idx_to_world_pos(block_counts: &BlockCounts, block_size: f32, idx: i32) -> Vector3 {
+    let chunk_count = block_counts.chunk_count();
 
     let chunk_x = idx % chunk_count.0;
     let chunk_y = (idx / chunk_count.0) % chunk_count.1;
@@ -203,7 +200,7 @@ fn cube_pos_to_idx(x: i32, y: i32, z: i32) -> usize {
 
 #[derive(Deserialize)]
 struct WorldBlockAssetRaw {
-    world_size: WorldSize,
+    block_counts: BlockCounts,
     block_size: BlockSize,
     world_material: String,
     world_chunk: Vec<WorldChunkRaw>,
@@ -235,9 +232,9 @@ impl WorldBlockAssetRaw {
         // check world size
         let chunk_len = (CHUNK_CUBE_LEN as f32 * self.block_size.to_f32()) as i32;
 
-        assert_eq!(self.world_size.x % chunk_len, 0);
-        assert_eq!(self.world_size.y % chunk_len, 0);
-        assert_eq!(self.world_size.z % chunk_len, 0);
+        assert_eq!(self.block_counts.x % chunk_len, 0);
+        assert_eq!(self.block_counts.y % chunk_len, 0);
+        assert_eq!(self.block_counts.z % chunk_len, 0);
 
         // check cube counts in chunk
         for chunk in &self.world_chunk {
@@ -249,13 +246,13 @@ impl WorldBlockAssetRaw {
 /// block count in x, y, z
 /// each should be multiple of CHUNK_CUBE_LEN
 #[derive(Deserialize)]
-pub struct WorldSize {
+pub struct BlockCounts {
     x: i32,
     y: i32,
     z: i32,
 }
 
-impl WorldSize {
+impl BlockCounts {
     pub fn chunk_count(&self) -> (i32, i32, i32) {
         (
             self.x / CHUNK_CUBE_LEN as i32,
@@ -284,29 +281,29 @@ mod tests {
 
     #[test]
     fn test_chunk_idx_to_world_pos() {
-        let world_size = WorldSize {
+        let block_counts = BlockCounts {
             x: 32,
             y: 64,
             z: 128,
         };
         let block_size = 0.5;
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 0);
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 0);
         assert_eq!(world_pos, Vector3::new(0.0, 0.0, 0.0));
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 1);
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 1);
         assert_eq!(world_pos, Vector3::new(8.0, 0.0, 0.0));
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 4);
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 2);
         assert_eq!(world_pos, Vector3::new(0.0, 8.0, 0.0));
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 31);
-        assert_eq!(world_pos, Vector3::new(24.0, 56.0, 0.0));
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 7);
+        assert_eq!(world_pos, Vector3::new(8.0, 24.0, 0.0));
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 32);
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 8);
         assert_eq!(world_pos, Vector3::new(0.0, 0.0, 8.0));
 
-        let world_pos = chunk_idx_to_world_pos(&world_size, block_size, 4 * 8 * 16 - 1);
-        assert_eq!(world_pos, Vector3::new(24.0, 56.0, 120.0));
+        let world_pos = chunk_idx_to_world_pos(&block_counts, block_size, 2 * 4 * 8 - 1);
+        assert_eq!(world_pos, Vector3::new(8.0, 24.0, 56.0));
     }
 }

@@ -1,5 +1,5 @@
 {
-    "world_size": { "x": 32, "y": 32, "z": 32 },
+    "block_counts": { "x": 32, "y": 32, "z": 32 },
     "block_size": "S",
     "world_material": "assets/world_mat.wmt",
     "world_chunk": [
