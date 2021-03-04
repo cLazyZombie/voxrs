@@ -2272,6 +2272,7 @@ version = "0.1.0"
 dependencies = [
  "enumflags2",
  "serde",
+ "voxrs_math",
 ]
 
 [[package]]

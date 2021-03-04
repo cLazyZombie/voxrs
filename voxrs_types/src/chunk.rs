@@ -1,5 +1,6 @@
 use enumflags2::bitflags;
 use serde::Deserialize;
+use voxrs_math::Vector3;
 
 /// block count in chunk direction (x, y, z)
 pub const BLOCK_COUNT_IN_CHUNKSIDE: usize = 16;
@@ -24,9 +25,9 @@ pub enum Dir {
 /// block count in world in each direction (x, y, z)
 #[derive(Copy, Clone, Debug, Deserialize)]
 pub struct WorldBlockCounts {
-    x: i32,
-    y: i32,
-    z: i32,
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
 }
 
 impl WorldBlockCounts {
@@ -46,6 +47,10 @@ pub struct WorldChunkCounts {
 impl WorldChunkCounts {
     pub fn new(x: i32, y: i32, z: i32) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn len(&self) -> usize {
+        (self.x * self.y * self.z) as usize
     }
 }
 
@@ -92,6 +97,15 @@ impl ChunkPos {
         }
     }
 
+    pub fn get_world_pos(&self, block_size: f32) -> Vector3 {
+        let (x, y, z) = self.get_xyz();
+        Vector3::new(
+            (x * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,
+            (y * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,
+            (z * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,
+        )
+    }
+
     fn xyz_to_idx(world_chunk_count: WorldChunkCounts, xyz: (i32, i32, i32)) -> i32 {
         let chunk_idx =
             xyz.0 + xyz.1 * world_chunk_count.x + xyz.2 * world_chunk_count.x * world_chunk_count.y;
@@ -129,8 +143,8 @@ impl From<&BlockPos> for ChunkPos {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BlockPos {
     chunk_counts: WorldChunkCounts,
-    chunk_idx: i32,
-    block_idx: i32,
+    pub chunk_idx: i32,
+    pub block_idx: i32,
 }
 
 impl BlockPos {
