@@ -58,7 +58,7 @@ impl WorldBlockAsset {
     }
 
     pub fn get_world_pos(&self, idx: i32) -> Vector3 {
-        let chunk_pos = ChunkPos::new(self.chunk_counts, idx);
+        let chunk_pos = ChunkPos::new(&self.chunk_counts, idx);
         chunk_pos.get_world_pos(self.block_size.to_f32())
     }
 }
@@ -114,7 +114,7 @@ fn build_vis(chunk_idx: usize, chunk_counts: &WorldChunkCounts, chunks: &[Option
 
 /// check block(indexed by block_idx) is empty at some direction (dir)
 fn is_visible_dir(chunk_idx: usize, block_idx: usize, dir: Dir, chunk_counts: &WorldChunkCounts, chunks: &[Option<WorldChunkRaw>]) -> bool {
-    let block_pos = BlockPos::new(*chunk_counts, chunk_idx as i32, block_idx as i32);
+    let block_pos = BlockPos::new(chunk_counts, chunk_idx as i32, block_idx as i32);
     let neighbor_pos = block_pos.neighbor_block_pos(dir);
 
     if let Some(neighbor_pos) = neighbor_pos {

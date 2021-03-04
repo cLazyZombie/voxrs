@@ -65,13 +65,13 @@ impl From<WorldBlockCounts> for WorldChunkCounts {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct ChunkPos {
-    chunk_counts: WorldChunkCounts,
+pub struct ChunkPos<'a> {
+    chunk_counts: &'a WorldChunkCounts,
     chunk_idx: i32,
 }
 
-impl ChunkPos {
-    pub fn new(chunk_counts: WorldChunkCounts, idx: i32) -> Self {
+impl<'a> ChunkPos<'a> {
+    pub fn new(chunk_counts: &'a WorldChunkCounts, idx: i32) -> Self {
         Self {
             chunk_counts,
             chunk_idx: idx,
@@ -106,13 +106,13 @@ impl ChunkPos {
         )
     }
 
-    fn xyz_to_idx(world_chunk_count: WorldChunkCounts, xyz: (i32, i32, i32)) -> i32 {
+    fn xyz_to_idx(world_chunk_count: &WorldChunkCounts, xyz: (i32, i32, i32)) -> i32 {
         let chunk_idx =
             xyz.0 + xyz.1 * world_chunk_count.x + xyz.2 * world_chunk_count.x * world_chunk_count.y;
         chunk_idx
     }
 
-    fn is_xyz_in_world(world_chunk_count: WorldChunkCounts, xyz: (i32, i32, i32)) -> bool {
+    fn is_xyz_in_world(world_chunk_count: &WorldChunkCounts, xyz: (i32, i32, i32)) -> bool {
         xyz.0 >= 0
             && xyz.0 < world_chunk_count.x
             && xyz.1 >= 0
@@ -131,8 +131,8 @@ impl ChunkPos {
     }
 }
 
-impl From<&BlockPos> for ChunkPos {
-    fn from(block_pos: &BlockPos) -> Self {
+impl<'a> From<&BlockPos<'a>> for ChunkPos<'a> {
+    fn from(block_pos: &BlockPos<'a>) -> Self {
         Self {
             chunk_counts: block_pos.chunk_counts,
             chunk_idx: block_pos.chunk_idx,
@@ -141,14 +141,14 @@ impl From<&BlockPos> for ChunkPos {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct BlockPos {
-    chunk_counts: WorldChunkCounts,
+pub struct BlockPos<'a> {
+    chunk_counts: &'a WorldChunkCounts,
     pub chunk_idx: i32,
     pub block_idx: i32,
 }
 
-impl BlockPos {
-    pub fn new(chunk_counts: WorldChunkCounts, chunk_idx: i32, block_idx: i32) -> Self {
+impl<'a> BlockPos<'a> {
+    pub fn new(chunk_counts: &'a WorldChunkCounts, chunk_idx: i32, block_idx: i32) -> Self {
         Self {
             chunk_counts,
             chunk_idx,
@@ -157,7 +157,7 @@ impl BlockPos {
     }
 
     pub fn from_world_xyz(
-        chunk_counts: WorldChunkCounts,
+        chunk_counts: &'a WorldChunkCounts,
         world_xyz: (i32, i32, i32),
     ) -> Option<Self> {
         if world_xyz.0 < 0 || world_xyz.1 < 0 || world_xyz.2 < 0 {
@@ -246,14 +246,14 @@ mod tests {
     #[test]
     fn neighbor_block_pos_test() {
         let chunk_counts = WorldChunkCounts::new(2, 4, 6);
-        let block = BlockPos::from_world_xyz(chunk_counts, (16, 16, 16)).unwrap();
-        assert_eq!(block, BlockPos::new(chunk_counts, 11, 0));
+        let block = BlockPos::from_world_xyz(&chunk_counts, (16, 16, 16)).unwrap();
+        assert_eq!(block, BlockPos::new(&chunk_counts, 11, 0));
 
         let block_xpos = block.neighbor_block_pos(Dir::XPos).unwrap();
-        assert_eq!(block_xpos, BlockPos::new(chunk_counts, 11, 1));
+        assert_eq!(block_xpos, BlockPos::new(&chunk_counts, 11, 1));
 
         let block_xneg = block.neighbor_block_pos(Dir::XNeg).unwrap();
-        assert_eq!(block_xneg, BlockPos::new(chunk_counts, 10, 15));
+        assert_eq!(block_xneg, BlockPos::new(&chunk_counts, 10, 15));
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
         let chunk_counts = WorldChunkCounts::new(2, 2, 2);
 
         // first block
-        let block = BlockPos::from_world_xyz(chunk_counts, (0, 0, 0)).unwrap();
+        let block = BlockPos::from_world_xyz(&chunk_counts, (0, 0, 0)).unwrap();
 
         let invalid = block.neighbor_block_pos(Dir::XNeg);
         assert_eq!(invalid, None);
@@ -273,7 +273,7 @@ mod tests {
         assert_eq!(invalid, None);
 
         // last block
-        let block = BlockPos::from_world_xyz(chunk_counts, (31, 31, 31)).unwrap();
+        let block = BlockPos::from_world_xyz(&chunk_counts, (31, 31, 31)).unwrap();
 
         let invalid = block.neighbor_block_pos(Dir::XPos);
         assert_eq!(invalid, None);
