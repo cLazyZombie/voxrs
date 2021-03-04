@@ -30,8 +30,8 @@ impl ChunkRenderSystem {
         asset_manager: &mut AssetManager<F>,
         view_proj_buff: &wgpu::Buffer,
     ) -> Self {
-        const VS_PATH: &str = "assets/shaders/cube_shader.vert.spv";
-        const FS_PATH: &str = "assets/shaders/cube_shader.frag.spv";
+        const VS_PATH: &str = "assets/shaders/block_shader.vert.spv";
+        const FS_PATH: &str = "assets/shaders/block_shader.frag.spv";
 
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));

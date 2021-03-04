@@ -1,6 +1,6 @@
 {
     "materials" : [
-        {"id": 1, "material": "assets/materials/cube_material.mat"},
-        {"id": 2, "material": "assets/materials/cube_material2.mat"}
+        {"id": 1, "material": "assets/materials/block_material.mat"},
+        {"id": 2, "material": "assets/materials/block_material2.mat"}
     ]
 }
