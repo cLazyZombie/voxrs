@@ -1,9 +1,9 @@
 #![allow(dead_code)] // todo: remove
 
-use enumflags2::{bitflags, make_bitflags, BitFlags};
+use enumflags2::{make_bitflags, BitFlags};
 use serde::Deserialize;
+use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK};
 
-use crate::blueprint::{CHUNK_CUBE_LEN, CHUNK_TOTAL_CUBE_COUNT};
 use crate::io::FileSystem;
 use voxrs_math::*;
 
@@ -59,31 +59,16 @@ fn chunk_idx_to_world_pos(block_counts: &BlockCounts, block_size: f32, idx: i32)
     let chunk_z = idx / (chunk_count.0 * chunk_count.1);
 
     Vector3::new(
-        chunk_x as f32 * block_size * CHUNK_CUBE_LEN as f32,
-        chunk_y as f32 * block_size * CHUNK_CUBE_LEN as f32,
-        chunk_z as f32 * block_size * CHUNK_CUBE_LEN as f32,
+        chunk_x as f32 * block_size * BLOCK_COUNT_IN_CHUNKSIDE as f32,
+        chunk_y as f32 * block_size * BLOCK_COUNT_IN_CHUNKSIDE as f32,
+        chunk_z as f32 * block_size * BLOCK_COUNT_IN_CHUNKSIDE as f32,
     )
-}
-
-/// WorldBlockVis has visible state using imformation about neighbor blocks
-/// ex) visible from ZPos (Z Positive), ZPos Flag is set
-/// XPos : X Positive direction , XNeg : X Negative direction
-#[bitflags]
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum WorldBlockVis {
-    XPos = 0b00000001,
-    XNeg = 0b00000010,
-    YPos = 0b00000100,
-    YNeg = 0b00001000,
-    ZPos = 0b00010000,
-    ZNeg = 0b00100000,
 }
 
 pub struct WorldChunk {
     pub idx: i32,
     pub blocks: Vec<u8>,
-    pub vis: Vec<BitFlags<WorldBlockVis>>,
+    pub vis: Vec<BitFlags<Dir>>,
 }
 
 impl WorldChunk {
@@ -96,21 +81,21 @@ impl WorldChunk {
     }
 }
 
-fn build_vis(chunk_idx: usize, chunks: &[WorldChunkRaw]) -> Vec<BitFlags<WorldBlockVis>> {
+fn build_vis(chunk_idx: usize, chunks: &[WorldChunkRaw]) -> Vec<BitFlags<Dir>> {
     let mut vis_vec = Vec::new();
     vis_vec.reserve(chunks[chunk_idx].blocks.len());
 
-    let full_vis = make_bitflags!(WorldBlockVis::{XPos|XNeg|YPos|YNeg|ZPos|ZNeg});
+    let full_vis = make_bitflags!(Dir::{XPos|XNeg|YPos|YNeg|ZPos|ZNeg});
 
     for cube_idx in 0..chunks[chunk_idx].blocks.len() {
         // if current block is empty, then skip
         let cur_block = chunks[chunk_idx].blocks[cube_idx];
         if cur_block == 0 {
-            vis_vec.push(BitFlags::<WorldBlockVis>::default());
+            vis_vec.push(BitFlags::<Dir>::default());
             continue;
         }
 
-        let mut vis = BitFlags::<WorldBlockVis>::default();
+        let mut vis = BitFlags::<Dir>::default();
 
         for dir in full_vis.iter() {
             if is_visible_dir(chunk_idx, cube_idx, dir, chunks) {
@@ -125,12 +110,7 @@ fn build_vis(chunk_idx: usize, chunks: &[WorldChunkRaw]) -> Vec<BitFlags<WorldBl
 }
 
 /// check cube(indexed by cube_idx) is not block at some direction (dir)
-fn is_visible_dir(
-    chunk_idx: usize,
-    cube_idx: usize,
-    dir: WorldBlockVis,
-    chunks: &[WorldChunkRaw],
-) -> bool {
+fn is_visible_dir(chunk_idx: usize, cube_idx: usize, dir: Dir, chunks: &[WorldChunkRaw]) -> bool {
     let (x, y, z) = cube_idx_to_pos(cube_idx);
     let (nx, ny, nz) = move_cube_pos(x, y, z, dir);
 
@@ -148,19 +128,19 @@ fn is_visible_dir(
 
 /// convert cube index to position in chunk (x, y, z)
 fn cube_idx_to_pos(cube_idx: usize) -> (i32, i32, i32) {
-    let x = cube_idx % CHUNK_CUBE_LEN;
-    let y = cube_idx / CHUNK_CUBE_LEN % CHUNK_CUBE_LEN;
-    let z = cube_idx / (CHUNK_CUBE_LEN * CHUNK_CUBE_LEN);
+    let x = cube_idx % BLOCK_COUNT_IN_CHUNKSIDE;
+    let y = cube_idx / BLOCK_COUNT_IN_CHUNKSIDE % BLOCK_COUNT_IN_CHUNKSIDE;
+    let z = cube_idx / (BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE);
     (x as i32, y as i32, z as i32)
 }
 
 /// check cube position in chunk is surface of chunk
 fn is_surface_of_chunk(x: i32, y: i32, z: i32) -> bool {
-    if x == 0 || x == (CHUNK_CUBE_LEN - 1) as i32 {
+    if x == 0 || x == (BLOCK_COUNT_IN_CHUNKSIDE - 1) as i32 {
         true
-    } else if y == 0 || y == (CHUNK_CUBE_LEN - 1) as i32 {
+    } else if y == 0 || y == (BLOCK_COUNT_IN_CHUNKSIDE - 1) as i32 {
         true
-    } else if z == 0 || z == (CHUNK_CUBE_LEN - 1) as i32 {
+    } else if z == 0 || z == (BLOCK_COUNT_IN_CHUNKSIDE - 1) as i32 {
         true
     } else {
         false
@@ -169,11 +149,11 @@ fn is_surface_of_chunk(x: i32, y: i32, z: i32) -> bool {
 
 fn is_in_chunk(x: i32, y: i32, z: i32) -> bool {
     if x >= 0
-        && x < CHUNK_CUBE_LEN as i32
+        && x < BLOCK_COUNT_IN_CHUNKSIDE as i32
         && y >= 0
-        && y < CHUNK_CUBE_LEN as i32
+        && y < BLOCK_COUNT_IN_CHUNKSIDE as i32
         && z >= 0
-        && z < CHUNK_CUBE_LEN as i32
+        && z < BLOCK_COUNT_IN_CHUNKSIDE as i32
     {
         true
     } else {
@@ -183,21 +163,21 @@ fn is_in_chunk(x: i32, y: i32, z: i32) -> bool {
 
 /// move pos(x, y, y in chunk_idx) in dir
 /// return (moved chunk idx, moved x, moved y, moved z)
-fn move_cube_pos(x: i32, y: i32, z: i32, dir: WorldBlockVis) -> (i32, i32, i32) {
+fn move_cube_pos(x: i32, y: i32, z: i32, dir: Dir) -> (i32, i32, i32) {
     match dir {
-        WorldBlockVis::XPos => (x + 1, y, z),
-        WorldBlockVis::XNeg => (x - 1, y, z),
-        WorldBlockVis::YPos => (x, y + 1, z),
-        WorldBlockVis::YNeg => (x, y - 1, z),
-        WorldBlockVis::ZPos => (x, y, z + 1),
-        WorldBlockVis::ZNeg => (x, y, z - 1),
+        Dir::XPos => (x + 1, y, z),
+        Dir::XNeg => (x - 1, y, z),
+        Dir::YPos => (x, y + 1, z),
+        Dir::YNeg => (x, y - 1, z),
+        Dir::ZPos => (x, y, z + 1),
+        Dir::ZNeg => (x, y, z - 1),
     }
 }
 
 fn cube_pos_to_idx(x: i32, y: i32, z: i32) -> usize {
     let mut idx = x;
-    idx += y * CHUNK_CUBE_LEN as i32;
-    idx += z * (CHUNK_CUBE_LEN * CHUNK_CUBE_LEN) as i32;
+    idx += y * BLOCK_COUNT_IN_CHUNKSIDE as i32;
+    idx += z * (BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE) as i32;
 
     idx as usize
 }
@@ -234,7 +214,7 @@ impl BlockSize {
 impl WorldBlockAssetRaw {
     fn validate(&self) {
         // check world size
-        let chunk_len = (CHUNK_CUBE_LEN as f32 * self.block_size.to_f32()) as i32;
+        let chunk_len = (BLOCK_COUNT_IN_CHUNKSIDE as f32 * self.block_size.to_f32()) as i32;
 
         assert_eq!(self.block_counts.x % chunk_len, 0);
         assert_eq!(self.block_counts.y % chunk_len, 0);
@@ -242,7 +222,7 @@ impl WorldBlockAssetRaw {
 
         // check cube counts in chunk
         for chunk in &self.world_chunks {
-            assert_eq!(chunk.blocks.len(), CHUNK_TOTAL_CUBE_COUNT);
+            assert_eq!(chunk.blocks.len(), TOTAL_BLOCK_COUNTS_IN_CHUNK);
         }
     }
 }
@@ -259,9 +239,9 @@ pub struct BlockCounts {
 impl BlockCounts {
     pub fn chunk_count(&self) -> (i32, i32, i32) {
         (
-            self.x / CHUNK_CUBE_LEN as i32,
-            self.y / CHUNK_CUBE_LEN as i32,
-            self.z / CHUNK_CUBE_LEN as i32,
+            self.x / BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            self.y / BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            self.z / BLOCK_COUNT_IN_CHUNKSIDE as i32,
         )
     }
 }

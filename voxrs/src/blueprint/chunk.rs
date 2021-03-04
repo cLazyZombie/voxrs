@@ -2,8 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use enumflags2::BitFlags;
 use voxrs_math::*;
-
-use crate::asset::WorldBlockVis;
+use voxrs_types::Dir;
 
 use super::{ChunkId, CubeMatIdx};
 
@@ -11,11 +10,11 @@ pub struct Chunk {
     pub id: ChunkId,
     pub pos: Vector3,
     pub cubes: Vec<CubeMatIdx>, // 0 : empty
-    pub vis: Vec<BitFlags<WorldBlockVis>>,
+    pub vis: Vec<BitFlags<Dir>>,
 }
 
 impl Chunk {
-    pub fn new(pos: Vector3, cubes: Vec<u8>, vis: Vec<BitFlags<WorldBlockVis>>) -> Self {
+    pub fn new(pos: Vector3, cubes: Vec<u8>, vis: Vec<BitFlags<Dir>>) -> Self {
         Self {
             id: generate_chunk_id(),
             pos,
