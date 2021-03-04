@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset},
-    blueprint::{self, ChunkId, CubeIdx, CubeMatIdx},
+    blueprint::{self, ChunkId, BlockIdx, BlockMatIdx},
     io::FileSystem,
     safecloner::SafeCloner,
     texture,
@@ -246,7 +246,7 @@ pub struct ChunkVertex {
 }
 
 #[rustfmt::skip]
-pub const CUBE_VERTICES: &[ChunkVertex] = &[
+pub const BLOCK_VERTICES: &[ChunkVertex] = &[
     // +y
     ChunkVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
     ChunkVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
@@ -311,7 +311,7 @@ pub const CHUNK_INDICES: &[u32] = &[
     22, 21, 23,
 ];
 
-fn cube_indices_in_dir(vis: BitFlags<Dir>) -> Vec<u32> {
+fn block_indices_in_dir(vis: BitFlags<Dir>) -> Vec<u32> {
     let mut indices = Vec::new();
 
     for dir in vis.iter() {
@@ -329,13 +329,13 @@ fn cube_indices_in_dir(vis: BitFlags<Dir>) -> Vec<u32> {
 
 pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     let mut v = Vec::new() as Vec<ChunkVertex>;
-    v.reserve(CUBE_VERTICES.len() *  TOTAL_BLOCK_COUNTS_IN_CHUNK);
+    v.reserve(BLOCK_VERTICES.len() *  TOTAL_BLOCK_COUNTS_IN_CHUNK);
 
     for z in 0..BLOCK_COUNT_IN_CHUNKSIDE {
         for y in 0..BLOCK_COUNT_IN_CHUNKSIDE {
             for x in 0..BLOCK_COUNT_IN_CHUNKSIDE {
                 let offset = Vector3::new(x as f32, y as f32, z as f32);
-                v.extend(CUBE_VERTICES.iter().map(|v| {
+                v.extend(BLOCK_VERTICES.iter().map(|v| {
                     let new_position =
                         offset + Vector3::new(v.position[0], v.position[1], v.position[2]);
                     ChunkVertex {
@@ -355,29 +355,24 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
 }
 
 /// #Inputs
-/// cube_indices: (idx, mat_idx)
+/// block_indices: (idx, mat_idx)
 /// #Returns
 ///  ().0 : index buffer
 ///  ().1 : index count
 pub fn create_chunk_indexbuffer(
-    cube_indices: &[CubeIdx],
+    block_indices: &[BlockIdx],
     device: &wgpu::Device,
     vis: &[BitFlags<Dir>],
 ) -> (wgpu::Buffer, u32) {
     let mut v = Vec::<u32>::new();
-    v.reserve(cube_indices.len() * CHUNK_INDICES.len());
-    for &cube_idx in cube_indices {
-        let indices = cube_indices_in_dir(vis[cube_idx as usize]);
+    v.reserve(block_indices.len() * CHUNK_INDICES.len());
+    for &block_idx in block_indices {
+        let indices = block_indices_in_dir(vis[block_idx as usize]);
         v.extend(
             indices
                 .iter()
-                .map(|idx| *idx + (cube_idx as usize * CUBE_VERTICES.len()) as u32),
+                .map(|idx| *idx + (block_idx as usize * BLOCK_VERTICES.len()) as u32),
         );
-        // v.extend(
-        //     CHUNK_INDICES
-        //         .iter()
-        //         .map(|idx| *idx + (cube_idx as usize * CHUNK_VERTICES.len()) as u32),
-        // );
     }
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -434,27 +429,27 @@ impl Chunk {
 
         // sort by material id
         // Vec : block location, material index
-        let mat_cubes = {
-            let mut mat_cubes: HashMap<CubeMatIdx, Vec<CubeIdx>> = HashMap::new();
-            for (idx, mat_idx) in bp.cubes.iter().enumerate() {
+        let mat_blocks = {
+            let mut mat_blocks: HashMap<BlockMatIdx, Vec<BlockIdx>> = HashMap::new();
+            for (idx, mat_idx) in bp.blocks.iter().enumerate() {
                 if *mat_idx == 0 {
                     continue;
                 }
 
-                if let Some(cubes) = mat_cubes.get_mut(mat_idx) {
-                    cubes.push(idx as CubeIdx);
+                if let Some(blocks) = mat_blocks.get_mut(mat_idx) {
+                    blocks.push(idx as BlockIdx);
                 } else {
-                    let mut cubes = Vec::new();
-                    cubes.push(idx as CubeIdx);
-                    mat_cubes.insert(*mat_idx, cubes);
+                    let mut blocks = Vec::new();
+                    blocks.push(idx as BlockIdx);
+                    mat_blocks.insert(*mat_idx, blocks);
                 }
             }
-            mat_cubes
+            mat_blocks
         };
 
         let world_mat = world_material.get_asset().unwrap();
 
-        for (k, v) in mat_cubes {
+        for (k, v) in mat_blocks {
             let material = world_mat
                 .material_handles
                 .get(&k)

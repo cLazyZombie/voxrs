@@ -52,13 +52,6 @@ fn main() {
 
             let bp = game.render();
 
-            //let cubes = (0..CHUNK_TOTAL_CUBE_COUNT).map(|v| (v % 3) as u8).collect();
-
-            //let chunk = voxrs::blueprint::Chunk::new(Vector3::new(0.0, 0.0, 0.0), cubes);
-            //let chunk = SafeCloner::new(chunk);
-
-            //bp.add_chunk(chunk.clone_read());
-
             if let Err(_) = sender.send(render::Command::Render(bp)) {
                 *control_flow = ControlFlow::Exit;
             }

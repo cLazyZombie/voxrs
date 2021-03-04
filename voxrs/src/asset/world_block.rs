@@ -172,7 +172,7 @@ impl WorldBlockAssetRaw {
         assert_eq!(self.block_counts.y % chunk_len, 0);
         assert_eq!(self.block_counts.z % chunk_len, 0);
 
-        // check cube counts in chunk
+        // check block counts in chunk
         for chunk in &self.world_chunks {
             assert_eq!(chunk.blocks.len(), TOTAL_BLOCK_COUNTS_IN_CHUNK);
         }
@@ -182,7 +182,7 @@ impl WorldBlockAssetRaw {
 #[derive(Deserialize)]
 pub struct WorldChunkRaw {
     pub idx: i32,        // chunk index (x, y, z order)
-    pub blocks: Vec<u8>, // CUBE_CHUNK_LEN ^ 3 (== CHUNK_TOTAL_CUBE_COUNT)
+    pub blocks: Vec<u8>, // == TOTAL_BLOCK_COUNTS_IN_CHUNK
 }
 
 #[cfg(test)]
