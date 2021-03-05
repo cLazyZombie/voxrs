@@ -36,8 +36,8 @@ impl ChunkRenderSystem {
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
 
-        let vs_asset = vs_handle.get_asset().unwrap();
-        let fs_asset = fs_handle.get_asset().unwrap();
+        let vs_asset = vs_handle.get_asset();
+        let fs_asset = fs_handle.get_asset();
 
         let vs_module = vs_asset.module.as_ref().unwrap();
         let fs_module = fs_asset.module.as_ref().unwrap();
@@ -447,16 +447,16 @@ impl Chunk {
             mat_blocks
         };
 
-        let world_mat = world_material.get_asset().unwrap();
+        let world_mat = world_material.get_asset();
 
         for (k, v) in mat_blocks {
             let material = world_mat
                 .material_handles
                 .get(&k)
                 .unwrap()
-                .get_asset()
-                .unwrap();
-            let diffuse_asset = material.diffuse_tex.get_asset().unwrap();
+                .get_asset();
+
+            let diffuse_asset = material.diffuse_tex.get_asset();
             let diffuse = diffuse_asset.texture.as_ref().unwrap();
 
             let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

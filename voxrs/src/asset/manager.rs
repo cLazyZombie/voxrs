@@ -381,7 +381,7 @@ mod tests {
     fn get_text() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle = manager.get::<TextAsset>(&"test.txt".into());
-        let text_asset = handle.get_asset().unwrap();
+        let text_asset = handle.get_asset();
         assert_eq!(text_asset.text, "test text file");
     }
 
@@ -389,7 +389,7 @@ mod tests {
     fn get_texture() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle: AssetHandle<TextureAsset> = manager.get(&"texture.png".into());
-        let texture_asset: &TextureAsset = handle.get_asset().unwrap();
+        let texture_asset = handle.get_asset();
         assert_eq!(
             texture_asset.buf,
             include_bytes!("../test_assets/texture.png")
@@ -400,9 +400,9 @@ mod tests {
     fn get_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle: AssetHandle<MaterialAsset> = manager.get(&AssetPath::from_str("material.mat"));
-        let material_asset: &MaterialAsset = handle.get_asset().unwrap();
+        let material_asset = handle.get_asset();
 
-        let diffuse_tex = material_asset.diffuse_tex.get_asset().unwrap();
+        let diffuse_tex = material_asset.diffuse_tex.get_asset();
         assert_eq!(
             diffuse_tex.buf,
             include_bytes!("../test_assets/texture.png")
@@ -415,7 +415,7 @@ mod tests {
         let handle: AssetHandle<WorldMaterialAsset> =
             manager.get(&AssetPath::from_str("world_material.wmt"));
 
-        let asset: &WorldMaterialAsset = handle.get_asset().unwrap();
+        let asset = handle.get_asset();
 
         asset.material_handles.get(&1).unwrap();
         asset.material_handles.get(&10).unwrap();
@@ -453,7 +453,7 @@ mod tests {
             let handle: AssetHandle<TextAsset> = clonned.get(&clonned_path);
             assert_eq!(clonned.get_rc::<TextAsset>(&clonned_path).unwrap(), 2);
 
-            let text_asset: &TextAsset = handle.get_asset().unwrap();
+            let text_asset = handle.get_asset();
             assert_eq!(text_asset.text, "test text file");
         });
 
@@ -471,6 +471,6 @@ mod tests {
         let path: AssetPath = "world_block.wb".into();
         let handle: AssetHandle<WorldBlockAsset> = manager.get(&path);
 
-        let _asset = handle.get_asset().unwrap();
+        let _asset = handle.get_asset();
     }
 }

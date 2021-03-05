@@ -1,7 +1,6 @@
 mod asset_path;
 mod assets;
 mod handle;
-mod whandle;
 mod manager;
 
 mod material;
@@ -15,8 +14,8 @@ pub use assets::AssetBuildResult;
 
 pub use asset_path::AssetPath;
 
+//pub use handle::AssetHandle;
 pub use handle::AssetHandle;
-pub use whandle::WAssetHandle;
 pub use manager::AssetManager;
 
 pub use material::MaterialAsset;
