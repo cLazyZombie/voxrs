@@ -6,17 +6,15 @@ use std::{ops::{Deref, DerefMut}, sync::Arc};
 /// asset in normal AssetHandle is read-only
 /// but asset in WAssetHandle can be modified
 pub struct WAssetHandle<T: Asset + 'static> {
-    loader: Arc<Once>,
+    loader: Arc<(Once, ReceiveType<T>)>,
     asset: Arc<RwLock<Option<T>>>,
-    recv: Arc<ReceiveType<T>>,
 }
 
 impl<T: Asset + 'static> WAssetHandle<T> {
     pub fn new(recv: ReceiveType<T>) -> Self {
         Self {
-            loader: Arc::new(Once::new()),
+            loader: Arc::new((Once::new(), recv)),
             asset: Arc::new(RwLock::new(None)),
-            recv: Arc::new(recv),
         }
     }
 
@@ -38,7 +36,7 @@ impl<T: Asset + 'static> WAssetHandle<T> {
     }
 
     fn load_asset(&self) {
-        self.loader.call_once(|| match self.recv.recv() {
+        self.loader.0.call_once(|| match self.loader.1.recv() {
             Ok(result) => match result {
                 Ok(asset) => {
                     let mut lock = self.asset.write();
@@ -56,7 +54,6 @@ impl<T: Asset + 'static> Clone for WAssetHandle<T> {
         Self {
             loader: Arc::clone(&self.loader),
             asset: Arc::clone(&self.asset),
-            recv: Arc::clone(&self.recv),
         }
     }
 }
