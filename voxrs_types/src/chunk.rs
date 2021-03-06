@@ -22,6 +22,19 @@ pub enum Dir {
     ZNeg = 0b00100000,
 }
 
+impl Dir {
+    pub fn opposite_dir(&self) -> Self {
+        match *self {
+            Dir::XPos => Dir::XNeg,
+            Dir::XNeg => Dir::XPos,
+            Dir::YPos => Dir::YNeg,
+            Dir::YNeg => Dir::YPos,
+            Dir::ZPos => Dir::ZNeg,
+            Dir::ZNeg => Dir::ZPos,
+        }
+    }
+}
+
 /// block count in world in each direction (x, y, z)
 #[derive(Copy, Clone, Debug, Deserialize)]
 pub struct WorldBlockCounts {

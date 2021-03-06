@@ -1,6 +1,6 @@
 #![allow(dead_code)] // todo: remove
 
-use enumflags2::{make_bitflags, BitFlags};
+use enumflags2::{BitFlags};
 use serde::Deserialize;
 use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, ChunkPos, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, WorldBlockCounts, WorldChunkCounts};
 
@@ -88,17 +88,17 @@ fn build_vis(chunk_idx: usize, chunk_counts: &WorldChunkCounts, chunks: &[Option
     let mut vis_vec = Vec::new();
     vis_vec.reserve(cur_chunk.blocks.len());
 
-    let full_vis = make_bitflags!(Dir::{XPos|XNeg|YPos|YNeg|ZPos|ZNeg});
+    let full_vis = BitFlags::<Dir>::all();
 
     for block_idx in 0..cur_chunk.blocks.len() {
         // if current block is empty, then skip
         let cur_block = cur_chunk.blocks[block_idx];
         if cur_block == 0 {
-            vis_vec.push(BitFlags::<Dir>::default());
+            vis_vec.push(BitFlags::<Dir>::empty());
             continue;
         }
 
-        let mut vis = BitFlags::<Dir>::default();
+        let mut vis = BitFlags::<Dir>::empty();
 
         for dir in full_vis.iter() {
             if is_visible_dir(chunk_idx, block_idx, dir, chunk_counts, chunks) {
