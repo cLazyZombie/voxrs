@@ -8,8 +8,7 @@ use crate::{
 use voxrs_math::*;
 
 use super::{
-    components::CameraComp,
-    resources::{ElapsedTimeRes, KeyInput, WorldBlockRes},
+    resources::{ElapsedTimeRes, KeyInput, WorldBlockRes, CameraRes},
     systems::{camera, world_block_render},
     Clock,
 };
@@ -19,21 +18,20 @@ pub struct Game {
     res: Resources,
     tick_schedule: Schedule,
     render_schedule: Schedule,
-    _camera: Entity,
 
     clock: Clock,
 }
 
 impl Game {
     pub fn new<F: FileSystem>(aspect: f32, asset_manager: &mut AssetManager<F>) -> Self {
-        let mut world = World::default();
+        let world = World::default();
         let mut res = Resources::default();
 
         let world_block_res =
             WorldBlockRes::new(&AssetPath::from_str("assets/world_01.wb"), asset_manager);
         res.insert(world_block_res);
 
-        let camera = CameraComp::new(
+        let camera = CameraRes::new(
             Vector3::new(3.5, 3.5, -10.0),
             Vector3::new(0.5, 0.5, 10.0),
             Vector3::new(0.0, 1.0, 0.0),
@@ -42,8 +40,7 @@ impl Game {
             0.1,
             100.0,
         );
-
-        let camera = world.push((camera,));
+        res.insert(camera);
 
         let tick_schedule = Schedule::builder()
             .add_system(camera::camera_move_system())
@@ -61,7 +58,6 @@ impl Game {
             res,
             tick_schedule,
             render_schedule,
-            _camera: camera,
             clock,
         }
     }
@@ -72,10 +68,8 @@ impl Game {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        let mut camera_qry = <&mut CameraComp>::query();
-        for camera in camera_qry.iter_mut(&mut self.world) {
-            camera.resize(width, height);
-        }
+        let mut camera_res = self.res.get_mut::<CameraRes>().unwrap();
+        camera_res.resize(width, height);
     }
 
     pub fn tick(&mut self) {

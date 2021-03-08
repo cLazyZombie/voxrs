@@ -1,7 +1,7 @@
 use crate::blueprint::Camera;
 use voxrs_math::*;
 
-pub struct CameraComp {
+pub struct CameraRes {
     eye: Vector3,
     target: Vector3,
     up: Vector3,
@@ -11,7 +11,7 @@ pub struct CameraComp {
     zfar: f32,
 }
 
-impl Clone for CameraComp {
+impl Clone for CameraRes {
     fn clone(&self) -> Self {
         Self::new(
             self.eye,
@@ -25,7 +25,7 @@ impl Clone for CameraComp {
     }
 }
 
-impl CameraComp {
+impl CameraRes {
     pub fn new(
         eye: Vector3,
         target: Vector3,
@@ -63,7 +63,7 @@ impl CameraComp {
     }
 }
 
-impl Into<Camera> for &CameraComp {
+impl Into<Camera> for &CameraRes {
     fn into(self) -> Camera {
         Camera {
             eye: self.eye,

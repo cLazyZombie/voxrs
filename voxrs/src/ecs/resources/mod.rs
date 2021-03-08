@@ -15,3 +15,6 @@ pub struct KeyInput(KeyboardInput);
 
 mod world_block_res;
 pub use world_block_res::WorldBlockRes;
+
+mod camera_res;
+pub use camera_res::CameraRes;

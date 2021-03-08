@@ -5,13 +5,12 @@ use crate::{blueprint::Blueprint};
 use voxrs_math::*;
 
 use crate::ecs::{
-    components::CameraComp,
-    resources::{ElapsedTimeRes, KeyInput},
+    resources::{ElapsedTimeRes, KeyInput, CameraRes},
 };
 
-#[system(for_each)]
+#[system]
 pub fn camera_move(
-    camera: &mut CameraComp,
+    #[resource] camera: &mut CameraRes,
     #[resource] elapsed_time: &ElapsedTimeRes,
     #[resource] key_input: &Option<KeyInput>,
 ) {
@@ -43,7 +42,10 @@ pub fn camera_move(
     }
 }
 
-#[system(for_each)]
-pub fn camera_render(camera: &CameraComp, #[resource] bp: &mut Blueprint) {
+#[system]
+pub fn camera_render(
+    #[resource] camera: &CameraRes, 
+    #[resource] bp: &mut Blueprint,
+) {
     bp.set_camera(camera.into());
 }
