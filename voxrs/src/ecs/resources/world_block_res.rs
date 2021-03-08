@@ -1,6 +1,9 @@
 use enumflags2::BitFlags;
 use voxrs_types::{BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
 
+#[cfg(test)]
+use voxrs_types::WorldChunkCounts;
+
 use crate::{
     asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset},
     blueprint::{BlockMatIdx, Chunk},
@@ -140,6 +143,12 @@ impl WorldBlockRes {
             true
         }
     }
+
+    #[cfg(test)]
+    pub fn get_world_chunk_counts(&self) -> WorldChunkCounts {
+        let asset = self.handle.get_asset();
+        asset.chunk_counts
+    }
 }
 
 #[cfg(test)]
@@ -153,5 +162,26 @@ mod test {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let path: AssetPath = "world_block.wb".into();
         let _res = WorldBlockRes::new(&path, &mut manager);
+    }
+
+    #[test]
+    fn test_set_block() {
+        let mut manager = AssetManager::<MockFileSystem>::new();
+        let path: AssetPath = "world_block.wb".into();
+        let mut res = WorldBlockRes::new(&path, &mut manager);
+        let world_chunk_counts = res.get_world_chunk_counts();
+        let block_pos = BlockPos::from_world_xyz(&world_chunk_counts, (0, 0, 0)).unwrap();
+        res.set_block(block_pos, 0);
+
+        assert_eq!(res.get_block(block_pos), Some(0));
+        let vis = res.get_block_vis(BlockPos::from_world_xyz(&world_chunk_counts, (1, 0, 0)).unwrap()).unwrap();
+        assert_eq!(vis.contains(Dir::XNeg), true);
+        assert_eq!(vis.contains(Dir::XPos), false);
+
+        let block_pos = BlockPos::from_world_xyz(&world_chunk_counts, (BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0)).unwrap();
+        res.set_block(block_pos, 0);
+        let vis = res.get_block_vis(BlockPos::from_world_xyz(&world_chunk_counts, (BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0)).unwrap()).unwrap();
+        assert_eq!(vis.contains(Dir::XNeg), true);
+        assert_eq!(vis.contains(Dir::XPos), false);
     }
 }
