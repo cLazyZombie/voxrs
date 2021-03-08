@@ -11,6 +11,8 @@ use crate::{
     safecloner::SafeCloner,
 };
 
+use super::CameraRes;
+
 pub struct WorldBlockRes {
     pub handle: AssetHandle<WorldBlockAsset>,
     pub chunks: Vec<Option<SafeCloner<Chunk>>>,
@@ -40,6 +42,18 @@ impl WorldBlockRes {
         }
 
         Self { handle, chunks }
+    }
+
+    pub fn frustum_culling(&self, _camera: &CameraRes) -> Vec<&SafeCloner<Chunk>> {
+        let mut culled = Vec::new();
+
+        for chunk in &self.chunks {
+            if let Some(chunk) = chunk {
+                culled.push(chunk);
+            }
+        }
+
+        culled
     }
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<u8> {
@@ -174,13 +188,27 @@ mod test {
         res.set_block(block_pos, 0);
 
         assert_eq!(res.get_block(block_pos), Some(0));
-        let vis = res.get_block_vis(BlockPos::from_world_xyz(&world_chunk_counts, (1, 0, 0)).unwrap()).unwrap();
+        let vis = res
+            .get_block_vis(BlockPos::from_world_xyz(&world_chunk_counts, (1, 0, 0)).unwrap())
+            .unwrap();
         assert_eq!(vis.contains(Dir::XNeg), true);
         assert_eq!(vis.contains(Dir::XPos), false);
 
-        let block_pos = BlockPos::from_world_xyz(&world_chunk_counts, (BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0)).unwrap();
+        let block_pos = BlockPos::from_world_xyz(
+            &world_chunk_counts,
+            (BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0),
+        )
+        .unwrap();
         res.set_block(block_pos, 0);
-        let vis = res.get_block_vis(BlockPos::from_world_xyz(&world_chunk_counts, (BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0)).unwrap()).unwrap();
+        let vis = res
+            .get_block_vis(
+                BlockPos::from_world_xyz(
+                    &world_chunk_counts,
+                    (BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0),
+                )
+                .unwrap(),
+            )
+            .unwrap();
         assert_eq!(vis.contains(Dir::XNeg), true);
         assert_eq!(vis.contains(Dir::XPos), false);
     }
