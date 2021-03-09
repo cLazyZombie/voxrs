@@ -1,3 +1,5 @@
+use std::{borrow::Borrow, fmt::Display};
+
 use nalgebra_glm as glm;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3 {
@@ -36,6 +38,13 @@ impl Vector3 {
     pub fn get_inner(&self) -> &glm::Vec3 {
         &self.v
     }
+
+    pub fn dot(lhs: impl Borrow<Vector3>, rhs: impl Borrow<Vector3>) -> f32 {
+        let lhs = Borrow::<Vector3>::borrow(&lhs);
+        let rhs = Borrow::<Vector3>::borrow(&rhs);
+
+        lhs.v.dot(&rhs.v)
+    }
 }
 
 impl std::ops::Add for Vector3 {
@@ -43,6 +52,14 @@ impl std::ops::Add for Vector3 {
 
     fn add(self, rhs: Self) -> Self::Output {
         Self::Output { v: self.v + rhs.v }
+    }
+}
+
+impl std::ops::Sub for Vector3 {
+    type Output = Vector3;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::Output { v: self.v - rhs.v }
     }
 }
 
@@ -76,6 +93,28 @@ impl From<&[f32; 3]> for Vector3 {
 impl Default for Vector3 {
     fn default() -> Self {
         Self::new(0.0, 0.0, 0.0)
+    }
+}
+
+impl Display for Vector3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}, {}, {}", self.v[0], self.v[1], self.v[2])
+    }
+}
+
+#[cfg(test)]
+impl approx::AbsDiffEq for Vector3 
+{
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        f32::EPSILON
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        f32::abs_diff_eq(&self.v[0], &other.v[0], epsilon) &&
+        f32::abs_diff_eq(&self.v[1], &other.v[1], epsilon) &&
+        f32::abs_diff_eq(&self.v[2], &other.v[2], epsilon) 
     }
 }
 
