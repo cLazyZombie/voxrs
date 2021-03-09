@@ -1,5 +1,6 @@
 use crate::Vector3;
 
+#[derive(Copy, Clone, Debug)]
 pub struct Aabb {
     pub min: Vector3,
     pub max: Vector3,

@@ -21,4 +21,5 @@ pub fn world_block_render(
     for chunk in culled_chunks {
         bp.add_chunk(chunk.clone_read());
     }
+
 }

@@ -1,4 +1,5 @@
 use enumflags2::BitFlags;
+use voxrs_math::{Aabb, Frustum, Vector3};
 use voxrs_types::{BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
 
 #[cfg(test)]
@@ -25,6 +26,8 @@ impl WorldBlockRes {
 
         {
             let asset = handle.get_asset();
+            let chunk_size = asset.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
+            let chunk_extend = Vector3::new(chunk_size, chunk_size, chunk_size);
 
             chunks.resize_with(asset.world_chunks.len(), Default::default);
 
@@ -33,6 +36,7 @@ impl WorldBlockRes {
                     let pos = asset.get_world_pos(chunk_asset.idx);
                     let chunk = SafeCloner::new(Chunk::new(
                         pos,
+                        Aabb::new( pos, pos + chunk_extend),
                         chunk_asset.blocks.clone(),
                         chunk_asset.vis.clone(),
                     ));
@@ -44,12 +48,16 @@ impl WorldBlockRes {
         Self { handle, chunks }
     }
 
-    pub fn frustum_culling(&self, _camera: &CameraRes) -> Vec<&SafeCloner<Chunk>> {
+    pub fn frustum_culling(&self, camera: &CameraRes) -> Vec<&SafeCloner<Chunk>> {
         let mut culled = Vec::new();
+
+        let frustum = Frustum::new(&camera.build_view_projection_matrix());
 
         for chunk in &self.chunks {
             if let Some(chunk) = chunk {
-                culled.push(chunk);
+                if frustum.cull_aabb(&chunk.aabb) {
+                    culled.push(chunk);
+                }
             }
         }
 
@@ -78,6 +86,8 @@ impl WorldBlockRes {
             let asset = self.handle.get_asset();
 
             let pos = asset.get_world_pos(block_pos.chunk_idx);
+            let aabb = asset.get_chunk_aabb(block_pos.chunk_idx);
+
             let mut blocks = Vec::new();
             blocks.resize_with(BLOCK_COUNT_IN_CHUNKSIDE, Default::default);
             blocks[block_pos.block_idx as usize] = block_val;
@@ -88,7 +98,7 @@ impl WorldBlockRes {
                 vis[block_pos.block_idx as usize] = BitFlags::all();
             }
 
-            let chunk = SafeCloner::new(Chunk::new(pos, blocks, vis));
+            let chunk = SafeCloner::new(Chunk::new(pos, aabb, blocks, vis));
 
             self.chunks[block_pos.chunk_idx as usize] = Some(chunk);
         }

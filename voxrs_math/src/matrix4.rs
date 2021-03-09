@@ -78,7 +78,10 @@ impl std::ops::Index<(usize, usize)> for Matrix4 {
     type Output = f32;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
-        self.m.index(index.0 + index.1 * 4)
+        assert!(index.0 > 0 && index.0 <= 4);
+        assert!(index.1 > 0 && index.1 <= 4);
+
+        self.m.index((index.0 - 1) + (index.1 - 1) * 4)
     }
 }
 
@@ -101,8 +104,6 @@ impl Default for Matrix4 {
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
-    use approx::*;
-
     use super::*;
 
     #[test]
@@ -116,7 +117,7 @@ mod tests {
 
         for c in 0..4_usize {
             for r in 0..4_usize {
-                assert_relative_eq!(m[(r, c)], (r * 4 + (c + 1)) as f32);
+                assert_eq!(m[(r+1, c+1)], (r * 4 + (c + 1)) as f32);
             }
         }
     }
@@ -124,10 +125,10 @@ mod tests {
     #[test]
     fn create_identity_matrix() {
         let m = Matrix4::identity();
-        assert_relative_eq!(m[(0, 0)], 1.0);
-        assert_relative_eq!(m[(1, 1)], 1.0);
-        assert_relative_eq!(m[(2, 2)], 1.0);
-        assert_relative_eq!(m[(3, 3)], 1.0);
+        assert_eq!(m[(1, 1)], 1.0);
+        assert_eq!(m[(2, 2)], 1.0);
+        assert_eq!(m[(3, 3)], 1.0);
+        assert_eq!(m[(4, 4)], 1.0);
     }
 
     #[test]

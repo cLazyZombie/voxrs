@@ -18,6 +18,13 @@ impl Plane {
         }
     }
 
+    pub fn from_unnorm(x: f32, y: f32, z: f32, d: f32) -> Self {
+        let v = Vector3::new(x, y, z);
+        let mag = v.magnitude();
+
+        Self::new(v.x() / mag, v.y() / mag, v.z() / mag, d / mag)
+    }
+
     pub fn x(&self) -> f32 {
         self.p[0]
     }

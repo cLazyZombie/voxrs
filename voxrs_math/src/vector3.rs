@@ -45,6 +45,19 @@ impl Vector3 {
 
         lhs.v.dot(&rhs.v)
     }
+
+    pub fn get_normalized(v: impl Borrow<Vector3>) -> Self {
+        let v = Borrow::<Vector3>::borrow(&v);
+        
+        Self {
+            v: v.v.normalize()
+        }
+    }
+
+    pub fn magnitude(&self) -> f32 {
+        let mag = self.v.magnitude();
+        mag
+    }
 }
 
 impl std::ops::Add for Vector3 {

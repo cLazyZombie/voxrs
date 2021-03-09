@@ -61,6 +61,13 @@ impl WorldBlockAsset {
         let chunk_pos = ChunkPos::new(&self.chunk_counts, idx);
         chunk_pos.get_world_pos(self.block_size.to_f32())
     }
+
+    pub fn get_chunk_aabb(&self, chunk_idx: i32) -> Aabb {
+        let min = self.get_world_pos(chunk_idx);
+        let size = &self.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
+        let max = min + Vector3::new(size, size, size);
+        Aabb::new(min, max)
+    }
 }
 
 pub struct WorldChunk {
