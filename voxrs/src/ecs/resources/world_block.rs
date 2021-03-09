@@ -1,4 +1,6 @@
 use enumflags2::BitFlags;
+use rayon::prelude::*;
+
 use voxrs_math::{Aabb, Frustum, Vector3};
 use voxrs_types::{BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
 
@@ -49,19 +51,26 @@ impl WorldBlockRes {
     }
 
     pub fn frustum_culling(&self, camera: &CameraRes) -> Vec<&SafeCloner<Chunk>> {
-        let mut culled = Vec::new();
+        //let mut culled = Vec::new();
 
         let frustum = Frustum::new(&camera.build_view_projection_matrix());
 
-        for chunk in &self.chunks {
-            if let Some(chunk) = chunk {
-                if frustum.cull_aabb(&chunk.aabb) {
-                    culled.push(chunk);
-                }
-            }
-        }
+        let chunks = self.chunks.par_iter()
+            .filter_map(|c| c.as_ref()) // remove none
+            .filter(|c| frustum.cull_aabb(&c.aabb))
+            .collect();
+        
+        return chunks;
 
-        culled
+        // for chunk in &self.chunks {
+        //     if let Some(chunk) = chunk {
+        //         if frustum.cull_aabb(&chunk.aabb) {
+        //             culled.push(chunk);
+        //         }
+        //     }
+        // }
+
+        // culled
     }
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<u8> {

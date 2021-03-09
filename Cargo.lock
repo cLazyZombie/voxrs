@@ -2251,6 +2251,7 @@ dependencies = [
  "legion",
  "log",
  "parking_lot",
+ "rayon",
  "serde",
  "serde_json",
  "shaderc",
