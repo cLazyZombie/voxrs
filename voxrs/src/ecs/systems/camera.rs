@@ -5,18 +5,19 @@ use crate::{blueprint::Blueprint};
 use voxrs_math::*;
 
 use crate::ecs::{
-    resources::{ElapsedTimeRes, KeyInput, CameraRes},
+    resources::{ElapsedTimeRes, KeyInputRes, CameraRes},
 };
 
 #[system]
 pub fn camera_move(
     #[resource] camera: &mut CameraRes,
     #[resource] elapsed_time: &ElapsedTimeRes,
-    #[resource] key_input: &Option<KeyInput>,
+    #[resource] key_input: &Option<KeyInputRes>,
 ) {
     const MOVE_SPEED: f32 = 20.0;
 
     let elapsed_time: f32 = **elapsed_time;
+
     if let Some(key_input) = key_input {
         if let Some(key) = key_input.virtual_keycode {
             if key_input.state != ElementState::Pressed {

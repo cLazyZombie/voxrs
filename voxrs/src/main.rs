@@ -1,6 +1,6 @@
 use voxrs::{
     asset::AssetManager,
-    ecs::{game::Game, resources::KeyInput},
+    ecs::{game::Game, resources::KeyInputRes},
     io::GeneralFileSystem,
     render,
 };
@@ -19,7 +19,7 @@ fn main() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
-    let mut key_input: Option<KeyInput> = None;
+    let mut key_input: Option<KeyInputRes> = None;
 
     let mut asset_manager = AssetManager::<GeneralFileSystem>::new();
     let (sender, receiver) = crossbeam_channel::bounded(1);
@@ -46,7 +46,7 @@ fn main() {
         Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
             game.set_input(key_input);
-            key_input = None;
+            //key_input = None;
 
             game.tick();
 

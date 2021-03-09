@@ -1,20 +1,11 @@
-use derive_more::{Deref, DerefMut, From};
-use winit::event::KeyboardInput;
+mod key_input;
+pub use key_input::KeyInputRes;
 
-#[derive(From, DerefMut, Deref, Copy, Clone)]
-pub struct ElapsedTimeRes(f32);
+mod world_block;
+pub use world_block::WorldBlockRes;
 
-impl Default for ElapsedTimeRes {
-    fn default() -> Self {
-        Self(0.0)
-    }
-}
+mod camera;
+pub use camera::CameraRes;
 
-#[derive(From, Deref, Copy, Clone)]
-pub struct KeyInput(KeyboardInput);
-
-mod world_block_res;
-pub use world_block_res::WorldBlockRes;
-
-mod camera_res;
-pub use camera_res::CameraRes;
+mod elapsed_time;
+pub use elapsed_time::ElapsedTimeRes;

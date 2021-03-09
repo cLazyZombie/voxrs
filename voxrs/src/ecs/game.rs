@@ -8,7 +8,7 @@ use crate::{
 use voxrs_math::*;
 
 use super::{
-    resources::{ElapsedTimeRes, KeyInput, WorldBlockRes, CameraRes},
+    resources::{ElapsedTimeRes, KeyInputRes, WorldBlockRes, CameraRes},
     systems::{camera, world_block_render},
     Clock,
 };
@@ -62,8 +62,8 @@ impl Game {
         }
     }
 
-    pub fn set_input(&mut self, key_input: Option<KeyInput>) {
-        let mut key_res = self.res.get_mut_or_default::<Option<KeyInput>>();
+    pub fn set_input(&mut self, key_input: Option<KeyInputRes>) {
+        let mut key_res = self.res.get_mut_or_default::<Option<KeyInputRes>>();
         *key_res = key_input;
     }
 
