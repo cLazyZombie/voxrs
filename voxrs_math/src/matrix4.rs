@@ -72,6 +72,15 @@ impl Matrix4 {
             0.0, 0.0, 0.0, 1.0
         )
     }
+
+    /// get inverse matrix
+    /// panic if matrix is not invertable
+    pub fn inverse(&self) -> Self {
+        let inverted = self.m.try_inverse().unwrap();
+        Self {
+            m: inverted,
+        }
+    }
 }
 
 impl std::ops::Index<(usize, usize)> for Matrix4 {
