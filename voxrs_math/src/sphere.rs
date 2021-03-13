@@ -36,6 +36,18 @@ impl Sphere {
             Sphere::new(c, r)
         }
     }
+
+    pub fn fron_view_proj(
+        eye: Vector3,
+        target: Vector3,
+        up: Vector3,
+        near: f32,
+        far: f32,
+        aspect: f32,
+        fov: f32,
+    ) -> Self {
+        todo!()
+    }
 }
 
 #[cfg(test)]
