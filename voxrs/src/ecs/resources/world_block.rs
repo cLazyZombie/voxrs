@@ -54,10 +54,11 @@ impl WorldBlockRes {
         //let mut culled = Vec::new();
 
         let frustum = Frustum::new(&camera.build_view_projection_matrix());
+        let camera_sphere = camera.get_sphere();
 
         let chunks = self.chunks.par_iter()
             .filter_map(|c| c.as_ref()) // remove none
-            .filter(|c| frustum.cull_aabb(&c.aabb))
+            .filter(|c| camera_sphere.intersect_aabb(&c.aabb) && frustum.cull_aabb(&c.aabb))
             .collect();
         
         return chunks;

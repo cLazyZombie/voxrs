@@ -61,6 +61,10 @@ impl CameraRes {
         self.eye += offset;
         self.target += offset;
     }
+
+    pub fn get_sphere(&self) -> Sphere {
+        Sphere::from_view_proj(&self.eye, &self.target, &self.up, self.znear, self.zfar, self.aspect, self.fovy)
+    }
 }
 
 impl Into<Camera> for &CameraRes {

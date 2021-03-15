@@ -1,4 +1,4 @@
-use crate::Vector3;
+use crate::{Aabb, Matrix4, Vector3};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sphere {
@@ -37,16 +37,42 @@ impl Sphere {
         }
     }
 
-    pub fn fron_view_proj(
-        eye: Vector3,
-        target: Vector3,
-        up: Vector3,
+    pub fn from_view_proj(
+        eye: &Vector3,
+        target: &Vector3,
+        up: &Vector3,
         near: f32,
         far: f32,
         aspect: f32,
         fov: f32,
     ) -> Self {
-        todo!()
+        let sphere = Sphere::from_proj(near, far, aspect, fov);
+
+        let view = Matrix4::look_at(eye, target, up);
+        let inv_view = view.inverse();
+
+        let center = inv_view.transform_point(&sphere.c);
+
+        Self {
+            c: center,
+            r: sphere.r,
+        }
+    }
+
+    /// sphere aabb intersection
+    /// https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+    pub fn intersect_aabb(&self, aabb: &Aabb) -> bool {
+        let x = f32::max(aabb.min.x(), f32::min(self.c.x(), aabb.max.x()));
+        let y = f32::max(aabb.min.y(), f32::min(self.c.y(), aabb.max.y()));
+        let z = f32::max(aabb.min.z(), f32::min(self.c.z(), aabb.max.z()));
+
+        let distance = f32::sqrt(
+            (x - self.c.x()) * (x - self.c.x())
+                + (y - self.c.y()) * (y - self.c.y())
+                + (z - self.c.z()) * (z - self.c.z()),
+        );
+
+        distance < self.r
     }
 }
 
@@ -68,5 +94,22 @@ mod test {
         println!("{:?}", sp);
         assert!(sp.c.z() >= 1.0 && sp.c.z() <= 10.0);
         assert!(sp.r <= 20.0);
+    }
+    
+    #[test]
+    fn test_intersect_aabb() {
+        let sp = Sphere::new(Vector3::new(10.0, 10.0, 10.0), 90.0);
+
+        // fully inside
+        let aabb = Aabb::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(20.0, 20.0, 20.0));
+        assert_eq!(sp.intersect_aabb(&aabb), true);
+
+        // between
+        let aabb = Aabb::new(Vector3::new(50.0, 50.0, 50.0), Vector3::new(120.0, 120.0, 120.0));
+        assert_eq!(sp.intersect_aabb(&aabb), true);
+        
+        // outside
+        let aabb = Aabb::new(Vector3::new(110.0, 110.0, 110.0), Vector3::new(120.0, 120.0, 120.0));
+        assert_eq!(sp.intersect_aabb(&aabb), false);
     }
 }
