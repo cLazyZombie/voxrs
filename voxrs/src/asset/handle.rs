@@ -49,6 +49,12 @@ impl<T: Asset + 'static> AssetHandle<T> {
     pub fn ref_count(&self) -> usize {
         Arc::strong_count(&self.asset) - 1 // manager hold original handle. so do not count original
     }
+
+    /// cast &AssetHandle<T> to &AssetHandle<U>
+    /// panic if T != U
+    pub fn cast<U: Asset + 'static>(&self) -> &AssetHandle<U> {
+        (self as &dyn Any).downcast_ref().unwrap()
+    }
 }
 
 impl<T: Asset + 'static> Clone for AssetHandle<T> {
@@ -57,14 +63,6 @@ impl<T: Asset + 'static> Clone for AssetHandle<T> {
             loader: Arc::clone(&self.loader),
             asset: Arc::clone(&self.asset),
         }
-    }
-}
-
-/// cast &AssetHandle<T> to &AssetHandle<U>
-/// panic if T != U
-impl<T: Asset + 'static, U: Asset + 'static> AsRef<AssetHandle<U>> for AssetHandle<T> {
-    fn as_ref(&self) -> &AssetHandle<U> {
-        (self as &dyn Any).downcast_ref().unwrap()
     }
 }
 
@@ -193,11 +191,11 @@ mod tests {
     }
     
     fn convert<T: Asset + 'static>(h: &AssetHandle<TextAsset>) -> &AssetHandle<T> {
-        h.as_ref()
+        h.cast()
     }
 
     #[test]
-    fn as_ref_test() {
+    fn test_cast() {
         let (_, r) = crossbeam_channel::unbounded();
         let handle = AssetHandle::<TextAsset>::new(r);
         convert::<TextAsset>(&handle);
