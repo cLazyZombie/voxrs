@@ -5,3 +5,7 @@ members = [
     "voxrs_types",
     "voxrs_derive",
 ]
+default-members = ["voxrs"]
+
+[profile.release]
+debug = true
