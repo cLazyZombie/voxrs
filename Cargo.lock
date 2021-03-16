@@ -2194,6 +2194,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "voxrs_ed"
+version = "0.1.0"
+
+[[package]]
 name = "voxrs_math"
 version = "0.1.0"
 dependencies = [
