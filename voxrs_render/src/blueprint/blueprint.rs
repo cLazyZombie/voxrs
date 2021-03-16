@@ -49,3 +49,9 @@ impl Blueprint {
         self.chunks.push(chunk);
     }
 }
+
+impl Default for Blueprint {
+    fn default() -> Self {
+        Self::new()
+    }
+}

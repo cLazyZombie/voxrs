@@ -42,6 +42,12 @@ impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     }
 }
 
+impl<F: FileSystem + 'static> Default for AssetManager<F> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'wgpu, F: FileSystem + 'static> Clone for AssetManager<F> {
     fn clone(&self) -> Self {
         Self {
@@ -149,8 +155,8 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let result;
             if let Ok(v) = F::read_binary(&path).await {
                 let mut texture = TextureAsset::new(v);
-                if device.is_some() && queue.is_some() {
-                    texture.build(&device.unwrap(), &queue.unwrap());
+                if let (Some(device), Some(queue)) = (device, queue) {
+                    texture.build(&device, &queue);
                 }
                 result = Ok(texture);
             } else {
@@ -177,8 +183,8 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let result;
             if let Ok(v) = F::read_binary(&path).await {
                 let mut shader = ShaderAsset::new(v);
-                if device.is_some() && queue.is_some() {
-                    shader.build(&device.unwrap(), &queue.unwrap());
+                if let (Some(device), Some(queue)) = (device, queue) {
+                    shader.build(&device, &queue);
                 }
                 result = Ok(shader);
             } else {
@@ -400,7 +406,7 @@ mod tests {
     #[test]
     fn get_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<MaterialAsset> = manager.get(&AssetPath::from_str("material.mat"));
+        let handle: AssetHandle<MaterialAsset> = manager.get(&AssetPath::from("material.mat"));
         let material_asset = handle.get_asset();
 
         let diffuse_tex = material_asset.diffuse_tex.get_asset();
@@ -414,7 +420,7 @@ mod tests {
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle: AssetHandle<WorldMaterialAsset> =
-            manager.get(&AssetPath::from_str("world_material.wmt"));
+            manager.get(&AssetPath::from("world_material.wmt"));
 
         let asset = handle.get_asset();
 

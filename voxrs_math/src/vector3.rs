@@ -55,8 +55,7 @@ impl Vector3 {
     }
 
     pub fn magnitude(&self) -> f32 {
-        let mag = self.v.magnitude();
-        mag
+        self.v.magnitude()
     }
 }
 

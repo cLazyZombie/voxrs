@@ -50,7 +50,7 @@ fn main() {
 
             let bp = game.render();
 
-            if let Err(_) = sender.send(render::Command::Render(bp)) {
+            if sender.send(render::Command::Render(bp)).is_err() {
                 *control_flow = ControlFlow::Exit;
             }
             //window.request_redraw();

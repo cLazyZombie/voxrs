@@ -8,6 +8,7 @@ impl Clock {
     pub fn new() -> Self {
         Self { prev: None }
     }
+
     pub fn tick(&mut self) -> Duration {
         if let Some(prev) = self.prev {
             let now = Instant::now();
@@ -18,5 +19,11 @@ impl Clock {
             self.prev = Some(Instant::now());
             Duration::from_secs(0)
         }
+    }
+}
+
+impl Default for Clock {
+    fn default() -> Self {
+        Self::new()
     }
 }

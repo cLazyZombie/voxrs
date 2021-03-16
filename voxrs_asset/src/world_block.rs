@@ -51,7 +51,7 @@ impl WorldBlockAsset {
         Self {
             chunk_counts,
             block_size: raw.block_size,
-            world_material: asset_manager.get(&AssetPath::from_str(&raw.world_material)),
+            world_material: asset_manager.get(&AssetPath::from(&raw.world_material)),
             world_chunks,
         }
     }
@@ -63,7 +63,7 @@ impl WorldBlockAsset {
 
     pub fn get_chunk_aabb(&self, chunk_idx: i32) -> Aabb {
         let min = self.get_world_pos(chunk_idx);
-        let size = &self.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
+        let size = self.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
         let max = min + Vector3::new(size, size, size);
         Aabb::new(min, max)
     }
@@ -127,11 +127,7 @@ fn is_visible_dir(chunk_idx: usize, block_idx: usize, dir: Dir, chunk_counts: &W
         let neighbor_chunk = &chunks[neighbor_pos.chunk_idx as usize];
         if let Some(neighbor_chunk) = neighbor_chunk {
             let block = neighbor_chunk.blocks[neighbor_pos.block_idx as usize];
-            if block == 0 {
-                true
-            } else {
-                false
-            }
+            block == 0
         } else {
             true
         }
@@ -160,11 +156,11 @@ pub enum BlockSize {
 impl BlockSize {
     pub fn to_f32(&self) -> f32 {
         match self {
-            &BlockSize::Xs => 0.25,
-            &BlockSize::S => 0.5,
-            &BlockSize::M => 1.0,
-            &BlockSize::L => 2.0,
-            &BlockSize::Xl => 4.0,
+            BlockSize::Xs => 0.25,
+            BlockSize::S => 0.5,
+            BlockSize::M => 1.0,
+            BlockSize::L => 2.0,
+            BlockSize::Xl => 4.0,
         }
     }
 }

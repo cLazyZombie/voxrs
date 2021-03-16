@@ -1,3 +1,7 @@
+#![allow(clippy::clippy::too_many_arguments)]
+#![allow(clippy::many_single_char_names)]
+#![allow(clippy::clippy::len_without_is_empty)]
+
 mod matrix4;
 mod vector3;
 mod quat;

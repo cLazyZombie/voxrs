@@ -14,7 +14,7 @@ impl Sphere {
     }
 
     /// create sphere using projection
-    /// reference: https://lxjk.github.io/2017/04/15/Calculate-Minimal-Bounding-Sphere-of-Frustum.html
+    /// reference: <https://lxjk.github.io/2017/04/15/Calculate-Minimal-Bounding-Sphere-of-Frustum.html/>
     pub fn from_proj(near: f32, far: f32, aspect: f32, fov: f32) -> Self {
         let rev_aspect = 1.0 / aspect;
         let k = (1.0 + rev_aspect * rev_aspect).sqrt() * (fov / 2.0).tan();
@@ -60,7 +60,7 @@ impl Sphere {
     }
 
     /// sphere aabb intersection
-    /// https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+    /// reference: <https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection>
     pub fn intersect_aabb(&self, aabb: &Aabb) -> bool {
         let x = f32::max(aabb.min.x(), f32::min(self.c.x(), aabb.max.x()));
         let y = f32::max(aabb.min.y(), f32::min(self.c.y(), aabb.max.y()));

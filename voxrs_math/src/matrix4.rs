@@ -90,7 +90,7 @@ impl Matrix4 {
     }
 
     pub fn transform_normal(&self, v: &Vector3) -> Vector3 {
-        let t = self.m.transform_vector(&v.v.into());
+        let t = self.m.transform_vector(&v.v);
         Vector3 {
             v: t,
         }

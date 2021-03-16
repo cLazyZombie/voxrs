@@ -14,12 +14,12 @@ pub const TOTAL_BLOCK_COUNTS_IN_CHUNK: usize =
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dir {
-    XPos = 0b00000001,
-    XNeg = 0b00000010,
-    YPos = 0b00000100,
-    YNeg = 0b00001000,
-    ZPos = 0b00010000,
-    ZNeg = 0b00100000,
+    XPos = 0b0000_0001,
+    XNeg = 0b0000_0010,
+    YPos = 0b0000_0100,
+    YNeg = 0b0000_1000,
+    ZPos = 0b0001_0000,
+    ZNeg = 0b0010_0000,
 }
 
 impl Dir {
@@ -120,9 +120,7 @@ impl<'a> ChunkPos<'a> {
     }
 
     fn xyz_to_idx(world_chunk_count: &WorldChunkCounts, xyz: (i32, i32, i32)) -> i32 {
-        let chunk_idx =
-            xyz.0 + xyz.1 * world_chunk_count.x + xyz.2 * world_chunk_count.x * world_chunk_count.y;
-        chunk_idx
+        xyz.0 + xyz.1 * world_chunk_count.x + xyz.2 * world_chunk_count.x * world_chunk_count.y
     }
 
     fn is_xyz_in_world(world_chunk_count: &WorldChunkCounts, xyz: (i32, i32, i32)) -> bool {
@@ -209,8 +207,7 @@ impl<'a> BlockPos<'a> {
             Dir::ZNeg => world_xyz.2 -= 1,
         }
 
-        let neighbor_pos = BlockPos::from_world_xyz(self.chunk_counts, world_xyz);
-        neighbor_pos
+        BlockPos::from_world_xyz(self.chunk_counts, world_xyz)
     }
 
     pub fn neighbor_chunk_idx(&self, dir: Dir) -> Option<i32> {

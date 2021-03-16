@@ -60,7 +60,7 @@ impl WorldBlockRes {
             .filter(|c| camera_sphere.intersect_aabb(&c.aabb) && frustum.cull_aabb(&c.aabb))
             .collect();
         
-        return chunks;
+        chunks
 
         // for chunk in &self.chunks {
         //     if let Some(chunk) = chunk {

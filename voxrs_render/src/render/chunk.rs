@@ -30,8 +30,8 @@ impl ChunkRenderSystem {
         const VS_PATH: &str = "assets/shaders/block_shader.vert.spv";
         const FS_PATH: &str = "assets/shaders/block_shader.frag.spv";
 
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(VS_PATH));
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from_str(FS_PATH));
+        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(VS_PATH));
+        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(FS_PATH));
 
         let vs_asset = vs_handle.get_asset();
         let fs_asset = fs_handle.get_asset();

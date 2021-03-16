@@ -20,7 +20,7 @@ impl AssetPath {
         Self { path: path.into() }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    pub fn from(s: &str) -> Self {
         Self { path: s.into() }
     }
 
@@ -61,7 +61,7 @@ impl From<&String> for AssetPath {
 
 impl From<String> for AssetPath {
     fn from(s: String) -> Self {
-        Self::new(s.into())
+        Self::new(s)
     }
 }
 

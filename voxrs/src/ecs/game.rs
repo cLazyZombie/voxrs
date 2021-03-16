@@ -25,7 +25,7 @@ impl Game {
         let mut res = Resources::default();
 
         let world_block_res =
-            WorldBlockRes::new(&AssetPath::from_str("assets/world_01.wb"), asset_manager);
+            WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
         res.insert(world_block_res);
 
         let camera = CameraRes::new(

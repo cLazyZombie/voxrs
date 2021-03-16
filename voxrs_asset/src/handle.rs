@@ -1,6 +1,11 @@
-use super::{assets::Asset};
+use super::assets::Asset;
 use parking_lot::{Once, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use std::{any::Any, ops::{Deref, DerefMut}, sync::Arc, time::Duration};
+use std::{
+    any::Any,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+    time::Duration,
+};
 
 pub struct AssetHandle<T: Asset + 'static> {
     loader: Arc<(Once, ReceiveType<T>)>,
@@ -34,18 +39,14 @@ impl<T: Asset + 'static> AssetHandle<T> {
     }
 
     fn load_asset(&self) {
-        self.loader.0.call_once(|| match self.loader.1.recv() {
-            Ok(result) => match result {
-                Ok(asset) => {
-                    let mut lock = self.asset.write();
-                    *lock = Some(asset);
-                }
-                Err(_) => {}
-            },
-            Err(_) => {}
+        self.loader.0.call_once(|| {
+            if let Ok( Ok(asset)) = self.loader.1.recv() {
+                let mut lock = self.asset.write();
+                *lock = Some(asset);
+            }
         });
     }
-    
+
     pub fn ref_count(&self) -> usize {
         Arc::strong_count(&self.asset) - 1 // manager hold original handle. so do not count original
     }
@@ -134,7 +135,7 @@ mod tests {
     use crate::{TextAsset, TextureAsset};
     use std::thread;
 
-    fn prepare_text_asset() -> AssetHandle<TextAsset>{
+    fn prepare_text_asset() -> AssetHandle<TextAsset> {
         let (s, r) = crossbeam_channel::unbounded();
 
         thread::spawn(move || {
@@ -174,7 +175,7 @@ mod tests {
         let asset2 = handle2.get_asset();
         assert_eq!(asset2.text, "text");
     }
-    
+
     #[test]
     fn read_after_write_test() {
         let mut handle1 = prepare_text_asset();
@@ -189,7 +190,7 @@ mod tests {
         let asset2 = handle2.get_asset();
         assert_eq!(asset2.text, "modified");
     }
-    
+
     fn convert<T: Asset + 'static>(h: &AssetHandle<TextAsset>) -> &AssetHandle<T> {
         h.cast()
     }
