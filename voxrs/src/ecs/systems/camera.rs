@@ -1,7 +1,7 @@
 use legion::system;
 use winit::event::{ElementState, VirtualKeyCode};
 
-use crate::{blueprint::Blueprint};
+use voxrs_render::{blueprint::Blueprint};
 use voxrs_math::*;
 
 use crate::ecs::{

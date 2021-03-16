@@ -1,8 +1,6 @@
-use voxrs::{
-    ecs::{game::Game, resources::KeyInputRes},
-    render,
-};
+use voxrs::ecs::{game::Game, resources::KeyInputRes};
 use voxrs_asset::AssetManager;
+use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
 use winit::{
     event::{Event, WindowEvent},

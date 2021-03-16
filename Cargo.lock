@@ -2145,16 +2145,13 @@ name = "voxrs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bytemuck",
  "crossbeam-channel",
  "derive_more",
  "enumflags2",
  "env_logger",
- "futures",
  "glob",
  "legion",
  "log",
- "parking_lot",
  "rayon",
  "serde",
  "serde_json",
@@ -2163,8 +2160,8 @@ dependencies = [
  "voxrs_asset",
  "voxrs_derive",
  "voxrs_math",
+ "voxrs_render",
  "voxrs_types",
- "wgpu",
  "winit",
 ]
 
@@ -2202,6 +2199,21 @@ version = "0.1.0"
 dependencies = [
  "approx",
  "nalgebra-glm",
+]
+
+[[package]]
+name = "voxrs_render"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "crossbeam-channel",
+ "enumflags2",
+ "futures",
+ "voxrs_asset",
+ "voxrs_math",
+ "voxrs_types",
+ "wgpu",
+ "winit",
 ]
 
 [[package]]

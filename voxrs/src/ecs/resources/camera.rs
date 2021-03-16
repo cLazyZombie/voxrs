@@ -1,4 +1,4 @@
-use crate::blueprint::Camera;
+use voxrs_render::blueprint::Camera;
 use voxrs_math::*;
 
 pub struct CameraRes {

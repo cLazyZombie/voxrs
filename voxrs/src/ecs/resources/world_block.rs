@@ -6,11 +6,11 @@ use voxrs_math::{Aabb, Frustum, Vector3};
 use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, Dir, io::FileSystem};
 
 #[cfg(test)]
-use voxrs_types::WorldChunkCounts;
+use voxrs_types::{WorldChunkCounts};
+use voxrs_types::{SafeCloner};
 
-use crate::{
+use voxrs_render::{
     blueprint::{BlockMatIdx, Chunk},
-    safecloner::SafeCloner,
 };
 
 use super::CameraRes;

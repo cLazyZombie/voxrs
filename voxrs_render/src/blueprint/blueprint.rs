@@ -1,6 +1,6 @@
-use crate::safecloner::SafeCloner;
 use voxrs_asset::{AssetHandle, WorldMaterialAsset};
 use voxrs_math::*;
+use voxrs_types::SafeCloner;
 
 use super::Chunk;
 

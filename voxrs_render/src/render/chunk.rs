@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use crate::{
     blueprint::{self, ChunkId, BlockIdx, BlockMatIdx},
-    safecloner::SafeCloner,
 };
 use enumflags2::BitFlags;
 use voxrs_asset::{AssetHandle, AssetManager, AssetPath, DEPTH_FORMAT, ShaderAsset, WorldMaterialAsset};
 use voxrs_math::*;
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, io::FileSystem};
+use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, SafeCloner, TOTAL_BLOCK_COUNTS_IN_CHUNK, io::FileSystem};
 
 use wgpu::util::DeviceExt;
 

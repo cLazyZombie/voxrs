@@ -1,7 +1,6 @@
 use legion::system;
-
+use voxrs_render::blueprint::Blueprint;
 use crate::{
-    blueprint::Blueprint,
     ecs::resources::{CameraRes, WorldBlockRes},
 };
 

@@ -5,6 +5,7 @@ members = [
     "voxrs_types",
     "voxrs_derive",
     "voxrs_asset",
+    "voxrs_render",
 ]
 default-members = ["voxrs"]
 
