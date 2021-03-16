@@ -131,7 +131,7 @@ pub type ReceiveType<T> = crossbeam_channel::Receiver<ResultType<T>>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::asset::{TextAsset, TextureAsset};
+    use crate::{TextAsset, TextureAsset};
     use std::thread;
 
     fn prepare_text_asset() -> AssetHandle<TextAsset>{

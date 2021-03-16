@@ -4,6 +4,7 @@ members = [
     "voxrs_math",
     "voxrs_types",
     "voxrs_derive",
+    "voxrs_asset",
 ]
 default-members = ["voxrs"]
 

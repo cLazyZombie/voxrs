@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use crate::io::FileSystem;
-
 use super::{
     assets::{Asset, AssetType},
     AssetHandle, AssetManager, AssetPath, MaterialAsset,
 };
 use serde::Deserialize;
+use voxrs_types::io::FileSystem;
 
 #[derive(Asset)]
 pub struct WorldMaterialAsset {

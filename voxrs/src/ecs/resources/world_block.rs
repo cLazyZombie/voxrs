@@ -1,16 +1,15 @@
 use enumflags2::BitFlags;
 use rayon::prelude::*;
 
+use voxrs_asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset};
 use voxrs_math::{Aabb, Frustum, Vector3};
-use voxrs_types::{BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
+use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, Dir, io::FileSystem};
 
 #[cfg(test)]
 use voxrs_types::WorldChunkCounts;
 
 use crate::{
-    asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset},
     blueprint::{BlockMatIdx, Chunk},
-    io::FileSystem,
     safecloner::SafeCloner,
 };
 
@@ -187,7 +186,7 @@ impl WorldBlockRes {
 
 #[cfg(test)]
 mod test {
-    use crate::io::tests::MockFileSystem;
+    use voxrs_types::io::tests::MockFileSystem;
 
     use super::*;
 

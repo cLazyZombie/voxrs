@@ -10,27 +10,28 @@ edition = "2018"
 voxrs_derive = { version = "0.1", path = "../voxrs_derive"}
 voxrs_math = { version = "0.1", path = "../voxrs_math" }
 voxrs_types = { version = "0.1", path = "../voxrs_types" }
+voxrs_asset = { version = "0.1", path = "../voxrs_asset" }
 wgpu = "0.7"
 winit = "0.24"
 env_logger = "0.8"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 futures = "0.3"
-anyhow = "1.0"
-image = "0.23"
+anyhow = "1"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 crossbeam-channel = "0.5"
-tokio = { version = "1.2", features = ["full"] }
-async-trait = "0.1"
+tokio = { version = "1", features = ["full"] }
 legion = "0.4"
 derive_more = "0.99"
 enumflags2 = "0.7"
 parking_lot = "0.11"
 rayon = "1.5"
 
+[dev-dependencies]
+voxrs_types = { version = "0.1", path = "../voxrs_types", features = ["test"] }
+
 [build-dependencies]
 anyhow = "1.0"
-fs_extra = "1.2"
 glob = "0.3"
 shaderc = "0.7"

@@ -1,15 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset},
     blueprint::{self, ChunkId, BlockIdx, BlockMatIdx},
-    io::FileSystem,
     safecloner::SafeCloner,
-    texture,
 };
 use enumflags2::BitFlags;
+use voxrs_asset::{AssetHandle, AssetManager, AssetPath, DEPTH_FORMAT, ShaderAsset, WorldMaterialAsset};
 use voxrs_math::*;
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK};
+use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, io::FileSystem};
 
 use wgpu::util::DeviceExt;
 
@@ -144,7 +142,7 @@ impl ChunkRenderSystem {
                 polygon_mode: wgpu::PolygonMode::Fill,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
-                format: texture::DEPTH_FORMAT,
+                format: DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less,
                 stencil: wgpu::StencilState::default(),

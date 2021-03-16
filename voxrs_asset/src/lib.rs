@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate voxrs_derive;
+
 mod asset_path;
 mod assets;
 mod handle;
@@ -22,5 +25,7 @@ pub use material::MaterialAsset;
 pub use shader::ShaderAsset;
 pub use text::TextAsset;
 pub use texture::TextureAsset;
+pub use texture::Texture;
+pub use texture::DEPTH_FORMAT;
 pub use world_block::WorldBlockAsset;
 pub use world_material::WorldMaterialAsset;

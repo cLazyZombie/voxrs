@@ -1,11 +1,10 @@
 use super::{chunk::ChunkRenderSystem, commands::Command};
 use crate::{
-    asset::AssetManager,
     blueprint::{Blueprint, Camera},
-    io::FileSystem,
-    texture,
 };
 use crossbeam_channel::Receiver;
+use voxrs_asset::{AssetManager, Texture};
+use voxrs_types::io::FileSystem;
 use std::{
     convert::TryInto,
     thread::{self, JoinHandle},
@@ -22,7 +21,7 @@ pub struct Renderer {
     swap_chain_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
-    depth_texture: texture::Texture,
+    depth_texture: Texture,
     chunk_renderer: ChunkRenderSystem,
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
@@ -68,7 +67,7 @@ impl Renderer {
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
         let depth_texture =
-            texture::Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
+            Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
         let uniforms = Uniforms::default();
         let view_proj_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -159,7 +158,7 @@ impl Renderer {
             .device
             .create_swap_chain(&self.surface, &self.swap_chain_desc);
 
-        self.depth_texture = texture::Texture::create_depth_texture(
+        self.depth_texture = Texture::create_depth_texture(
             &self.device,
             &self.swap_chain_desc,
             "depth_texture",

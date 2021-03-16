@@ -1,10 +1,9 @@
 use legion::*;
-use voxrs_types::Clock;
+use voxrs_asset::{AssetManager, AssetPath};
+use voxrs_types::{Clock, io::FileSystem};
 
 use crate::{
-    asset::{AssetManager, AssetPath},
     blueprint::Blueprint,
-    io::FileSystem,
 };
 use voxrs_math::*;
 

@@ -5,8 +5,7 @@ use std::{
 use std::{hash::Hash, time::Instant};
 
 use tokio::runtime::{Builder, Runtime};
-
-use crate::io::FileSystem;
+use voxrs_types::io::FileSystem;
 
 use super::{
     assets::{Asset, AssetType},
@@ -375,8 +374,9 @@ impl<'a> Drop for AssetLoadLogger<'a> {
 mod tests {
     use std::thread;
 
+    use voxrs_types::io::tests::MockFileSystem;
+
     use super::*;
-    use crate::io::tests::MockFileSystem;
 
     #[test]
     fn get_text() {
@@ -393,7 +393,7 @@ mod tests {
         let texture_asset = handle.get_asset();
         assert_eq!(
             texture_asset.buf,
-            include_bytes!("../test_assets/texture.png")
+            include_bytes!("../../test_assets/texture.png")
         );
     }
 
@@ -406,7 +406,7 @@ mod tests {
         let diffuse_tex = material_asset.diffuse_tex.get_asset();
         assert_eq!(
             diffuse_tex.buf,
-            include_bytes!("../test_assets/texture.png")
+            include_bytes!("../../test_assets/texture.png")
         );
     }
 

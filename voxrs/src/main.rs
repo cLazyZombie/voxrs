@@ -1,9 +1,9 @@
 use voxrs::{
-    asset::AssetManager,
     ecs::{game::Game, resources::KeyInputRes},
-    io::GeneralFileSystem,
     render,
 };
+use voxrs_asset::AssetManager;
+use voxrs_types::io::GeneralFileSystem;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},

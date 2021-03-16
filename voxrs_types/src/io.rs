@@ -34,7 +34,7 @@ impl FileSystem for GeneralFileSystem {
     }
 }
 
-#[cfg(test)]
+#[cfg(feature = "test")]
 pub mod tests {
     use super::*;
 
@@ -45,15 +45,15 @@ pub mod tests {
         async fn read_binary(path: &Path) -> Result<Vec<u8>> {
             match path.to_str() {
                 Some("texture.png") => {
-                    let buf = include_bytes!("test_assets/texture.png");
+                    let buf = include_bytes!("../../test_assets/texture.png");
                     Ok(buf.to_vec())
                 }
                 Some("shader.vert.spv") => {
-                    let buf = include_bytes!("test_assets/shader.vert.spv");
+                    let buf = include_bytes!("../../test_assets/shader.vert.spv");
                     Ok(buf.to_vec())
                 }
                 Some("shader.frag.spv") => {
-                    let buf = include_bytes!("test_assets/shader.frag.spv");
+                    let buf = include_bytes!("../../test_assets/shader.frag.spv");
                     Ok(buf.to_vec())
                 }
                 _ => panic!("not found"),
@@ -63,19 +63,19 @@ pub mod tests {
         async fn read_text(path: &Path) -> Result<String> {
             match path.to_str() {
                 Some("test.txt") => {
-                    let s = include_str!("test_assets/test.txt");
+                    let s = include_str!("../../test_assets/test.txt");
                     Ok(s.to_string())
                 }
                 Some("material.mat") => {
-                    let s = include_str!("test_assets/material.mat");
+                    let s = include_str!("../../test_assets/material.mat");
                     Ok(s.to_string())
                 }
                 Some("world_material.wmt") => {
-                    let s = include_str!("test_assets/world_material.wmt");
+                    let s = include_str!("../../test_assets/world_material.wmt");
                     Ok(s.to_string())
                 }
                 Some("world_block.wb") => {
-                    let s = include_str!("test_assets/world_block.wb");
+                    let s = include_str!("../../test_assets/world_block.wb");
                     Ok(s.to_string())
                 }
                 _ => panic!("not found"),

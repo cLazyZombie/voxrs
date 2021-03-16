@@ -2,9 +2,8 @@
 
 use enumflags2::{BitFlags};
 use serde::Deserialize;
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, ChunkPos, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, WorldBlockCounts, WorldChunkCounts};
+use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, ChunkPos, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, WorldBlockCounts, WorldChunkCounts, io::FileSystem};
 
-use crate::io::FileSystem;
 use voxrs_math::*;
 
 use super::{

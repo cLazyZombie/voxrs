@@ -1,10 +1,10 @@
 use serde::Deserialize;
+use voxrs_types::io::FileSystem;
 
 use super::{
     assets::{Asset, AssetType},
     AssetHandle, AssetManager, TextureAsset,
 };
-use crate::io::FileSystem;
 
 #[derive(Asset)]
 pub struct MaterialAsset {
