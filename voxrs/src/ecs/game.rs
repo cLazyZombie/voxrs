@@ -1,4 +1,5 @@
 use legion::*;
+use voxrs_types::Clock;
 
 use crate::{
     asset::{AssetManager, AssetPath},
@@ -10,7 +11,6 @@ use voxrs_math::*;
 use super::{
     resources::{ElapsedTimeRes, KeyInputRes, WorldBlockRes, CameraRes},
     systems::{camera, world_block_render},
-    Clock,
 };
 
 pub struct Game {
