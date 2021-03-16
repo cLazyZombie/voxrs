@@ -82,11 +82,17 @@ impl Matrix4 {
         }
     }
 
-    // todo. need test
     pub fn transform_point(&self, v: &Vector3) -> Vector3 {
         let t = self.m.transform_point(&v.v.into());
         Vector3 {
             v: t.coords,
+        }
+    }
+
+    pub fn transform_normal(&self, v: &Vector3) -> Vector3 {
+        let t = self.m.transform_vector(&v.v.into());
+        Vector3 {
+            v: t,
         }
     }
 }
@@ -239,5 +245,14 @@ mod tests {
 
         let v2 = m.transform_point(&v);
         assert_eq!(v2, Vector3::new(2.0, 3.0, 4.0));
+    }
+
+    #[test]
+    fn test_transform_normal() {
+        let m = Matrix4::translate(&Vector3::new(1.0, 2.0, 3.0));
+        let v = Vector3::new(1.0, 0.0, 0.0);
+
+        let v2 = m.transform_normal(&v);
+        assert_eq!(v2, v);
     }
 }
