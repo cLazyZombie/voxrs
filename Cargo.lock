@@ -2196,6 +2196,26 @@ dependencies = [
 [[package]]
 name = "voxrs_ed"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossbeam-channel",
+ "derive_more",
+ "enumflags2",
+ "env_logger",
+ "futures",
+ "legion",
+ "log",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tokio",
+ "voxrs_asset",
+ "voxrs_derive",
+ "voxrs_math",
+ "voxrs_render",
+ "voxrs_types",
+ "winit",
+]
 
 [[package]]
 name = "voxrs_math"
