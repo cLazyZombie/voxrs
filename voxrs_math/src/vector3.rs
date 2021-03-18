@@ -34,8 +34,7 @@ impl Vector3 {
         self.v.as_slice().try_into().unwrap()
     }
 
-    /// warning: math 내부에서만 사용 가능
-    pub fn get_inner(&self) -> &glm::Vec3 {
+    pub(crate) fn get_inner(&self) -> &glm::Vec3 {
         &self.v
     }
 
@@ -46,11 +45,18 @@ impl Vector3 {
         lhs.v.dot(&rhs.v)
     }
 
-    pub fn get_normalized(v: impl Borrow<Vector3>) -> Self {
-        let v = Borrow::<Vector3>::borrow(&v);
-        
+    pub fn cross(lhs: impl Borrow<Vector3>, rhs: impl Borrow<Vector3>) -> Vector3 {
+        let lhs = Borrow::<Vector3>::borrow(&lhs);
+        let rhs = Borrow::<Vector3>::borrow(&rhs);
+
         Self {
-            v: v.v.normalize()
+            v: lhs.v.cross(&rhs.v),
+        }
+    }
+
+    pub fn get_normalized(&self) -> Self {
+        Self {
+            v: self.v.normalize(),
         }
     }
 
@@ -102,6 +108,12 @@ impl From<&[f32; 3]> for Vector3 {
     }
 }
 
+impl From<[f32; 3]> for Vector3 {
+    fn from(array: [f32; 3]) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+}
+
 impl Default for Vector3 {
     fn default() -> Self {
         Self::new(0.0, 0.0, 0.0)
@@ -114,24 +126,28 @@ impl Display for Vector3 {
     }
 }
 
-#[cfg(test)]
-impl approx::AbsDiffEq for Vector3 
-{
+impl approx::AbsDiffEq for Vector3 {
     type Epsilon = f32;
 
     fn default_epsilon() -> Self::Epsilon {
-        f32::EPSILON
+        0.0001
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        f32::abs_diff_eq(&self.v[0], &other.v[0], epsilon) &&
-        f32::abs_diff_eq(&self.v[1], &other.v[1], epsilon) &&
-        f32::abs_diff_eq(&self.v[2], &other.v[2], epsilon) 
+        for i in 0..3 {
+            if (self.v[i] - other.v[i]).abs() > epsilon {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_abs_diff_eq;
+
     use super::*;
 
     #[test]
@@ -185,5 +201,13 @@ mod tests {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let v2: Vector3 = v * 3.0;
         assert_eq!(v2.as_slice(), &[3.0, 6.0, 9.0]);
+    }
+
+    #[test]
+    fn test_cross() {
+        let v1 = [1.0, 0.0, 0.0].into();
+        let v2 = [0.0, 1.0, 0.0].into();
+        let v3 = Vector3::cross(&v1, &v2);
+        assert_abs_diff_eq!(v3, [0.0, 0.0, 1.0].into());
     }
 }
