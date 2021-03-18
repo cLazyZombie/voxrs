@@ -1,12 +1,12 @@
 use legion::*;
-use voxrs_asset::AssetManager;
+use voxrs_asset::{AssetManager, AssetPath};
 use voxrs_math::Vector3;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
 
 use crate::ecs::res::Camera;
 
-use super::{res::ElapsedTime, system};
+use super::{res, system};
 
 pub struct Editor {
     world: World,
@@ -17,12 +17,16 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new<F: FileSystem>(aspect: f32, _asset_manager: &mut AssetManager<F>) -> Self {
+    pub fn new<F: FileSystem>(aspect: f32, asset_manager: &mut AssetManager<F>) -> Self {
         let world = World::default();
         let mut res = Resources::default();
 
+        let world_block_res =
+            res::WorldBlock::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
+        res.insert(world_block_res);
+
         let camera = Camera::new(
-            Vector3::new(0.0, 100.0, -100.0),
+            Vector3::new(0.0, 50.0, -50.0),
             Vector3::get_normalized(&Vector3::new(0.0, -1.0, 1.0)),
             Vector3::get_normalized(&Vector3::new(0.0, 1.0, 1.0)),
             aspect,
@@ -38,6 +42,7 @@ impl Editor {
 
         let render_schedule = Schedule::builder()
             .add_system(system::camera::render_system())
+            .add_system(system::world_block_render::render_system())
             .build();
 
         let clock = Clock::new();
@@ -51,12 +56,22 @@ impl Editor {
         }
     }
 
+    pub fn set_input(&mut self, key_input: Option<res::KeyInput>) {
+        let mut key_res = self.res.get_mut_or_default::<Option<res::KeyInput>>();
+        *key_res = key_input;
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) {
+        let mut camera_res = self.res.get_mut::<res::Camera>().unwrap();
+        camera_res.resize(width, height);
+    }
+
     pub fn tick(&mut self) {
         let interval = self.clock.tick().as_secs_f32();
 
         // change time
         {
-            let mut elapsed = self.res.get_mut_or_default::<ElapsedTime>();
+            let mut elapsed = self.res.get_mut_or_default::<res::ElapsedTime>();
             *elapsed = interval.into();
         }
 

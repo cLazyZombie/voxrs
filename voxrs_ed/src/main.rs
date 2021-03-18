@@ -1,5 +1,5 @@
-use voxrs_asset::{AssetManager, WorldMaterialAsset};
-use voxrs_ed::Editor;
+use voxrs_asset::AssetManager;
+use voxrs_ed::{res, Editor};
 use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
 use winit::{
@@ -17,12 +17,12 @@ fn main() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
+    let mut key_input: Option<res::KeyInput> = None;
+
     let mut asset_manager = AssetManager::<GeneralFileSystem>::new();
 
     let mut renderer =
         futures::executor::block_on(render::Renderer::new(&window, &mut asset_manager));
-
-    let world_block_mat = asset_manager.get::<WorldMaterialAsset>(&"assets/world_mat.wmt".into());
 
     let mut editor = Editor::new(aspect, &mut asset_manager);
 
@@ -33,16 +33,19 @@ fn main() {
         } if window_id == window.id() => match event {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
+                editor.resize(physical_size.width, physical_size.height);
                 renderer.resize(*physical_size);
             }
-            WindowEvent::KeyboardInput { input: _, .. } => {}
+            WindowEvent::KeyboardInput { input, .. } => {
+                key_input = Some((*input).into());
+            }
             _ => {}
         },
         Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
+            editor.set_input(key_input);
             editor.tick();
-            let mut bp = editor.render();
-            bp.world_block_mat_handle = Some(world_block_mat.clone());
+            let bp = editor.render();
             renderer.render(bp).unwrap();
         }
         _ => {}

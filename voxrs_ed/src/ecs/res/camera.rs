@@ -52,6 +52,8 @@ impl Camera {
         let right = Vector3::cross(&self.up, &self.dir).get_normalized();
         let offset = self.dir * rel_offset.z() + self.up * rel_offset.y() + right * rel_offset.x();
         self.move_camera(&offset);
+
+        eprintln!("camera pos: {:?}", self.eye);
     }
 
     /// horizon: positive -> right, radians
