@@ -1,2 +1,2 @@
-mod camera;
-pub use camera::Camera;
+mod ecs;
+pub use ecs::Editor;
