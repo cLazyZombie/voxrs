@@ -1,4 +1,4 @@
-use voxrs_asset::AssetManager;
+use voxrs_asset::{AssetManager, WorldMaterialAsset};
 use voxrs_render::blueprint::Blueprint;
 use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
@@ -21,6 +21,8 @@ fn main() {
 
     let mut renderer =
         futures::executor::block_on(render::Renderer::new(&window, &mut asset_manager));
+    
+    let world_block_mat = asset_manager.get::<WorldMaterialAsset>(&"assets/world_mat.wmt".into());
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -36,7 +38,8 @@ fn main() {
         },
         Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
-            let bp = Blueprint::new();
+            let mut bp = Blueprint::new();
+            bp.world_block_mat_handle = Some(world_block_mat.clone());
             renderer.render(bp).unwrap();
         }
         _ => {}
