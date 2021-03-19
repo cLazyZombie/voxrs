@@ -8,10 +8,7 @@ pub struct Aabb {
 
 impl Aabb {
     pub fn new(min: Vector3, max: Vector3) -> Self {
-        Self {
-            min,
-            max,
-        }
+        Self { min, max }
     }
 
     pub fn center(&self) -> Vector3 {
@@ -32,10 +29,7 @@ mod tests {
 
     #[test]
     fn test_center() {
-        let aabb = Aabb::new(
-            Vector3::new(1.0, 2.0, 3.0),
-            Vector3::new(10.0, 11.0, 12.0),
-        );
+        let aabb = Aabb::new(Vector3::new(1.0, 2.0, 3.0), Vector3::new(10.0, 11.0, 12.0));
 
         assert_eq!(aabb.center(), Vector3::new(5.5, 6.5, 7.5));
     }

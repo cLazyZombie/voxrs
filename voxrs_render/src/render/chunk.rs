@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
-use crate::{
-    blueprint::{self, ChunkId, BlockIdx, BlockMatIdx},
-};
+use crate::blueprint::{self, BlockIdx, BlockMatIdx, ChunkId};
 use enumflags2::BitFlags;
-use voxrs_asset::{AssetHandle, AssetManager, AssetPath, DEPTH_FORMAT, ShaderAsset, WorldMaterialAsset};
+use voxrs_asset::{
+    AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset, DEPTH_FORMAT,
+};
 use voxrs_math::*;
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, Dir, SafeCloner, TOTAL_BLOCK_COUNTS_IN_CHUNK, io::FileSystem};
+use voxrs_types::{
+    io::FileSystem, Dir, SafeCloner, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
+};
 
 use wgpu::util::DeviceExt;
 
@@ -326,7 +328,7 @@ fn block_indices_in_dir(vis: BitFlags<Dir>) -> Vec<u32> {
 
 pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     let mut v = Vec::new() as Vec<ChunkVertex>;
-    v.reserve(BLOCK_VERTICES.len() *  TOTAL_BLOCK_COUNTS_IN_CHUNK);
+    v.reserve(BLOCK_VERTICES.len() * TOTAL_BLOCK_COUNTS_IN_CHUNK);
 
     for z in 0..BLOCK_COUNT_IN_CHUNKSIDE {
         for y in 0..BLOCK_COUNT_IN_CHUNKSIDE {
@@ -447,11 +449,7 @@ impl Chunk {
         let world_mat = world_material.get_asset();
 
         for (k, v) in mat_blocks {
-            let material = world_mat
-                .material_handles
-                .get(&k)
-                .unwrap()
-                .get_asset();
+            let material = world_mat.material_handles.get(&k).unwrap().get_asset();
 
             let diffuse_asset = material.diffuse_tex.get_asset();
             let diffuse = diffuse_asset.texture.as_ref().unwrap();

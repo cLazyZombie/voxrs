@@ -1,18 +1,16 @@
 use super::{chunk::ChunkRenderSystem, commands::Command};
-use crate::{
-    blueprint::{Blueprint, Camera},
-};
+use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
-use voxrs_asset::{AssetManager, Texture};
-use voxrs_types::io::FileSystem;
 use std::{
     convert::TryInto,
     thread::{self, JoinHandle},
 };
 use std::{iter, sync::Arc};
+use voxrs_asset::{AssetManager, Texture};
+use voxrs_math::*;
+use voxrs_types::io::FileSystem;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use voxrs_math::*;
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -158,11 +156,8 @@ impl Renderer {
             .device
             .create_swap_chain(&self.surface, &self.swap_chain_desc);
 
-        self.depth_texture = Texture::create_depth_texture(
-            &self.device,
-            &self.swap_chain_desc,
-            "depth_texture",
-        );
+        self.depth_texture =
+            Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
     }
 
     pub fn resize_self(&mut self) {

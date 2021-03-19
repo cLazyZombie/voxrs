@@ -95,7 +95,7 @@ mod test {
         assert!(sp.c.z() >= 1.0 && sp.c.z() <= 10.0);
         assert!(sp.r <= 20.0);
     }
-    
+
     #[test]
     fn test_intersect_aabb() {
         let sp = Sphere::new(Vector3::new(10.0, 10.0, 10.0), 90.0);
@@ -105,11 +105,17 @@ mod test {
         assert_eq!(sp.intersect_aabb(&aabb), true);
 
         // between
-        let aabb = Aabb::new(Vector3::new(50.0, 50.0, 50.0), Vector3::new(120.0, 120.0, 120.0));
+        let aabb = Aabb::new(
+            Vector3::new(50.0, 50.0, 50.0),
+            Vector3::new(120.0, 120.0, 120.0),
+        );
         assert_eq!(sp.intersect_aabb(&aabb), true);
-        
+
         // outside
-        let aabb = Aabb::new(Vector3::new(110.0, 110.0, 110.0), Vector3::new(120.0, 120.0, 120.0));
+        let aabb = Aabb::new(
+            Vector3::new(110.0, 110.0, 110.0),
+            Vector3::new(120.0, 120.0, 120.0),
+        );
         assert_eq!(sp.intersect_aabb(&aabb), false);
     }
 }

@@ -64,9 +64,9 @@ impl Matrix4 {
     #[rustfmt::skip]
     pub fn uniform_scale(s: f32) -> Self {
         Self::new(
-            s, 0.0, 0.0, 0.0, 
+            s, 0.0, 0.0, 0.0,
             0.0, s, 0.0, 0.0,
-            0.0, 0.0, s, 0.0, 
+            0.0, 0.0, s, 0.0,
             0.0, 0.0, 0.0, 1.0
         )
     }
@@ -75,23 +75,17 @@ impl Matrix4 {
     /// panic if matrix is not invertable
     pub fn inverse(&self) -> Self {
         let inverted = self.m.try_inverse().unwrap();
-        Self {
-            m: inverted,
-        }
+        Self { m: inverted }
     }
 
     pub fn transform_point(&self, v: &Vector3) -> Vector3 {
         let t = self.m.transform_point(&v.v.into());
-        Vector3 {
-            v: t.coords,
-        }
+        Vector3 { v: t.coords }
     }
 
     pub fn transform_normal(&self, v: &Vector3) -> Vector3 {
         let t = self.m.transform_vector(&v.v);
-        Vector3 {
-            v: t,
-        }
+        Vector3 { v: t }
     }
 }
 

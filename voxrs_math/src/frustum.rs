@@ -72,7 +72,7 @@ impl Frustum {
     /// else false
     pub fn cull_aabb(&self, aabb: impl Borrow<Aabb>) -> bool {
         let aabb = Borrow::<Aabb>::borrow(&aabb);
-        
+
         if self.near.dist_aabb(aabb) < 0.0 {
             return false;
         }
@@ -123,7 +123,10 @@ mod test {
         let aabb = Aabb::new(Vector3::new(-1.0, -1.0, 20.0), Vector3::new(1.0, 1.0, 30.0));
         assert_eq!(frustum.cull_aabb(&aabb), true);
 
-        let aabb = Aabb::new(Vector3::new(-1.0, -1.0, 120.0), Vector3::new(1.0, 1.0, 130.0));
+        let aabb = Aabb::new(
+            Vector3::new(-1.0, -1.0, 120.0),
+            Vector3::new(1.0, 1.0, 130.0),
+        );
         assert_eq!(frustum.cull_aabb(&aabb), false);
     }
 }

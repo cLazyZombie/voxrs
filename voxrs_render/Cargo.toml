@@ -1,18 +1,19 @@
 [package]
-name = "voxrs_render"
-version = "0.1.0"
 authors = ["cLazyZombie <rusad96@gmail.com>"]
 edition = "2018"
+name = "voxrs_render"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-voxrs_math = { version = "0.1", path = "../voxrs_math" }
-voxrs_asset = { version = "0.1", path = "../voxrs_asset" }
-voxrs_types = { version = "0.1", path = "../voxrs_types" }
-enumflags2 = "0.7"
-wgpu = "0.7"
+voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
+voxrs_math = {version = "0.1", path = "../voxrs_math"}
+voxrs_types = {version = "0.1", path = "../voxrs_types"}
+
+bytemuck = {version = "1.4", features = ["derive"]}
 crossbeam-channel = "0.5"
-bytemuck = { version = "1.4", features = [ "derive" ] }
-winit = "0.24"
+enumflags2 = "0.7"
 futures = "0.3"
+wgpu = "0.7"
+winit = "0.24"

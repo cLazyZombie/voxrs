@@ -40,7 +40,7 @@ impl<T: Asset + 'static> AssetHandle<T> {
 
     fn load_asset(&self) {
         self.loader.0.call_once(|| {
-            if let Ok( Ok(asset)) = self.loader.1.recv() {
+            if let Ok(Ok(asset)) = self.loader.1.recv() {
                 let mut lock = self.asset.write();
                 *lock = Some(asset);
             }

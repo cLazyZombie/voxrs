@@ -1,8 +1,11 @@
 #![allow(dead_code)] // todo: remove
 
-use enumflags2::{BitFlags};
+use enumflags2::BitFlags;
 use serde::Deserialize;
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, ChunkPos, Dir, TOTAL_BLOCK_COUNTS_IN_CHUNK, WorldBlockCounts, WorldChunkCounts, io::FileSystem};
+use voxrs_types::{
+    io::FileSystem, BlockPos, ChunkPos, Dir, WorldBlockCounts, WorldChunkCounts,
+    BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
+};
 
 use voxrs_math::*;
 
@@ -76,7 +79,11 @@ pub struct WorldChunk {
 }
 
 impl WorldChunk {
-    fn new(idx: usize, chunk_counts: &WorldChunkCounts, raw_chunks: &[Option<WorldChunkRaw>]) -> Self {
+    fn new(
+        idx: usize,
+        chunk_counts: &WorldChunkCounts,
+        raw_chunks: &[Option<WorldChunkRaw>],
+    ) -> Self {
         let cur_chunk = raw_chunks[idx].as_ref().unwrap();
         assert_eq!(idx, cur_chunk.idx as usize);
 
@@ -88,7 +95,11 @@ impl WorldChunk {
     }
 }
 
-fn build_vis(chunk_idx: usize, chunk_counts: &WorldChunkCounts, chunks: &[Option<WorldChunkRaw>]) -> Vec<BitFlags<Dir>> {
+fn build_vis(
+    chunk_idx: usize,
+    chunk_counts: &WorldChunkCounts,
+    chunks: &[Option<WorldChunkRaw>],
+) -> Vec<BitFlags<Dir>> {
     let cur_chunk = chunks[chunk_idx].as_ref().unwrap();
 
     let mut vis_vec = Vec::new();
@@ -119,7 +130,13 @@ fn build_vis(chunk_idx: usize, chunk_counts: &WorldChunkCounts, chunks: &[Option
 }
 
 /// check block(indexed by block_idx) is empty at some direction (dir)
-fn is_visible_dir(chunk_idx: usize, block_idx: usize, dir: Dir, chunk_counts: &WorldChunkCounts, chunks: &[Option<WorldChunkRaw>]) -> bool {
+fn is_visible_dir(
+    chunk_idx: usize,
+    block_idx: usize,
+    dir: Dir,
+    chunk_counts: &WorldChunkCounts,
+    chunks: &[Option<WorldChunkRaw>],
+) -> bool {
     let block_pos = BlockPos::new(chunk_counts, chunk_idx as i32, block_idx as i32);
     let neighbor_pos = block_pos.neighbor_block_pos(dir);
 
