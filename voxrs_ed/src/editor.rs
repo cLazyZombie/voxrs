@@ -1,7 +1,7 @@
 use legion::*;
 use voxrs_asset::{AssetManager, AssetPath};
 use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, WorldBlockRes};
-use voxrs_math::Vector3;
+use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
 use winit::event::{ElementState, KeyboardInput, MouseButton};
@@ -27,8 +27,8 @@ impl Editor {
 
         let camera = CameraRes::new(
             Vector3::new(0.0, 50.0, -50.0),
-            0.0,
-            -std::f32::consts::FRAC_PI_4,
+            Angle::from_degrees(0.0),
+            Angle::from_degrees(-45.0),
             aspect,
             45.0,
             0.1,

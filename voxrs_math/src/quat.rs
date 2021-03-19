@@ -1,6 +1,6 @@
 use glm::Qua;
 
-use crate::Vector3;
+use crate::{Angle, Vector3};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Quat {
@@ -13,8 +13,8 @@ impl Quat {
         Self { q }
     }
 
-    pub fn from_rotate_axis(axis: &Vector3, angle: f32) -> Self {
-        let q = glm::quat_angle_axis(angle, &axis.v);
+    pub fn from_rotate_axis(axis: &Vector3, angle: Angle) -> Self {
+        let q = glm::quat_angle_axis(angle.to_radians(), &axis.v);
         Self { q }
     }
 
@@ -30,7 +30,7 @@ impl Quat {
         Vector3 { v }
     }
 
-    pub fn rotate_axis(&mut self, axis: &Vector3, angle: f32) {
+    pub fn rotate_axis(&mut self, axis: &Vector3, angle: Angle) {
         let q2 = Self::from_rotate_axis(axis, angle);
         *self = q2 * (*self);
     }
@@ -98,12 +98,12 @@ mod tests {
         let v = Vector3::new(100.0, 0.0, 0.0);
 
         // make rotate from yaxis, 90 degree
-        q.rotate_axis(&[0.0, 1.0, 0.0].into(), (90.0_f32).to_radians());
+        q.rotate_axis(&[0.0, 1.0, 0.0].into(), Angle::from_degrees(90.0));
         let rotated = q.transform(&v);
         assert_abs_diff_eq!(rotated, Vector3::new(0.0, 0.0, -100.0));
 
         // make rotate from x axis, 90 degree
-        q.rotate_axis(&[1.0, 0.0, 0.0].into(), (90.0_f32).to_radians());
+        q.rotate_axis(&[1.0, 0.0, 0.0].into(), Angle::from_degrees(90.0));
         let rotated = q.transform(&v);
         assert_abs_diff_eq!(rotated, Vector3::new(0.0, 100.0, 0.0));
     }

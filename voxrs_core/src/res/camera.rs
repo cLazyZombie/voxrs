@@ -1,13 +1,11 @@
-use std::f32::consts::FRAC_PI_2;
-
 use voxrs_math::*;
 use voxrs_render::blueprint;
 
 /// CameraRes is free moving camera
 pub struct CameraRes {
     eye: Vector3,
-    horizon: f32,
-    vert: f32,
+    horizon: Angle,
+    vert: Angle,
     aspect: f32,
     fovy: f32,
     znear: f32,
@@ -17,8 +15,8 @@ pub struct CameraRes {
 impl CameraRes {
     pub fn new(
         eye: Vector3,
-        horizon: f32,
-        vert: f32,
+        horizon: Angle,
+        vert: Angle,
         aspect: f32,
         fovy: f32,
         znear: f32,
@@ -60,10 +58,9 @@ impl CameraRes {
 
     /// horizon: positive -> right, radians
     /// vert: positive -> up. radians
-    pub fn rotate_camera(&mut self, horizon: f32, vert: f32) {
-        self.horizon += horizon;
-        self.vert += vert;
-        self.vert = self.vert.clamp(-FRAC_PI_2, FRAC_PI_2);
+    pub fn rotate_camera(&mut self, horizon: Angle, vert: Angle) {
+        self.horizon = (self.horizon + horizon).normalize();
+        self.vert = (self.vert + vert).clamp_half();
     }
 
     pub fn get_sphere(&self) -> Sphere {

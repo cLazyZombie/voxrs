@@ -5,6 +5,7 @@
 extern crate nalgebra_glm as glm;
 
 mod aabb;
+mod angle;
 mod frustum;
 mod matrix4;
 mod plane;
@@ -13,6 +14,7 @@ mod sphere;
 mod vector3;
 
 pub use aabb::Aabb;
+pub use angle::Angle;
 pub use frustum::Frustum;
 pub use matrix4::Matrix4;
 pub use plane::Plane;

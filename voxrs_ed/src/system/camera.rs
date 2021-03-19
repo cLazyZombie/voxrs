@@ -1,6 +1,6 @@
 use legion::*;
 use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes};
-use voxrs_math::Vector3;
+use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use winit::event::VirtualKeyCode;
 
@@ -49,8 +49,8 @@ pub fn control(
     if mouse_input.right_button {
         let delta = mouse_input.delta;
         camera.rotate_camera(
-            delta.0 as f32 * ROTATE_SPEED_HORIZON,
-            delta.1 as f32 * ROTATE_SPEED_VERT * -1.0,
+            Angle::from_radians(delta.0 as f32 * ROTATE_SPEED_HORIZON),
+            Angle::from_radians(delta.1 as f32 * ROTATE_SPEED_VERT * -1.0),
         );
     }
     mouse_input.clear_mouse_motion();
