@@ -1,4 +1,4 @@
-use nalgebra_glm::Qua;
+use glm::Qua;
 
 use crate::Vector3;
 
@@ -14,19 +14,19 @@ impl Quat {
     }
 
     pub fn from_rotate_axis(axis: &Vector3, angle: f32) -> Self {
-        let q = nalgebra_glm::quat_angle_axis(angle, &axis.v);
+        let q = glm::quat_angle_axis(angle, &axis.v);
         Self { q }
     }
 
     /// make quaternion
     /// ratate from dir1 to dir2
     pub fn from_two_dirs(dir1: &Vector3, dir2: &Vector3) -> Self {
-        let rot = nalgebra_glm::quat_rotation(&dir1.v, &dir2.v);
+        let rot = glm::quat_rotation(&dir1.v, &dir2.v);
         Self { q: rot }
     }
 
     pub fn transform(&self, p: &Vector3) -> Vector3 {
-        let v = nalgebra_glm::quat_rotate_vec3(&self.q, &p.v);
+        let v = glm::quat_rotate_vec3(&self.q, &p.v);
         Vector3 { v }
     }
 
@@ -48,7 +48,7 @@ impl From<&[f32]> for Quat {
     fn from(v: &[f32]) -> Self {
         assert_eq!(v.len(), 4);
         Self {
-            q: nalgebra_glm::quat(v[0], v[1], v[2], v[3]),
+            q: glm::quat(v[0], v[1], v[2], v[3]),
         }
     }
 }
@@ -56,7 +56,7 @@ impl From<&[f32]> for Quat {
 impl From<&[f32; 4]> for Quat {
     fn from(v: &[f32; 4]) -> Self {
         Self {
-            q: nalgebra_glm::quat(v[0], v[1], v[2], v[3]),
+            q: glm::quat(v[0], v[1], v[2], v[3]),
         }
     }
 }

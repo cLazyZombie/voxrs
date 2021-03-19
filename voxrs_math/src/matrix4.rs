@@ -1,5 +1,3 @@
-use nalgebra_glm as glm;
-
 use crate::Vector3;
 
 #[derive(Copy, Clone, Debug)]

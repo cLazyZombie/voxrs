@@ -1,6 +1,5 @@
 use std::{borrow::Borrow, fmt::Display};
 
-use nalgebra_glm as glm;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3 {
     pub(crate) v: glm::Vec3,

@@ -1,7 +1,5 @@
 use std::borrow::Borrow;
 
-use nalgebra_glm as glm;
-
 use crate::{Aabb, Vector3};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -57,7 +55,9 @@ impl Plane {
         let extend = aabb.max - center;
         let normal = self.normal();
 
-        let r = extend.x() * normal.x().abs() + extend.y() * normal.y().abs() + extend.z() * normal.z().abs();
+        let r = extend.x() * normal.x().abs()
+            + extend.y() * normal.y().abs()
+            + extend.z() * normal.z().abs();
         let s = Vector3::dot(&self.normal(), &center) + self.d();
 
         if s.abs() <= r {
@@ -71,8 +71,7 @@ impl Plane {
 }
 
 #[cfg(test)]
-impl approx::AbsDiffEq for Plane
-{
+impl approx::AbsDiffEq for Plane {
     type Epsilon = f32;
 
     fn default_epsilon() -> Self::Epsilon {
@@ -80,10 +79,10 @@ impl approx::AbsDiffEq for Plane
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        f32::abs_diff_eq(&self.p[0], &other.p[0], epsilon) &&
-        f32::abs_diff_eq(&self.p[1], &other.p[1], epsilon) &&
-        f32::abs_diff_eq(&self.p[2], &other.p[2], epsilon) &&
-        f32::abs_diff_eq(&self.p[3], &other.p[3], epsilon)
+        f32::abs_diff_eq(&self.p[0], &other.p[0], epsilon)
+            && f32::abs_diff_eq(&self.p[1], &other.p[1], epsilon)
+            && f32::abs_diff_eq(&self.p[2], &other.p[2], epsilon)
+            && f32::abs_diff_eq(&self.p[3], &other.p[3], epsilon)
     }
 }
 
@@ -110,9 +109,12 @@ mod tests {
 
     #[test]
     fn test_dist_aabb() {
-        let plane = Plane::new(1.0, 0.0, 0.0,-5.0);
+        let plane = Plane::new(1.0, 0.0, 0.0, -5.0);
 
-        let aabb = Aabb::new(Vector3::new(-1.0, -1.0, -1.0), Vector3::new(10.0, 10.0, 10.0));
+        let aabb = Aabb::new(
+            Vector3::new(-1.0, -1.0, -1.0),
+            Vector3::new(10.0, 10.0, 10.0),
+        );
         let dist = plane.dist_aabb(aabb);
         assert_eq!(dist, 0.0);
 
