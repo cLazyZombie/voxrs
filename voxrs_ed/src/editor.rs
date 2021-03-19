@@ -27,8 +27,8 @@ impl Editor {
 
         let camera = CameraRes::new(
             Vector3::new(0.0, 50.0, -50.0),
-            Vector3::get_normalized(&Vector3::new(0.0, -1.0, 1.0)),
-            Vector3::get_normalized(&Vector3::new(0.0, 1.0, 1.0)),
+            0.0,
+            -std::f32::consts::FRAC_PI_4,
             aspect,
             45.0,
             0.1,

@@ -1,10 +1,13 @@
+use std::f32::consts::FRAC_PI_2;
+
 use voxrs_math::*;
 use voxrs_render::blueprint;
 
+/// CameraRes is free moving camera
 pub struct CameraRes {
     eye: Vector3,
-    dir: Vector3, // look at dir
-    up: Vector3,
+    horizon: f32,
+    vert: f32,
     aspect: f32,
     fovy: f32,
     znear: f32,
@@ -14,8 +17,8 @@ pub struct CameraRes {
 impl CameraRes {
     pub fn new(
         eye: Vector3,
-        dir: Vector3,
-        up: Vector3,
+        horizon: f32,
+        vert: f32,
         aspect: f32,
         fovy: f32,
         znear: f32,
@@ -23,8 +26,8 @@ impl CameraRes {
     ) -> Self {
         Self {
             eye,
-            dir,
-            up,
+            horizon,
+            vert,
             aspect,
             fovy,
             znear,
@@ -33,8 +36,9 @@ impl CameraRes {
     }
 
     pub fn build_view_projection_matrix(&self) -> Matrix4 {
-        let target = self.get_eye_target();
-        let view = Matrix4::look_at(&self.eye, &target, &self.up);
+        let (_, y, z) = self.get_xyz();
+        let target = self.eye + z;
+        let view = Matrix4::look_at(&self.eye, &target, &y);
         let proj = Matrix4::perspective(self.aspect, self.fovy, self.znear, self.zfar);
 
         proj * view
@@ -49,35 +53,26 @@ impl CameraRes {
     }
 
     pub fn move_camera_relative(&mut self, rel_offset: &Vector3) {
-        let right = Vector3::cross(&self.up, &self.dir).get_normalized();
-        let offset = self.dir * rel_offset.z() + self.up * rel_offset.y() + right * rel_offset.x();
+        let (x, y, z) = self.get_xyz();
+        let offset = x * rel_offset.x() + y * rel_offset.y() + z * rel_offset.z();
         self.move_camera(&offset);
-
-        eprintln!("camera pos: {:?}", self.eye);
     }
 
     /// horizon: positive -> right, radians
     /// vert: positive -> up. radians
     pub fn rotate_camera(&mut self, horizon: f32, vert: f32) {
-        let up = self.up;
-        let dir = self.dir;
-        let mut right = Vector3::cross(&up, &dir).get_normalized();
-
-        // rotate world y axis
-        let mut q = Quat::from_rotate_axis(&Vector3::new(0.0, 1.0, 0.0), horizon);
-        right = q.transform(&right);
-
-        q.rotate_axis(&right, -vert);
-
-        self.up = q.transform(&up);
-        self.dir = q.transform(&dir);
+        self.horizon += horizon;
+        self.vert += vert;
+        self.vert = self.vert.clamp(-FRAC_PI_2, FRAC_PI_2);
     }
 
     pub fn get_sphere(&self) -> Sphere {
+        let (_, y, z) = self.get_xyz();
+        let target = self.eye + z;
         Sphere::from_view_proj(
             &self.eye,
-            &(self.eye + self.dir),
-            &self.up,
+            &target,
+            &y,
             self.znear,
             self.zfar,
             self.aspect,
@@ -85,17 +80,27 @@ impl CameraRes {
         )
     }
 
-    pub fn get_eye_target(&self) -> Vector3 {
-        self.eye + self.dir
+    /// get_xyz returns x(right) direction, y(up) direction, z(forward) direction in world coord
+    pub fn get_xyz(&self) -> (Vector3, Vector3, Vector3) {
+        let mut q = Quat::from_rotate_axis(&Vector3::new(1.0, 0.0, 0.0), -self.vert);
+        q.rotate_axis(&Vector3::new(0.0, 1.0, 0.0), self.horizon);
+
+        let x = q.transform(&Vector3::new(1.0, 0.0, 0.0));
+        let y = q.transform(&Vector3::new(0.0, 1.0, 0.0));
+        let z = q.transform(&Vector3::new(0.0, 0.0, 1.0));
+
+        (x, y, z)
     }
 }
 
 impl Into<blueprint::Camera> for &CameraRes {
     fn into(self) -> blueprint::Camera {
+        let (_, y, z) = self.get_xyz();
+        let target = self.eye + z;
         blueprint::Camera {
             eye: self.eye,
-            target: self.get_eye_target(),
-            up: self.up,
+            target,
+            up: y,
             aspect: self.aspect,
             fovy: self.fovy,
             znear: self.znear,

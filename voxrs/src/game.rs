@@ -29,8 +29,8 @@ impl Game {
 
         let camera = CameraRes::new(
             Vector3::new(3.5, 3.5, -10.0),
-            Vector3::new(0.5, 0.5, 10.0),
-            Vector3::new(0.0, 1.0, 0.0),
+            0.0,
+            0.0,
             aspect,
             45.0,
             0.1,

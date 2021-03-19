@@ -17,6 +17,7 @@ impl Quat {
         let q = nalgebra_glm::quat_angle_axis(angle, &axis.v);
         Self { q }
     }
+
     /// make quaternion
     /// ratate from dir1 to dir2
     pub fn from_two_dirs(dir1: &Vector3, dir2: &Vector3) -> Self {
@@ -32,8 +33,6 @@ impl Quat {
     pub fn rotate_axis(&mut self, axis: &Vector3, angle: f32) {
         let q2 = Self::from_rotate_axis(axis, angle);
         *self = q2 * (*self);
-        // let q2 = nalgebra_glm::quat_angle_axis(angle, &axis.v);
-        // self.q = q2 * self.q;
     }
 }
 

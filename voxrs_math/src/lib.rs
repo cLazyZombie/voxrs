@@ -2,18 +2,20 @@
 #![allow(clippy::many_single_char_names)]
 #![allow(clippy::clippy::len_without_is_empty)]
 
-mod matrix4;
-mod vector3;
-mod quat;
-mod plane;
+extern crate nalgebra_glm as glm;
+
 mod aabb;
 mod frustum;
+mod matrix4;
+mod plane;
+mod quat;
 mod sphere;
+mod vector3;
 
-pub use matrix4::Matrix4;
-pub use vector3::Vector3;
-pub use quat::Quat;
-pub use plane::Plane;
 pub use aabb::Aabb;
 pub use frustum::Frustum;
+pub use matrix4::Matrix4;
+pub use plane::Plane;
+pub use quat::Quat;
 pub use sphere::Sphere;
+pub use vector3::Vector3;
