@@ -63,7 +63,8 @@ impl CameraRes {
         let dir = self.dir;
         let mut right = Vector3::cross(&up, &dir).get_normalized();
 
-        let mut q = Quat::from_rotate_axis(&up, horizon);
+        // rotate world y axis
+        let mut q = Quat::from_rotate_axis(&Vector3::new(0.0, 1.0, 0.0), horizon);
         right = q.transform(&right);
 
         q.rotate_axis(&right, -vert);

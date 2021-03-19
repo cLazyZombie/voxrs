@@ -42,14 +42,15 @@ pub fn control(
         }
     }
 
-    const ROTATE_SPEED: f32 = 0.003;
+    const ROTATE_SPEED_HORIZON: f32 = 0.007;
+    const ROTATE_SPEED_VERT: f32 = 0.003;
 
     // rotate mouse
     if mouse_input.right_button {
         let delta = mouse_input.delta;
         camera.rotate_camera(
-            delta.0 as f32 * ROTATE_SPEED,
-            delta.1 as f32 * ROTATE_SPEED * -1.0,
+            delta.0 as f32 * ROTATE_SPEED_HORIZON,
+            delta.1 as f32 * ROTATE_SPEED_VERT * -1.0,
         );
     }
     mouse_input.clear_mouse_motion();
