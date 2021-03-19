@@ -1,4 +1,4 @@
-use voxrs::ecs::game::Game;
+use voxrs::Game;
 use voxrs_asset::AssetManager;
 use voxrs_core::res::KeyInputRes;
 use voxrs_render::render;

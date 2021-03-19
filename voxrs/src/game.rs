@@ -6,7 +6,7 @@ use voxrs_types::{io::FileSystem, Clock};
 
 use voxrs_math::*;
 
-use super::systems::{camera, world_block_render};
+use super::system::{camera, world_block_render};
 
 pub struct Game {
     world: World,

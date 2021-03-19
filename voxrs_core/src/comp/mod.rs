@@ -6,10 +6,10 @@ use derive_more::{AddAssign, Deref, From};
 use voxrs_math::*;
 
 #[derive(From, Deref, AddAssign, Debug, Copy, Clone)]
-pub struct Position(pub Vector3);
+pub struct PositionComp(pub Vector3);
 
 #[derive(From, Deref, Debug, Copy, Clone)]
-pub struct Direction(Vector3);
+pub struct DirectionComp(Vector3);
 
 #[cfg(test)]
 mod tests {
@@ -17,6 +17,6 @@ mod tests {
 
     #[test]
     fn test_position() {
-        let _pos: Position = Vector3::new(1.0, 1.0, 1.0).into();
+        let _pos: PositionComp = Vector3::new(1.0, 1.0, 1.0).into();
     }
 }

@@ -1,2 +1,4 @@
-mod ecs;
-pub use ecs::Editor;
+pub mod system;
+
+mod editor;
+pub use editor::Editor;
