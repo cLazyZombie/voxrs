@@ -1,14 +1,15 @@
 [workspace]
-members = [
-    "voxrs",
-    "voxrs_ed",
-    "voxrs_math",
-    "voxrs_types",
-    "voxrs_derive",
-    "voxrs_asset",
-    "voxrs_render",
-]
 default-members = ["voxrs"]
+members = [
+  "voxrs",
+  "voxrs_ed",
+  "voxrs_math",
+  "voxrs_types",
+  "voxrs_derive",
+  "voxrs_asset",
+  "voxrs_render",
+  "voxrs_core",
+]
 
 [profile.release]
 debug = true

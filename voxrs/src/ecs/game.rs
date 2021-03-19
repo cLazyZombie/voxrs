@@ -1,14 +1,12 @@
 use legion::*;
 use voxrs_asset::{AssetManager, AssetPath};
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, WorldBlockRes};
 use voxrs_render::blueprint::Blueprint;
-use voxrs_types::{Clock, io::FileSystem};
+use voxrs_types::{io::FileSystem, Clock};
 
 use voxrs_math::*;
 
-use super::{
-    resources::{ElapsedTimeRes, KeyInputRes, WorldBlockRes, CameraRes},
-    systems::{camera, world_block_render},
-};
+use super::systems::{camera, world_block_render};
 
 pub struct Game {
     world: World,

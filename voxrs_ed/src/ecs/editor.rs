@@ -1,12 +1,11 @@
 use legion::*;
 use voxrs_asset::{AssetManager, AssetPath};
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, WorldBlockRes};
 use voxrs_math::Vector3;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
 
-use crate::ecs::res::Camera;
-
-use super::{res, system};
+use super::system;
 
 pub struct Editor {
     world: World,
@@ -22,10 +21,10 @@ impl Editor {
         let mut res = Resources::default();
 
         let world_block_res =
-            res::WorldBlock::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
+            WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
         res.insert(world_block_res);
 
-        let camera = Camera::new(
+        let camera = CameraRes::new(
             Vector3::new(0.0, 50.0, -50.0),
             Vector3::get_normalized(&Vector3::new(0.0, -1.0, 1.0)),
             Vector3::get_normalized(&Vector3::new(0.0, 1.0, 1.0)),
@@ -56,13 +55,13 @@ impl Editor {
         }
     }
 
-    pub fn set_input(&mut self, key_input: Option<res::KeyInput>) {
-        let mut key_res = self.res.get_mut_or_default::<Option<res::KeyInput>>();
+    pub fn set_input(&mut self, key_input: Option<KeyInputRes>) {
+        let mut key_res = self.res.get_mut_or_default::<Option<KeyInputRes>>();
         *key_res = key_input;
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        let mut camera_res = self.res.get_mut::<res::Camera>().unwrap();
+        let mut camera_res = self.res.get_mut::<CameraRes>().unwrap();
         camera_res.resize(width, height);
     }
 
@@ -71,7 +70,7 @@ impl Editor {
 
         // change time
         {
-            let mut elapsed = self.res.get_mut_or_default::<res::ElapsedTime>();
+            let mut elapsed = self.res.get_mut_or_default::<ElapsedTimeRes>();
             *elapsed = interval.into();
         }
 

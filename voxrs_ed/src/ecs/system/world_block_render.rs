@@ -1,11 +1,11 @@
-use crate::ecs::res;
 use legion::system;
+use voxrs_core::res::{CameraRes, WorldBlockRes};
 use voxrs_render::blueprint::Blueprint;
 
 #[system]
 pub fn render(
-    #[resource] world_block_res: &res::WorldBlock,
-    #[resource] camera_res: &res::Camera,
+    #[resource] world_block_res: &WorldBlockRes,
+    #[resource] camera_res: &CameraRes,
     #[resource] bp: &mut Blueprint,
 ) {
     let asset = world_block_res.handle.get_asset();

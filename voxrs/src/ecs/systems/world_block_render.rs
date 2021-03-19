@@ -1,8 +1,6 @@
 use legion::system;
+use voxrs_core::res::{CameraRes, WorldBlockRes};
 use voxrs_render::blueprint::Blueprint;
-use crate::{
-    ecs::resources::{CameraRes, WorldBlockRes},
-};
 
 #[system]
 pub fn world_block_render(
@@ -20,5 +18,4 @@ pub fn world_block_render(
     for chunk in culled_chunks {
         bp.add_chunk(chunk.clone_read());
     }
-
 }

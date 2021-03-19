@@ -1,12 +1,9 @@
 use legion::system;
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes};
 use winit::event::{ElementState, VirtualKeyCode};
 
-use voxrs_render::{blueprint::Blueprint};
 use voxrs_math::*;
-
-use crate::ecs::{
-    resources::{ElapsedTimeRes, KeyInputRes, CameraRes},
-};
+use voxrs_render::blueprint::Blueprint;
 
 #[system]
 pub fn camera_move(
@@ -26,16 +23,16 @@ pub fn camera_move(
 
             match key {
                 VirtualKeyCode::W | VirtualKeyCode::Up => {
-                    camera.move_camera(Vector3::new(0.0, 0.0, 1.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(&(Vector3::new(0.0, 0.0, 1.0) * elapsed_time * MOVE_SPEED));
                 }
                 VirtualKeyCode::S | VirtualKeyCode::Down => {
-                    camera.move_camera(Vector3::new(0.0, 0.0, -1.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(&(Vector3::new(0.0, 0.0, -1.0) * elapsed_time * MOVE_SPEED));
                 }
                 VirtualKeyCode::A | VirtualKeyCode::Left => {
-                    camera.move_camera(Vector3::new(-1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(&(Vector3::new(-1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED));
                 }
                 VirtualKeyCode::D | VirtualKeyCode::Right => {
-                    camera.move_camera(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED);
+                    camera.move_camera(&(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED));
                 }
                 _ => {}
             }
@@ -44,9 +41,6 @@ pub fn camera_move(
 }
 
 #[system]
-pub fn camera_render(
-    #[resource] camera: &CameraRes, 
-    #[resource] bp: &mut Blueprint,
-) {
+pub fn camera_render(#[resource] camera: &CameraRes, #[resource] bp: &mut Blueprint) {
     bp.set_camera(camera.into());
 }

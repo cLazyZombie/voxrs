@@ -1,15 +1,14 @@
 use legion::*;
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes};
 use voxrs_math::Vector3;
 use voxrs_render::blueprint::Blueprint;
 use winit::event::{ElementState, VirtualKeyCode};
 
-use crate::ecs::res;
-
 #[system]
 pub fn control(
-    #[resource] camera: &mut res::Camera,
-    #[resource] elapsed_time: &res::ElapsedTime,
-    #[resource] key_input: &Option<res::KeyInput>,
+    #[resource] camera: &mut CameraRes,
+    #[resource] elapsed_time: &ElapsedTimeRes,
+    #[resource] key_input: &Option<KeyInputRes>,
 ) {
     const MOVE_SPEED: f32 = 20.0;
 
@@ -49,6 +48,6 @@ pub fn control(
 }
 
 #[system]
-pub fn render(#[resource] camera: &res::Camera, #[resource] bp: &mut Blueprint) {
+pub fn render(#[resource] camera: &CameraRes, #[resource] bp: &mut Blueprint) {
     bp.set_camera(camera.into());
 }

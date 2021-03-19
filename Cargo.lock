@@ -2156,6 +2156,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "voxrs_asset",
+ "voxrs_core",
  "voxrs_derive",
  "voxrs_math",
  "voxrs_render",
@@ -2185,6 +2186,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "voxrs_core"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "enumflags2",
+ "rayon",
+ "voxrs_asset",
+ "voxrs_math",
+ "voxrs_render",
+ "voxrs_types",
+ "winit",
+]
+
+[[package]]
 name = "voxrs_derive"
 version = "0.1.0"
 dependencies = [
@@ -2210,6 +2225,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "voxrs_asset",
+ "voxrs_core",
  "voxrs_derive",
  "voxrs_math",
  "voxrs_render",

@@ -1,7 +1,7 @@
 use voxrs_math::*;
 use voxrs_render::blueprint;
 
-pub struct Camera {
+pub struct CameraRes {
     eye: Vector3,
     dir: Vector3, // look at dir
     up: Vector3,
@@ -11,7 +11,7 @@ pub struct Camera {
     zfar: f32,
 }
 
-impl Camera {
+impl CameraRes {
     pub fn new(
         eye: Vector3,
         dir: Vector3,
@@ -89,7 +89,7 @@ impl Camera {
     }
 }
 
-impl Into<blueprint::Camera> for &Camera {
+impl Into<blueprint::Camera> for &CameraRes {
     fn into(self) -> blueprint::Camera {
         blueprint::Camera {
             eye: self.eye,

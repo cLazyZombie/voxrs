@@ -3,15 +3,13 @@ use rayon::prelude::*;
 
 use voxrs_asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset};
 use voxrs_math::{Aabb, Frustum, Vector3};
-use voxrs_types::{BLOCK_COUNT_IN_CHUNKSIDE, BlockPos, Dir, io::FileSystem};
+use voxrs_types::{io::FileSystem, BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
 
+use voxrs_types::SafeCloner;
 #[cfg(test)]
-use voxrs_types::{WorldChunkCounts};
-use voxrs_types::{SafeCloner};
+use voxrs_types::WorldChunkCounts;
 
-use voxrs_render::{
-    blueprint::{BlockMatIdx, Chunk},
-};
+use voxrs_render::blueprint::{BlockMatIdx, Chunk};
 
 use super::CameraRes;
 
@@ -37,7 +35,7 @@ impl WorldBlockRes {
                     let pos = asset.get_world_pos(chunk_asset.idx);
                     let chunk = SafeCloner::new(Chunk::new(
                         pos,
-                        Aabb::new( pos, pos + chunk_extend),
+                        Aabb::new(pos, pos + chunk_extend),
                         chunk_asset.blocks.clone(),
                         chunk_asset.vis.clone(),
                     ));
@@ -55,11 +53,13 @@ impl WorldBlockRes {
         let frustum = Frustum::new(&camera.build_view_projection_matrix());
         let camera_sphere = camera.get_sphere();
 
-        let chunks = self.chunks.par_iter()
+        let chunks = self
+            .chunks
+            .par_iter()
             .filter_map(|c| c.as_ref()) // remove none
             .filter(|c| camera_sphere.intersect_aabb(&c.aabb) && frustum.cull_aabb(&c.aabb))
             .collect();
-        
+
         chunks
 
         // for chunk in &self.chunks {

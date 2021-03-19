@@ -1,5 +1,6 @@
-use voxrs::ecs::{game::Game, resources::KeyInputRes};
+use voxrs::ecs::game::Game;
 use voxrs_asset::AssetManager;
+use voxrs_core::res::KeyInputRes;
 use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
 use winit::{
