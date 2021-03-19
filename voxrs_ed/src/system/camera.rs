@@ -38,6 +38,12 @@ pub fn control(
                     &(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED),
                 );
             }
+            VirtualKeyCode::E => {
+                camera.move_camera(&(Vector3::new(0.0, 1.0, 0.0) * elapsed_time * MOVE_SPEED));
+            }
+            VirtualKeyCode::Q => {
+                camera.move_camera(&(Vector3::new(0.0, -1.0, 0.0) * elapsed_time * MOVE_SPEED));
+            }
             _ => {}
         }
     }
