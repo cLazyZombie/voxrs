@@ -1,5 +1,4 @@
 use voxrs_asset::AssetManager;
-use voxrs_core::res::KeyInputRes;
 use voxrs_ed::Editor;
 use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
@@ -18,7 +17,6 @@ fn main() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
-    let mut key_input: Option<KeyInputRes> = None;
 
     let mut asset_manager = AssetManager::<GeneralFileSystem>::new();
 
@@ -38,13 +36,12 @@ fn main() {
                 renderer.resize(*physical_size);
             }
             WindowEvent::KeyboardInput { input, .. } => {
-                key_input = Some((*input).into());
+                editor.on_key_input(input);
             }
             _ => {}
         },
         Event::RedrawRequested(_) => {}
         Event::MainEventsCleared => {
-            editor.set_input(key_input);
             editor.tick();
             let bp = editor.render();
             renderer.render(bp).unwrap();

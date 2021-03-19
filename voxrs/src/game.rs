@@ -5,6 +5,7 @@ use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
 
 use voxrs_math::*;
+use winit::event::{ElementState, KeyboardInput};
 
 use super::system::{camera, world_block_render};
 
@@ -37,6 +38,9 @@ impl Game {
         );
         res.insert(camera);
 
+        let key_input = KeyInputRes::new();
+        res.insert(key_input);
+
         let tick_schedule = Schedule::builder()
             .add_system(camera::camera_move_system())
             .build();
@@ -57,9 +61,16 @@ impl Game {
         }
     }
 
-    pub fn set_input(&mut self, key_input: Option<KeyInputRes>) {
-        let mut key_res = self.res.get_mut_or_default::<Option<KeyInputRes>>();
-        *key_res = key_input;
+    pub fn on_key_input(&mut self, input: &KeyboardInput) {
+        let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
+
+        if let Some(key_code) = input.virtual_keycode {
+            if input.state == ElementState::Pressed {
+                key_input.on_key_pressed(key_code);
+            } else {
+                key_input.on_key_released(key_code);
+            }
+        }
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
