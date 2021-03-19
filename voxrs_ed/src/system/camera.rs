@@ -1,5 +1,5 @@
 use legion::*;
-use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes};
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes};
 use voxrs_math::Vector3;
 use voxrs_render::blueprint::Blueprint;
 use winit::event::VirtualKeyCode;
@@ -9,11 +9,13 @@ pub fn control(
     #[resource] camera: &mut CameraRes,
     #[resource] elapsed_time: &ElapsedTimeRes,
     #[resource] key_input: &KeyInputRes,
+    #[resource] mouse_input: &mut MouseInputRes,
 ) {
     const MOVE_SPEED: f32 = 20.0;
 
     let elapsed_time: f32 = **elapsed_time;
 
+    // move mouse
     for key in key_input.keys() {
         match *key {
             VirtualKeyCode::W | VirtualKeyCode::Up => {
@@ -39,6 +41,18 @@ pub fn control(
             _ => {}
         }
     }
+
+    const ROTATE_SPEED: f32 = 0.003;
+
+    // rotate mouse
+    if mouse_input.right_button {
+        let delta = mouse_input.delta;
+        camera.rotate_camera(
+            delta.0 as f32 * ROTATE_SPEED,
+            delta.1 as f32 * ROTATE_SPEED * -1.0,
+        );
+    }
+    mouse_input.clear_mouse_motion();
 }
 
 #[system]

@@ -1,10 +1,10 @@
 use legion::*;
 use voxrs_asset::{AssetManager, AssetPath};
-use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, WorldBlockRes};
+use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, WorldBlockRes};
 use voxrs_math::Vector3;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use winit::event::{ElementState, KeyboardInput};
+use winit::event::{ElementState, KeyboardInput, MouseButton};
 
 use super::system;
 
@@ -39,6 +39,9 @@ impl Editor {
         let key_input = KeyInputRes::new();
         res.insert(key_input);
 
+        let mouse_input = MouseInputRes::new();
+        res.insert(mouse_input);
+
         let tick_schedule = Schedule::builder()
             .add_system(system::camera::control_system())
             .build();
@@ -68,6 +71,20 @@ impl Editor {
             } else {
                 key_input.on_key_released(key_code);
             }
+        }
+    }
+
+    pub fn on_mouse_motion(&mut self, delta: (f64, f64)) {
+        let mut mouse_input = self.res.get_mut_or_default::<MouseInputRes>();
+        mouse_input.on_mouse_motion(delta);
+    }
+
+    pub fn on_mouse_input(&mut self, button: MouseButton, state: ElementState) {
+        let mut mouse_input = self.res.get_mut_or_default::<MouseInputRes>();
+        if state == ElementState::Pressed {
+            mouse_input.on_mouse_pressed(button);
+        } else {
+            mouse_input.on_mouse_released(button);
         }
     }
 

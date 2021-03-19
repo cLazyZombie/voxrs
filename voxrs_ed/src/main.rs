@@ -3,7 +3,7 @@ use voxrs_ed::Editor;
 use voxrs_render::render;
 use voxrs_types::io::GeneralFileSystem;
 use winit::{
-    event::{Event, WindowEvent},
+    event::{DeviceEvent, Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
@@ -37,6 +37,15 @@ fn main() {
             }
             WindowEvent::KeyboardInput { input, .. } => {
                 editor.on_key_input(input);
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                editor.on_mouse_input(*button, *state);
+            }
+            _ => {}
+        },
+        Event::DeviceEvent { ref event, .. } => match event {
+            DeviceEvent::MouseMotion { delta } => {
+                editor.on_mouse_motion(*delta);
             }
             _ => {}
         },
