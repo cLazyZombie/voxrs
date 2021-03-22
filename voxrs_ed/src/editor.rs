@@ -17,7 +17,11 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new<F: FileSystem>(aspect: f32, asset_manager: &mut AssetManager<F>) -> Self {
+    pub fn new<F: FileSystem>(
+        width: u32,
+        height: u32,
+        asset_manager: &mut AssetManager<F>,
+    ) -> Self {
         let world = World::default();
         let mut res = Resources::default();
 
@@ -29,7 +33,8 @@ impl Editor {
             Vector3::new(0.0, 50.0, -50.0),
             Angle::from_degrees(0.0),
             Angle::from_degrees(-45.0),
-            aspect,
+            width,
+            height,
             45.0,
             0.1,
             100.0,
@@ -44,6 +49,7 @@ impl Editor {
 
         let tick_schedule = Schedule::builder()
             .add_system(system::camera::control_system())
+            .add_system(system::world_block_modify::modify_system())
             .build();
 
         let render_schedule = Schedule::builder()

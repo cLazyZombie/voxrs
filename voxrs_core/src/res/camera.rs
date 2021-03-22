@@ -6,7 +6,8 @@ pub struct CameraRes {
     eye: Vector3,
     horizon: Angle,
     vert: Angle,
-    aspect: f32,
+    width: u32,
+    height: u32,
     fovy: f32,
     znear: f32,
     zfar: f32,
@@ -17,7 +18,8 @@ impl CameraRes {
         eye: Vector3,
         horizon: Angle,
         vert: Angle,
-        aspect: f32,
+        width: u32,
+        height: u32,
         fovy: f32,
         znear: f32,
         zfar: f32,
@@ -26,7 +28,8 @@ impl CameraRes {
             eye,
             horizon,
             vert,
-            aspect,
+            width,
+            height,
             fovy,
             znear,
             zfar,
@@ -37,13 +40,18 @@ impl CameraRes {
         let (_, y, z) = self.get_xyz();
         let target = self.eye + z;
         let view = Matrix4::look_at(&self.eye, &target, &y);
-        let proj = Matrix4::perspective(self.aspect, self.fovy, self.znear, self.zfar);
+        let proj = Matrix4::perspective(self.aspect(), self.fovy, self.znear, self.zfar);
 
         proj * view
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.aspect = width as f32 / height as f32;
+        self.width = width;
+        self.height = height;
+    }
+
+    pub fn aspect(&self) -> f32 {
+        self.width as f32 / self.height as f32
     }
 
     pub fn move_camera(&mut self, offset: &Vector3) {
@@ -72,7 +80,7 @@ impl CameraRes {
             &y,
             self.znear,
             self.zfar,
-            self.aspect,
+            self.aspect(),
             self.fovy,
         )
     }
@@ -88,6 +96,11 @@ impl CameraRes {
 
         (x, y, z)
     }
+
+    pub fn create_ray(&self, _screen_x: f64, _screen_y: f64) -> Ray {
+        let (_, _, dir) = self.get_xyz();
+        Ray::from_values(&self.eye, &dir)
+    }
 }
 
 impl Into<blueprint::Camera> for &CameraRes {
@@ -98,7 +111,7 @@ impl Into<blueprint::Camera> for &CameraRes {
             eye: self.eye,
             target,
             up: y,
-            aspect: self.aspect,
+            aspect: self.aspect(),
             fovy: self.fovy,
             znear: self.znear,
             zfar: self.zfar,

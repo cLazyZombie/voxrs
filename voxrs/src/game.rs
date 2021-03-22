@@ -19,7 +19,11 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new<F: FileSystem>(aspect: f32, asset_manager: &mut AssetManager<F>) -> Self {
+    pub fn new<F: FileSystem>(
+        width: u32,
+        height: u32,
+        asset_manager: &mut AssetManager<F>,
+    ) -> Self {
         let world = World::default();
         let mut res = Resources::default();
 
@@ -31,7 +35,8 @@ impl Game {
             Vector3::new(3.5, 3.5, -10.0),
             Angle::from_degrees(0.0),
             Angle::from_degrees(0.0),
-            aspect,
+            width,
+            height,
             45.0,
             0.1,
             100.0,

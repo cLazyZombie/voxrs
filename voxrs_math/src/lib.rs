@@ -23,5 +23,6 @@ pub use matrix4::Matrix4;
 pub use plane::Plane;
 pub use quat::Quat;
 pub use ray::Ray;
+pub use ray::RayAabbResult;
 pub use sphere::Sphere;
 pub use vector3::Vector3;

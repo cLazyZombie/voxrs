@@ -5,6 +5,7 @@
 mod chunk;
 
 pub use chunk::BlockPos;
+pub use chunk::BlockXyz;
 pub use chunk::ChunkPos;
 pub use chunk::WorldBlockCounts;
 pub use chunk::WorldChunkCounts;

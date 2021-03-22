@@ -16,14 +16,16 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
-
     let mut asset_manager = AssetManager::<GeneralFileSystem>::new();
     let (sender, receiver) = crossbeam_channel::bounded(1);
 
     render::create_rendering_thread(receiver, &window, asset_manager.clone());
 
-    let mut game = Game::new(aspect, &mut asset_manager);
+    let mut game = Game::new(
+        window.inner_size().width,
+        window.inner_size().height,
+        &mut asset_manager,
+    );
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {

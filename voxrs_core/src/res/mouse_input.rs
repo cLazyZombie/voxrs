@@ -2,6 +2,7 @@ use winit::event::MouseButton;
 
 pub struct MouseInputRes {
     pub delta: (f64, f64),
+    pub position: (f64, f64),
     pub left_button: bool,
     pub right_button: bool,
     pub middle_button: bool,
@@ -11,6 +12,7 @@ impl MouseInputRes {
     pub fn new() -> Self {
         Self {
             delta: (0.0, 0.0),
+            position: (0.0, 0.0),
             left_button: false,
             right_button: false,
             middle_button: false,

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use voxrs_math::{Dir, Vector3};
+use voxrs_math::{Aabb, Dir, Vector3};
 
 /// block count in chunk direction (x, y, z)
 pub const BLOCK_COUNT_IN_CHUNKSIDE: usize = 16;
@@ -140,25 +140,22 @@ impl<'a> BlockPos<'a> {
         }
     }
 
-    pub fn from_world_xyz(
-        chunk_counts: &'a WorldChunkCounts,
-        world_xyz: (i32, i32, i32),
-    ) -> Option<Self> {
-        if world_xyz.0 < 0 || world_xyz.1 < 0 || world_xyz.2 < 0 {
+    pub fn from_world_xyz(chunk_counts: &'a WorldChunkCounts, world_xyz: BlockXyz) -> Option<Self> {
+        if world_xyz.x < 0 || world_xyz.y < 0 || world_xyz.z < 0 {
             return None;
         }
 
         let chunk_xyz = (
-            world_xyz.0 / BLOCK_COUNT_IN_CHUNKSIDE as i32,
-            world_xyz.1 / BLOCK_COUNT_IN_CHUNKSIDE as i32,
-            world_xyz.2 / BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            world_xyz.x / BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            world_xyz.y / BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            world_xyz.z / BLOCK_COUNT_IN_CHUNKSIDE as i32,
         );
 
         if ChunkPos::is_xyz_in_world(chunk_counts, chunk_xyz) {
             let local_xyz = (
-                world_xyz.0 % BLOCK_COUNT_IN_CHUNKSIDE as i32,
-                world_xyz.1 % BLOCK_COUNT_IN_CHUNKSIDE as i32,
-                world_xyz.2 % BLOCK_COUNT_IN_CHUNKSIDE as i32,
+                world_xyz.x % BLOCK_COUNT_IN_CHUNKSIDE as i32,
+                world_xyz.y % BLOCK_COUNT_IN_CHUNKSIDE as i32,
+                world_xyz.z % BLOCK_COUNT_IN_CHUNKSIDE as i32,
             );
             let block_idx = BlockPos::pos_to_idx(local_xyz);
             let chunk_idx = ChunkPos::xyz_to_idx(chunk_counts, chunk_xyz);
@@ -172,12 +169,12 @@ impl<'a> BlockPos<'a> {
         let mut world_xyz = self.get_world_xyz();
 
         match dir {
-            Dir::XPos => world_xyz.0 += 1,
-            Dir::XNeg => world_xyz.0 -= 1,
-            Dir::YPos => world_xyz.1 += 1,
-            Dir::YNeg => world_xyz.1 -= 1,
-            Dir::ZPos => world_xyz.2 += 1,
-            Dir::ZNeg => world_xyz.2 -= 1,
+            Dir::XPos => world_xyz.x += 1,
+            Dir::XNeg => world_xyz.x -= 1,
+            Dir::YPos => world_xyz.y += 1,
+            Dir::YNeg => world_xyz.y -= 1,
+            Dir::ZPos => world_xyz.z += 1,
+            Dir::ZNeg => world_xyz.z -= 1,
         }
 
         BlockPos::from_world_xyz(self.chunk_counts, world_xyz)
@@ -208,17 +205,43 @@ impl<'a> BlockPos<'a> {
     }
 
     /// get world xyz of lbock
-    fn get_world_xyz(&self) -> (i32, i32, i32) {
+    pub fn get_world_xyz(&self) -> BlockXyz {
         let chunk_pos: ChunkPos = self.into();
         let chunk_xyz: (i32, i32, i32) = chunk_pos.get_xyz();
 
         let local_xyz = self.get_local_xyz();
 
-        (
+        BlockXyz::new(
             local_xyz.0 + chunk_xyz.0 * BLOCK_COUNT_IN_CHUNKSIDE as i32,
             local_xyz.1 + chunk_xyz.1 * BLOCK_COUNT_IN_CHUNKSIDE as i32,
             local_xyz.2 + chunk_xyz.2 * BLOCK_COUNT_IN_CHUNKSIDE as i32,
         )
+    }
+
+    pub fn aabb(&self, block_size: f32) -> Aabb {
+        let xyz = self.get_world_xyz();
+        let min = Vector3::new(
+            xyz.x as f32 * block_size,
+            xyz.y as f32 * block_size,
+            xyz.z as f32 * block_size,
+        );
+        let max = min + Vector3::new(block_size, block_size, block_size);
+
+        Aabb::new(min, max)
+    }
+}
+
+/// block position in world x, y, z (block unit)
+#[derive(Copy, Clone, Debug)]
+pub struct BlockXyz {
+    x: i32,
+    y: i32,
+    z: i32,
+}
+
+impl BlockXyz {
+    pub fn new(x: i32, y: i32, z: i32) -> Self {
+        BlockXyz { x, y, z }
     }
 }
 
@@ -229,7 +252,7 @@ mod tests {
     #[test]
     fn neighbor_block_pos_test() {
         let chunk_counts = WorldChunkCounts::new(2, 4, 6);
-        let block = BlockPos::from_world_xyz(&chunk_counts, (16, 16, 16)).unwrap();
+        let block = BlockPos::from_world_xyz(&chunk_counts, BlockXyz::new(16, 16, 16)).unwrap();
         assert_eq!(block, BlockPos::new(&chunk_counts, 11, 0));
 
         let block_xpos = block.neighbor_block_pos(Dir::XPos).unwrap();
@@ -244,7 +267,7 @@ mod tests {
         let chunk_counts = WorldChunkCounts::new(2, 2, 2);
 
         // first block
-        let block = BlockPos::from_world_xyz(&chunk_counts, (0, 0, 0)).unwrap();
+        let block = BlockPos::from_world_xyz(&chunk_counts, BlockXyz::new(0, 0, 0)).unwrap();
 
         let invalid = block.neighbor_block_pos(Dir::XNeg);
         assert_eq!(invalid, None);
@@ -256,7 +279,7 @@ mod tests {
         assert_eq!(invalid, None);
 
         // last block
-        let block = BlockPos::from_world_xyz(&chunk_counts, (31, 31, 31)).unwrap();
+        let block = BlockPos::from_world_xyz(&chunk_counts, BlockXyz::new(31, 31, 31)).unwrap();
 
         let invalid = block.neighbor_block_pos(Dir::XPos);
         assert_eq!(invalid, None);
