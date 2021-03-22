@@ -1,6 +1,5 @@
-use enumflags2::bitflags;
 use serde::Deserialize;
-use voxrs_math::Vector3;
+use voxrs_math::{Dir, Vector3};
 
 /// block count in chunk direction (x, y, z)
 pub const BLOCK_COUNT_IN_CHUNKSIDE: usize = 16;
@@ -8,32 +7,6 @@ pub const BLOCK_COUNT_IN_CHUNKSIDE: usize = 16;
 /// total block count in chunk
 pub const TOTAL_BLOCK_COUNTS_IN_CHUNK: usize =
     BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE;
-
-/// XPos : X Positive direction , XNeg : X Negative direction
-#[bitflags]
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Dir {
-    XPos = 0b0000_0001,
-    XNeg = 0b0000_0010,
-    YPos = 0b0000_0100,
-    YNeg = 0b0000_1000,
-    ZPos = 0b0001_0000,
-    ZNeg = 0b0010_0000,
-}
-
-impl Dir {
-    pub fn opposite_dir(&self) -> Self {
-        match *self {
-            Dir::XPos => Dir::XNeg,
-            Dir::XNeg => Dir::XPos,
-            Dir::YPos => Dir::YNeg,
-            Dir::YNeg => Dir::YPos,
-            Dir::ZPos => Dir::ZNeg,
-            Dir::ZNeg => Dir::ZPos,
-        }
-    }
-}
 
 /// block count in world in each direction (x, y, z)
 #[derive(Copy, Clone, Debug, Deserialize)]

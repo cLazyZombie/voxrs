@@ -7,7 +7,7 @@ use voxrs_asset::{
 };
 use voxrs_math::*;
 use voxrs_types::{
-    io::FileSystem, Dir, SafeCloner, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
+    io::FileSystem, SafeCloner, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
 };
 
 use wgpu::util::DeviceExt;

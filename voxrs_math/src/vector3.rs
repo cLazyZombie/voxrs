@@ -12,6 +12,18 @@ impl Vector3 {
         }
     }
 
+    pub fn front() -> Self {
+        Self::new(0.0, 0.0, 1.0)
+    }
+
+    pub fn back() -> Self {
+        Self::new(0.0, 0.0, -1.0)
+    }
+
+    pub fn zero() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+
     pub fn x(&self) -> f32 {
         self.v[0]
     }
@@ -91,6 +103,22 @@ impl std::ops::Mul<f32> for Vector3 {
 impl std::ops::AddAssign for Vector3 {
     fn add_assign(&mut self, rhs: Self) {
         self.v += rhs.v;
+    }
+}
+
+impl std::ops::Div<f32> for Vector3 {
+    type Output = Vector3;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Vector3::new(self.x() / rhs, self.y() / rhs, self.z() / rhs)
+    }
+}
+
+impl std::ops::Div<Vector3> for f32 {
+    type Output = Vector3;
+
+    fn div(self, rhs: Vector3) -> Self::Output {
+        Vector3::new(self / rhs.x(), self / rhs.y(), self / rhs.z())
     }
 }
 

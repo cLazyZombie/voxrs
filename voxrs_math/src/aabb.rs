@@ -14,6 +14,15 @@ impl Aabb {
     pub fn center(&self) -> Vector3 {
         (self.min + self.max) * 0.5
     }
+
+    pub fn has_point(&self, v: &Vector3) -> bool {
+        v.x() >= self.min.x()
+            && v.y() >= self.min.y()
+            && v.z() >= self.min.z()
+            && v.x() <= self.max.x()
+            && v.y() <= self.max.y()
+            && v.z() <= self.max.z()
+    }
 }
 
 #[cfg(test)]

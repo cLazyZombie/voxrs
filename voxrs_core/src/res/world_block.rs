@@ -2,8 +2,8 @@ use enumflags2::BitFlags;
 use rayon::prelude::*;
 
 use voxrs_asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset};
-use voxrs_math::{Aabb, Frustum, Vector3};
-use voxrs_types::{io::FileSystem, BlockPos, Dir, BLOCK_COUNT_IN_CHUNKSIDE};
+use voxrs_math::{Aabb, Dir, Frustum, Ray, Vector3};
+use voxrs_types::{io::FileSystem, BlockPos, BLOCK_COUNT_IN_CHUNKSIDE};
 
 use voxrs_types::SafeCloner;
 #[cfg(test)]
@@ -175,6 +175,10 @@ impl WorldBlockRes {
         } else {
             true
         }
+    }
+
+    pub fn trace(&self, _ray: &Ray) -> Option<(BlockPos, Dir)> {
+        todo!()
     }
 
     #[cfg(test)]

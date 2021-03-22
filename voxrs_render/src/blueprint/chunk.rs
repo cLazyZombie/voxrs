@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use enumflags2::BitFlags;
 use voxrs_math::*;
-use voxrs_types::Dir;
 
 use super::{BlockMatIdx, ChunkId};
 
