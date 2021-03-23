@@ -11,7 +11,7 @@ pub fn control(
     #[resource] key_input: &KeyInputRes,
     #[resource] mouse_input: &mut MouseInputRes,
 ) {
-    const MOVE_SPEED: f32 = 20.0;
+    const MOVE_SPEED: f32 = 10.0;
 
     let elapsed_time: f32 = **elapsed_time;
 
