@@ -2191,6 +2191,7 @@ version = "0.1.0"
 dependencies = [
  "derive_more",
  "enumflags2",
+ "log",
  "rayon",
  "voxrs_asset",
  "voxrs_math",

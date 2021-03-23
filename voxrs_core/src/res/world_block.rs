@@ -117,9 +117,9 @@ impl WorldBlockRes {
 
         // check self vis
         {
-            let mut vis = BitFlags::<Dir>::empty();
-            let check_dirs = BitFlags::<Dir>::all();
-            for dir in check_dirs.iter() {
+            //let mut vis = BitFlags::<Dir>::empty();
+            let mut vis = BitFlags::<Dir>::default();
+            for dir in BitFlags::<Dir>::all().iter() {
                 if self.is_block_visible_dir(block_pos, dir) {
                     vis |= dir;
                 }
@@ -138,7 +138,7 @@ impl WorldBlockRes {
                         if block_val == 0 {
                             neighbor_vis |= check_dir.opposite_dir();
                         } else {
-                            neighbor_vis &= check_dir.opposite_dir();
+                            neighbor_vis ^= check_dir.opposite_dir();
                         }
 
                         self.set_block_vis(neighbor_pos, neighbor_vis);
@@ -233,6 +233,12 @@ impl WorldBlockRes {
         let asset = self.handle.get_asset();
         asset.chunk_counts
     }
+
+    pub fn clear_blocks(&mut self) {
+        for chunk in self.chunks.iter_mut() {
+            *chunk = None;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -284,5 +290,43 @@ mod test {
             .unwrap();
         assert_eq!(vis.contains(Dir::XNeg), true);
         assert_eq!(vis.contains(Dir::XPos), false);
+    }
+
+    #[test]
+    fn test_set_block_from_empty() {
+        let mut manager = AssetManager::<MockFileSystem>::new();
+        let path: AssetPath = "world_block.wb".into();
+        let mut res = WorldBlockRes::new(&path, &mut manager);
+        res.clear_blocks();
+
+        let world_chunk_counts = res.get_world_chunk_counts();
+        let block_pos_1 =
+            BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(0, 0, 0)).unwrap();
+        res.set_block(block_pos_1, 1);
+
+        let vis1 = res.get_block_vis(block_pos_1).unwrap();
+        assert_eq!(
+            vis1,
+            Dir::XPos | Dir::XNeg | Dir::YPos | Dir::YNeg | Dir::ZPos | Dir::ZNeg
+        );
+
+        let block_pos_2 =
+            BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(0, 1, 0)).unwrap();
+        res.set_block(block_pos_2, 1);
+
+        assert_eq!(res.get_block(block_pos_1), Some(1));
+        assert_eq!(res.get_block(block_pos_2), Some(1));
+
+        let vis1 = res.get_block_vis(block_pos_1).unwrap();
+        assert_eq!(
+            vis1,
+            Dir::XPos | Dir::XNeg | Dir::YNeg | Dir::ZPos | Dir::ZNeg
+        );
+
+        let vis2 = res.get_block_vis(block_pos_2).unwrap();
+        assert_eq!(
+            vis2,
+            Dir::XPos | Dir::XNeg | Dir::YPos | Dir::ZPos | Dir::ZNeg
+        );
     }
 }

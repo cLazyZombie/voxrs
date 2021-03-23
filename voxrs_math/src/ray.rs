@@ -89,6 +89,7 @@ impl Ray {
 
         if tmin < 0.0 && tmax >= 0.0 {
             tmin = 0.0;
+            
         }
 
         return RayAabbResult::Intersect {
