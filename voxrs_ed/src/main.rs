@@ -56,6 +56,7 @@ fn main() {
             editor.tick();
             let bp = editor.render();
             renderer.render(bp).unwrap();
+            editor.end_frame();
         }
         _ => {}
     });

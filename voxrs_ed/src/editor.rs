@@ -13,6 +13,7 @@ pub struct Editor {
     res: Resources,
     tick_schedule: Schedule,
     render_schedule: Schedule,
+    end_frame_schedule: Schedule,
     clock: Clock,
 }
 
@@ -57,6 +58,10 @@ impl Editor {
             .add_system(system::world_block_render::render_system())
             .build();
 
+        let end_frame_schedule = Schedule::builder()
+            .add_system(system::end_frame::end_frame_system())
+            .build();
+
         let clock = Clock::new();
 
         Self {
@@ -64,6 +69,7 @@ impl Editor {
             res,
             tick_schedule,
             render_schedule,
+            end_frame_schedule,
             clock,
         }
     }
@@ -117,5 +123,10 @@ impl Editor {
         self.render_schedule.execute(&mut self.world, &mut self.res);
 
         self.res.remove::<Blueprint>().unwrap()
+    }
+
+    pub fn end_frame(&mut self) {
+        self.end_frame_schedule
+            .execute(&mut self.world, &mut self.res);
     }
 }

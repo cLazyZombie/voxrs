@@ -59,7 +59,6 @@ pub fn control(
             Angle::from_radians(delta.1 as f32 * ROTATE_SPEED_VERT * -1.0),
         );
     }
-    mouse_input.clear_mouse_motion();
 }
 
 #[system]

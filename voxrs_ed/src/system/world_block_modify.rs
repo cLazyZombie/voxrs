@@ -8,7 +8,7 @@ pub fn modify(
     #[resource] world_block_res: &mut WorldBlockRes,
     #[resource] mouse_input: &mut MouseInputRes,
 ) {
-    if mouse_input.left_button {
+    if mouse_input.left_click {
         let ray = camera.create_ray(mouse_input.position.0, mouse_input.position.1);
         let result = world_block_res.trace(&ray);
         if let Some(result) = result {
