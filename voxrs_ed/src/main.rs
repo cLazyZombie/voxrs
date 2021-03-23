@@ -43,6 +43,9 @@ fn main() {
             WindowEvent::MouseInput { state, button, .. } => {
                 editor.on_mouse_input(*button, *state);
             }
+            WindowEvent::CursorMoved { position, .. } => {
+                editor.on_cursor_moved((position.x as f32, position.y as f32));
+            }
             _ => {}
         },
         Event::DeviceEvent { ref event, .. } => match event {

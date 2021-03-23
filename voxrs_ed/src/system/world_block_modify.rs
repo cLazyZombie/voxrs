@@ -9,7 +9,7 @@ pub fn modify(
     #[resource] mouse_input: &mut MouseInputRes,
 ) {
     if mouse_input.left_click {
-        let ray = camera.create_ray(mouse_input.position.0, mouse_input.position.1);
+        let ray = camera.create_ray(mouse_input.position);
         let result = world_block_res.trace(&ray);
         if let Some(result) = result {
             let chunk_counts = world_block_res.get_world_chunk_counts();

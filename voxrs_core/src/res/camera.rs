@@ -45,6 +45,13 @@ impl CameraRes {
         proj * view
     }
 
+    pub fn view_matrix(&self) -> Matrix4 {
+        let (_, y, z) = self.get_xyz();
+        let target = self.eye + z;
+        let view = Matrix4::look_at(&self.eye, &target, &y);
+        view
+    }
+
     pub fn resize(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
@@ -97,9 +104,32 @@ impl CameraRes {
         (x, y, z)
     }
 
-    pub fn create_ray(&self, _screen_x: f64, _screen_y: f64) -> Ray {
-        let (_, _, dir) = self.get_xyz();
-        Ray::from_values(&self.eye, &dir)
+    pub fn create_ray(&self, screen_xy: (f32, f32)) -> Ray {
+        // x : -1(left) to 1(right)
+        let mut x = screen_xy.0 as f32;
+        x /= self.width as f32;
+        x = x.clamp(0.0, 1.0);
+        x = x * 2.0 - 1.0;
+
+        // y : -1(bottom) to 1(top)
+        let mut y = (self.height as f32) - (screen_xy.1 as f32);
+        y /= self.height as f32;
+        y = y.clamp(0.0, 1.0);
+        y = y * 2.0 - 1.0;
+
+        // make view dir (view coord)
+        let tan_y = (self.fovy * 0.5).tan();
+        let tan_x = tan_y * self.aspect();
+        let view_x = tan_x * (x as f32);
+        let view_y = tan_y * (y as f32);
+        let view_dir = Vector3::new(view_x, view_y, 1.0).get_normalized();
+
+        // transform to world coord
+        let view_mat = self.view_matrix();
+        let inv_view_mat = view_mat.inverse();
+        let world_dir = inv_view_mat.transform_normal(&view_dir);
+
+        Ray::from_values(&self.eye, &world_dir)
     }
 }
 

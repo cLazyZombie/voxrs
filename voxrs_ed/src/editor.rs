@@ -31,7 +31,7 @@ impl Editor {
         res.insert(world_block_res);
 
         let camera = CameraRes::new(
-            Vector3::new(0.0, 50.0, -50.0),
+            Vector3::new(0.0, 30.0, -30.0),
             Angle::from_degrees(0.0),
             Angle::from_degrees(-45.0),
             width,
@@ -98,6 +98,11 @@ impl Editor {
         } else {
             mouse_input.on_mouse_released(button);
         }
+    }
+
+    pub fn on_cursor_moved(&mut self, pos: (f32, f32)) {
+        let mut mouse_input = self.res.get_mut_or_default::<MouseInputRes>();
+        mouse_input.on_mouse_pos(pos);
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
