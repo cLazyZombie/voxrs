@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use voxrs_asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset};
 use voxrs_math::{Aabb, Dir, Frustum, Ray, RayAabbResult, Vector3};
 use voxrs_types::{
-    io::FileSystem, BlockPos, BlockXyz, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
+    io::FileSystem, BlockPos, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
 };
 
 use voxrs_types::SafeCloner;
@@ -17,12 +17,14 @@ use super::CameraRes;
 pub struct WorldBlockRes {
     pub handle: AssetHandle<WorldBlockAsset>,
     pub chunks: Vec<Option<SafeCloner<Chunk>>>,
+    pub chunk_counts: WorldChunkCounts,
 }
 
 impl WorldBlockRes {
     pub fn new<F: FileSystem>(path: &AssetPath, asset_manager: &mut AssetManager<F>) -> Self {
         let handle = asset_manager.get::<WorldBlockAsset>(path);
         let mut chunks = Vec::new();
+        let chunk_counts = handle.get_asset().chunk_counts;
 
         {
             let asset = handle.get_asset();
@@ -33,7 +35,7 @@ impl WorldBlockRes {
 
             for chunk_asset in &asset.world_chunks {
                 if let Some(chunk_asset) = chunk_asset {
-                    let pos = asset.get_world_pos(chunk_asset.idx);
+                    let pos = asset.get_world_pos(chunk_asset.idx as usize);
                     let chunk = SafeCloner::new(Chunk::new(
                         pos,
                         Aabb::new(pos, pos + chunk_extend),
@@ -45,7 +47,11 @@ impl WorldBlockRes {
             }
         }
 
-        Self { handle, chunks }
+        Self {
+            handle,
+            chunks,
+            chunk_counts,
+        }
     }
 
     pub fn frustum_culling(&self, camera: &CameraRes) -> Vec<&SafeCloner<Chunk>> {
@@ -75,42 +81,49 @@ impl WorldBlockRes {
     }
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<u8> {
-        let chunk = self.chunks[block_pos.chunk_idx as usize].as_ref();
-        if let Some(chunk) = chunk {
-            Some(chunk.blocks[block_pos.block_idx as usize])
+        if let Some((chunk_idx, block_idx)) = block_pos.get_index(&self.chunk_counts) {
+            let chunk = self.chunks[chunk_idx].as_ref();
+            if let Some(chunk) = chunk {
+                Some(chunk.blocks[block_idx])
+            } else {
+                None
+            }
         } else {
             None
         }
     }
 
     pub fn set_block(&mut self, block_pos: BlockPos, block_val: BlockMatIdx) {
+        let idx = block_pos.get_index(&self.chunk_counts);
+        if idx == None {
+            return;
+        }
+
+        let (chunk_idx, block_idx) = idx.unwrap();
+
         // change block value
-        let chunk = self
-            .chunks
-            .get_mut(block_pos.chunk_idx as usize)
-            .unwrap()
-            .as_mut();
+        let chunk = self.chunks.get_mut(chunk_idx).unwrap().as_mut();
         if let Some(chunk) = chunk {
-            chunk.blocks[block_pos.block_idx as usize] = block_val;
+            chunk.blocks[block_idx] = block_val;
         } else {
             let asset = self.handle.get_asset();
 
-            let pos = asset.get_world_pos(block_pos.chunk_idx);
-            let aabb = asset.get_chunk_aabb(block_pos.chunk_idx);
+            let pos = asset.get_world_pos(chunk_idx);
+            let aabb = asset.get_chunk_aabb(chunk_idx);
 
             let mut blocks = Vec::new();
             blocks.resize_with(TOTAL_BLOCK_COUNTS_IN_CHUNK, Default::default);
-            blocks[block_pos.block_idx as usize] = block_val;
+            blocks[block_idx] = block_val;
 
             let mut vis = Vec::<BitFlags<Dir>>::new();
             vis.extend([BitFlags::empty(); TOTAL_BLOCK_COUNTS_IN_CHUNK].iter());
             if block_val != 0 {
-                vis[block_pos.block_idx as usize] = BitFlags::all();
+                vis[block_idx] = BitFlags::all();
             }
 
             let chunk = SafeCloner::new(Chunk::new(pos, aabb, blocks, vis));
 
-            self.chunks[block_pos.chunk_idx as usize] = Some(chunk);
+            self.chunks[chunk_idx] = Some(chunk);
         }
 
         // refresh vis
@@ -131,8 +144,8 @@ impl WorldBlockRes {
         {
             let check_dirs = BitFlags::<Dir>::all();
             for check_dir in check_dirs.iter() {
-                let neighbor_pos = block_pos.neighbor_block_pos(check_dir);
-                if let Some(neighbor_pos) = neighbor_pos {
+                let neighbor_pos = block_pos.get_neighbor(check_dir);
+                if neighbor_pos.is_valid(&self.chunk_counts) {
                     let neighbor_vis = self.get_block_vis(neighbor_pos);
                     if let Some(mut neighbor_vis) = neighbor_vis {
                         if block_val == 0 {
@@ -151,22 +164,28 @@ impl WorldBlockRes {
     /// chunk indicated by block_pos should valid
     /// else this function panic
     fn set_block_vis(&mut self, block_pos: BlockPos, vis: BitFlags<Dir>) {
-        let chunk = self.chunks[block_pos.chunk_idx as usize].as_mut().unwrap();
-        chunk.vis[block_pos.block_idx as usize] = vis;
+        let (chunk_idx, block_idx) = block_pos.get_index(&self.chunk_counts).unwrap();
+        let chunk = self.chunks[chunk_idx].as_mut().unwrap();
+        chunk.vis[block_idx] = vis;
     }
 
     fn get_block_vis(&self, block_pos: BlockPos) -> Option<BitFlags<Dir>> {
-        let chunk = self.chunks[block_pos.chunk_idx as usize].as_ref();
-        if let Some(chunk) = chunk {
-            Some(chunk.vis[block_pos.block_idx as usize])
+        let idx = block_pos.get_index(&self.chunk_counts);
+        if let Some((chunk_idx, block_idx)) = idx {
+            let chunk = self.chunks[chunk_idx].as_ref();
+            if let Some(chunk) = chunk {
+                Some(chunk.vis[block_idx])
+            } else {
+                None
+            }
         } else {
             None
         }
     }
 
     fn is_block_visible_dir(&self, block_pos: BlockPos, dir: Dir) -> bool {
-        let neighbor_pos = block_pos.neighbor_block_pos(dir);
-        if let Some(neighbor_pos) = neighbor_pos {
+        let neighbor_pos = block_pos.get_neighbor(dir);
+        if neighbor_pos.is_valid(&self.chunk_counts) {
             let block = self.get_block(neighbor_pos);
             if let Some(block) = block {
                 block == 0
@@ -179,13 +198,12 @@ impl WorldBlockRes {
     }
 
     // todo. need optimize (very!)
-    pub fn trace(&self, ray: &Ray) -> Option<(BlockXyz, Dir)> {
-        let world_chunk_count = self.handle.get_asset().chunk_counts;
+    pub fn trace(&self, ray: &Ray) -> Option<(BlockPos, Dir)> {
         let block_size = self.handle.get_asset().block_size.to_f32();
 
         let mut hit_dist = f32::MAX;
         let mut hit_dir = Dir::XPos;
-        let mut hit_block_pos = BlockPos::new(&world_chunk_count, 0, 0);
+        let mut hit_block_pos = BlockPos::new(0, 0, 0);
 
         for (chunk_idx, chunk) in self.chunks.iter().enumerate() {
             if let Some(chunk) = chunk {
@@ -198,11 +216,8 @@ impl WorldBlockRes {
                             }
 
                             // get block aabb
-                            let block_pos = BlockPos::new(
-                                &world_chunk_count,
-                                chunk_idx as i32,
-                                block_idx as i32,
-                            );
+                            let block_pos =
+                                BlockPos::from_index(chunk_idx, block_idx, &self.chunk_counts);
                             let block_aabb = block_pos.aabb(block_size);
 
                             match ray.check_aabb(&block_aabb) {
@@ -223,7 +238,7 @@ impl WorldBlockRes {
         }
 
         if hit_dist != f32::MAX {
-            Some((hit_block_pos.get_world_xyz(), hit_dir))
+            Some((hit_block_pos, hit_dir))
         } else {
             None
         }
@@ -259,34 +274,18 @@ mod test {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let path: AssetPath = "world_block.wb".into();
         let mut res = WorldBlockRes::new(&path, &mut manager);
-        let world_chunk_counts = res.get_world_chunk_counts();
-        let block_pos =
-            BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(0, 0, 0)).unwrap();
+        let block_pos = BlockPos::new(0, 0, 0);
         res.set_block(block_pos, 0);
 
         assert_eq!(res.get_block(block_pos), Some(0));
-        let vis = res
-            .get_block_vis(
-                BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(1, 0, 0)).unwrap(),
-            )
-            .unwrap();
+        let vis = res.get_block_vis(BlockPos::new(1, 0, 0)).unwrap();
         assert_eq!(vis.contains(Dir::XNeg), true);
         assert_eq!(vis.contains(Dir::XPos), false);
 
-        let block_pos = BlockPos::from_world_xyz(
-            &world_chunk_counts,
-            BlockXyz::new(BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0),
-        )
-        .unwrap();
+        let block_pos = BlockPos::new(BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0);
         res.set_block(block_pos, 0);
         let vis = res
-            .get_block_vis(
-                BlockPos::from_world_xyz(
-                    &world_chunk_counts,
-                    BlockXyz::new(BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0),
-                )
-                .unwrap(),
-            )
+            .get_block_vis(BlockPos::new(BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0))
             .unwrap();
         assert_eq!(vis.contains(Dir::XNeg), true);
         assert_eq!(vis.contains(Dir::XPos), false);
@@ -299,9 +298,7 @@ mod test {
         let mut res = WorldBlockRes::new(&path, &mut manager);
         res.clear_blocks();
 
-        let world_chunk_counts = res.get_world_chunk_counts();
-        let block_pos_1 =
-            BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(0, 0, 0)).unwrap();
+        let block_pos_1 = BlockPos::new(0, 0, 0);
         res.set_block(block_pos_1, 1);
 
         let vis1 = res.get_block_vis(block_pos_1).unwrap();
@@ -310,8 +307,7 @@ mod test {
             Dir::XPos | Dir::XNeg | Dir::YPos | Dir::YNeg | Dir::ZPos | Dir::ZNeg
         );
 
-        let block_pos_2 =
-            BlockPos::from_world_xyz(&world_chunk_counts, BlockXyz::new(0, 1, 0)).unwrap();
+        let block_pos_2 = BlockPos::new(0, 1, 0);
         res.set_block(block_pos_2, 1);
 
         assert_eq!(res.get_block(block_pos_1), Some(1));

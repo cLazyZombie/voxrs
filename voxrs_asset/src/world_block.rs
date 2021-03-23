@@ -1,5 +1,3 @@
-#![allow(dead_code)] // todo: remove
-
 use enumflags2::BitFlags;
 use serde::Deserialize;
 use voxrs_types::{
@@ -59,12 +57,12 @@ impl WorldBlockAsset {
         }
     }
 
-    pub fn get_world_pos(&self, idx: i32) -> Vector3 {
-        let chunk_pos = ChunkPos::new(&self.chunk_counts, idx);
+    pub fn get_world_pos(&self, idx: usize) -> Vector3 {
+        let chunk_pos = ChunkPos::from_index(idx, &self.chunk_counts);
         chunk_pos.get_world_pos(self.block_size.to_f32())
     }
 
-    pub fn get_chunk_aabb(&self, chunk_idx: i32) -> Aabb {
+    pub fn get_chunk_aabb(&self, chunk_idx: usize) -> Aabb {
         let min = self.get_world_pos(chunk_idx);
         let size = self.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
         let max = min + Vector3::new(size, size, size);
@@ -137,13 +135,13 @@ fn is_visible_dir(
     chunk_counts: &WorldChunkCounts,
     chunks: &[Option<WorldChunkRaw>],
 ) -> bool {
-    let block_pos = BlockPos::new(chunk_counts, chunk_idx as i32, block_idx as i32);
-    let neighbor_pos = block_pos.neighbor_block_pos(dir);
+    let block_pos = BlockPos::from_index(chunk_idx, block_idx, chunk_counts);
+    let neighbor_pos = block_pos.get_neighbor(dir);
 
-    if let Some(neighbor_pos) = neighbor_pos {
-        let neighbor_chunk = &chunks[neighbor_pos.chunk_idx as usize];
+    if let Some((neighbor_chunk_idx, neighbor_block_idx)) = neighbor_pos.get_index(chunk_counts) {
+        let neighbor_chunk = &chunks[neighbor_chunk_idx];
         if let Some(neighbor_chunk) = neighbor_chunk {
-            let block = neighbor_chunk.blocks[neighbor_pos.block_idx as usize];
+            let block = neighbor_chunk.blocks[neighbor_block_idx];
             block == 0
         } else {
             true
