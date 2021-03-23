@@ -46,6 +46,9 @@ fn main() {
             WindowEvent::CursorMoved { position, .. } => {
                 editor.on_cursor_moved((position.x as f32, position.y as f32));
             }
+            WindowEvent::ModifiersChanged(modifier) => {
+                editor.on_modifier_changed(modifier);
+            }
             _ => {}
         },
         Event::DeviceEvent { ref event, .. } => match event {

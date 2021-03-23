@@ -4,7 +4,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use winit::event::{ElementState, KeyboardInput, MouseButton};
+use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
 use super::system;
 
@@ -103,6 +103,11 @@ impl Editor {
     pub fn on_cursor_moved(&mut self, pos: (f32, f32)) {
         let mut mouse_input = self.res.get_mut_or_default::<MouseInputRes>();
         mouse_input.on_mouse_pos(pos);
+    }
+
+    pub fn on_modifier_changed(&mut self, modifier: &ModifiersState) {
+        let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
+        key_input.on_modifier_changed(modifier);
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {

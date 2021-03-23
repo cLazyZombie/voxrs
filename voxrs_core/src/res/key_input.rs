@@ -1,13 +1,19 @@
-use winit::event::VirtualKeyCode;
+use winit::event::{ModifiersState, VirtualKeyCode};
 
 pub struct KeyInputRes {
     pressed_keys: Vec<VirtualKeyCode>,
+    shift_pressed: bool,
+    ctrl_pressed: bool,
+    alt_pressed: bool,
 }
 
 impl KeyInputRes {
     pub fn new() -> Self {
         KeyInputRes {
             pressed_keys: Vec::new(),
+            shift_pressed: false,
+            ctrl_pressed: false,
+            alt_pressed: false,
         }
     }
 
@@ -23,6 +29,12 @@ impl KeyInputRes {
         }
     }
 
+    pub fn on_modifier_changed(&mut self, modifier: &ModifiersState) {
+        self.shift_pressed = modifier.shift();
+        self.ctrl_pressed = modifier.ctrl();
+        self.alt_pressed = modifier.alt();
+    }
+
     pub fn is_key_pressed(&self, key: VirtualKeyCode) -> bool {
         self.pressed_keys.iter().any(|k| *k == key)
     }
@@ -33,6 +45,18 @@ impl KeyInputRes {
 
     pub fn keys(&self) -> impl Iterator<Item = &VirtualKeyCode> + '_ {
         self.pressed_keys.iter()
+    }
+
+    pub fn is_shift_pressed(&self) -> bool {
+        self.shift_pressed
+    }
+
+    pub fn is_ctrl_pressed(&self) -> bool {
+        self.ctrl_pressed
+    }
+
+    pub fn is_alt_pressed(&self) -> bool {
+        self.alt_pressed
     }
 }
 
