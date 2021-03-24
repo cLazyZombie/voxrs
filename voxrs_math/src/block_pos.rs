@@ -34,6 +34,14 @@ impl BlockPos {
         }
     }
 
+    pub fn from_vec3(pos: &Vector3, block_size: f32) -> Self {
+        let x = (pos.x() / block_size).floor() as i32;
+        let y = (pos.y() / block_size).floor() as i32;
+        let z = (pos.z() / block_size).floor() as i32;
+
+        Self::new(x, y, z)
+    }
+
     pub fn is_valid(&self, chunk_counts: &WorldChunkCounts) -> bool {
         self.x >= 0
             && self.x < chunk_counts.x * BLOCK_COUNT_IN_CHUNKSIDE as i32
@@ -177,5 +185,17 @@ mod tests {
 
         let block = BlockPos::from_index(1, 0, &chunk_counts);
         assert_eq!(block, BlockPos::new(BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0));
+    }
+
+    #[test]
+    fn test_from_vec3() {
+        let block = BlockPos::from_vec3(&(0.5, 0.5, 0.5).into(), 1.0);
+        assert_eq!(block, BlockPos::new(0, 0, 0));
+
+        let block = BlockPos::from_vec3(&(1.5, 1.5, 1.5).into(), 1.0);
+        assert_eq!(block, BlockPos::new(1, 1, 1));
+
+        let block = BlockPos::from_vec3(&(-0.5, -0.5, -0.5).into(), 1.0);
+        assert_eq!(block, BlockPos::new(-1, -1, -1));
     }
 }
