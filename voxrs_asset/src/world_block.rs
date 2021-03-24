@@ -1,9 +1,6 @@
 use enumflags2::BitFlags;
 use serde::Deserialize;
-use voxrs_types::{
-    io::FileSystem, BlockPos, ChunkPos, WorldBlockCounts, WorldChunkCounts,
-    BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
-};
+use voxrs_types::io::FileSystem;
 
 use voxrs_math::*;
 

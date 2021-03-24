@@ -1,6 +1,4 @@
-use voxrs_math::*;
-
-use crate::{WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
+use crate::{Dir, Vector3, WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ChunkPos {

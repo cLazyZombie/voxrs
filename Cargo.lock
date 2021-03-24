@@ -2236,6 +2236,7 @@ dependencies = [
  "approx",
  "enumflags2",
  "nalgebra-glm",
+ "serde",
 ]
 
 [[package]]

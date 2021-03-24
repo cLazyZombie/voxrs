@@ -6,9 +6,7 @@ use voxrs_asset::{
     AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset, DEPTH_FORMAT,
 };
 use voxrs_math::*;
-use voxrs_types::{
-    io::FileSystem, SafeCloner, BLOCK_COUNT_IN_CHUNKSIDE, TOTAL_BLOCK_COUNTS_IN_CHUNK,
-};
+use voxrs_types::{io::FileSystem, SafeCloner};
 
 use wgpu::util::DeviceExt;
 

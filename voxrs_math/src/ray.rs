@@ -108,6 +108,13 @@ pub enum RayAabbResult {
     Intersect { dist: f32, pos: Vector3, dir: Dir },
 }
 
+pub struct RayVoxelIter<'a> {
+    ray: &'a Ray,
+    max_x: f32,
+    max_y: f32,
+    max_z: f32,
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
