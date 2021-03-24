@@ -1,8 +1,8 @@
 use crate::{Aabb, Dir, Vector3};
 
 pub struct Ray {
-    origin: Vector3,
-    dir: Vector3,
+    pub origin: Vector3,
+    pub dir: Vector3,
 }
 
 impl Ray {
@@ -15,14 +15,6 @@ impl Ray {
             origin: *origin,
             dir: *dir,
         }
-    }
-
-    pub fn origin(&self) -> Vector3 {
-        self.origin
-    }
-
-    pub fn dir(&self) -> Vector3 {
-        self.dir
     }
 
     /// ray - aabb intersection
@@ -89,7 +81,6 @@ impl Ray {
 
         if tmin < 0.0 && tmax >= 0.0 {
             tmin = 0.0;
-            
         }
 
         return RayAabbResult::Intersect {
