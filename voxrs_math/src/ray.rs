@@ -197,28 +197,25 @@ impl<'a> Iterator for RayBlockIter<'a> {
             self.nth = Some(nth - 1);
         }
 
-        let mut next_pos = self.cur_pos;
-
         if self.max_x < self.max_y {
             if self.max_x < self.max_z {
-                next_pos.x += self.step_x;
+                self.cur_pos.x += self.step_x;
                 self.max_x += self.delta_x;
             } else {
-                next_pos.z += self.step_z;
+                self.cur_pos.z += self.step_z;
                 self.max_z += self.delta_z;
             }
         } else {
             if self.max_y < self.max_z {
-                next_pos.y += self.step_y;
+                self.cur_pos.y += self.step_y;
                 self.max_y += self.delta_y;
             } else {
-                next_pos.z += self.step_z;
+                self.cur_pos.z += self.step_z;
                 self.max_z += self.delta_z;
             }
         }
 
-        self.cur_pos = next_pos;
-        Some(next_pos)
+        Some(self.cur_pos)
     }
 }
 
