@@ -141,6 +141,12 @@ impl From<[f32; 3]> for Vector3 {
     }
 }
 
+impl From<(f32, f32, f32)> for Vector3 {
+    fn from(tup: (f32, f32, f32)) -> Self {
+        Self::new(tup.0, tup.1, tup.2)
+    }
+}
+
 impl Default for Vector3 {
     fn default() -> Self {
         Self::new(0.0, 0.0, 0.0)
@@ -236,5 +242,26 @@ mod tests {
         let v2 = [0.0, 1.0, 0.0].into();
         let v3 = Vector3::cross(&v1, &v2);
         assert_abs_diff_eq!(v3, [0.0, 0.0, 1.0].into());
+    }
+
+    #[test]
+    fn test_from_array() {
+        let array: [f32; 3] = [1.0, 2.0, 3.0];
+        let v: Vector3 = array.into();
+        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_from_slice() {
+        let slice: &[f32] = &[1.0, 2.0, 3.0];
+        let v: Vector3 = slice.into();
+        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_from_tuple() {
+        let tup = (1.0_f32, 2.0_f32, 3.0_f32);
+        let v: Vector3 = tup.into();
+        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
     }
 }
