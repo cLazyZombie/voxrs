@@ -92,7 +92,12 @@ impl Ray {
     }
 
     pub fn block_iter(&self, block_size: f32) -> impl Iterator<Item = BlockPos> + '_ {
-        RayBlockIter::new(self, block_size)
+        RayBlockIter::new(self, block_size, None)
+    }
+
+    /// iterator only nth
+    pub fn block_iter_nth(&self, block_size: f32, nth: i32) -> impl Iterator<Item = BlockPos> + '_ {
+        RayBlockIter::new(self, block_size, Some(nth))
     }
 }
 
@@ -118,6 +123,7 @@ pub enum RayAabbResult {
 #[derive(Debug)]
 pub struct RayBlockIter<'a> {
     _ray: &'a Ray,
+    nth: Option<i32>,
     cur_pos: BlockPos,
     max_x: f32,
     max_y: f32,
@@ -131,7 +137,7 @@ pub struct RayBlockIter<'a> {
 }
 
 impl<'a> RayBlockIter<'a> {
-    pub fn new(ray: &'a Ray, block_size: f32) -> Self {
+    pub fn new(ray: &'a Ray, block_size: f32, nth: Option<i32>) -> Self {
         let cur_pos = BlockPos::from_vec3(&ray.origin, block_size);
 
         // step
@@ -139,18 +145,32 @@ impl<'a> RayBlockIter<'a> {
         let step_y = ray.dir.y().signum() as i32;
         let step_z = ray.dir.z().signum() as i32;
 
-        // max
-        let max_x = ((cur_pos.x as f32 * block_size + block_size) - ray.origin.x()) / ray.dir.x();
-        let max_y = ((cur_pos.y as f32 * block_size + block_size) - ray.origin.y()) / ray.dir.y();
-        let max_z = ((cur_pos.z as f32 * block_size + block_size) - ray.origin.z()) / ray.dir.z();
+        let max_x = if step_x > 0 {
+            ((cur_pos.x as f32 * block_size + block_size) - ray.origin.x()) / ray.dir.x()
+        } else {
+            ((cur_pos.x as f32 * block_size) - ray.origin.x()) / ray.dir.x()
+        };
+
+        let max_y = if step_y > 0 {
+            ((cur_pos.y as f32 * block_size + block_size) - ray.origin.y()) / ray.dir.y()
+        } else {
+            ((cur_pos.y as f32 * block_size) - ray.origin.y()) / ray.dir.y()
+        };
+
+        let max_z = if step_z > 0 {
+            ((cur_pos.z as f32 * block_size + block_size) - ray.origin.z()) / ray.dir.z()
+        } else {
+            ((cur_pos.z as f32 * block_size) - ray.origin.z()) / ray.dir.z()
+        };
 
         // delta
-        let delta_x = block_size / ray.dir.x();
-        let delta_y = block_size / ray.dir.y();
-        let delta_z = block_size / ray.dir.z();
+        let delta_x = block_size / ray.dir.x().abs();
+        let delta_y = block_size / ray.dir.y().abs();
+        let delta_z = block_size / ray.dir.z().abs();
 
         Self {
             _ray: ray,
+            nth,
             cur_pos,
             max_x,
             max_y,
@@ -169,6 +189,14 @@ impl<'a> Iterator for RayBlockIter<'a> {
     type Item = BlockPos;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if let Some(nth) = self.nth {
+            if nth < 1 {
+                return None;
+            }
+
+            self.nth = Some(nth - 1);
+        }
+
         let mut next_pos = self.cur_pos;
 
         if self.max_x < self.max_y {
@@ -235,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    fn test_voxel_iter() {
+    fn test_block_iter() {
         let ray = Ray::from_values(&(0.5, 0.5, 0.5).into(), &(0.0, 0.0, 1.0).into());
         let mut iter = ray.block_iter(1.0);
         assert_eq!(iter.next(), Some(BlockPos::new(0, 0, 1)));
@@ -253,5 +281,15 @@ mod tests {
         assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -1)));
         assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -2)));
         assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -3)));
+    }
+
+    #[test]
+    fn test_block_iter_nth() {
+        let ray = Ray::from_values(&(0.5, 0.5, 0.5).into(), &(0.0, 0.0, -1.0).into());
+        let mut iter = ray.block_iter_nth(1.0, 3);
+        assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -1)));
+        assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -2)));
+        assert_eq!(iter.next(), Some(BlockPos::new(0, 0, -3)));
+        assert_eq!(iter.next(), None);
     }
 }

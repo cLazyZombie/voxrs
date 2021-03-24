@@ -194,51 +194,69 @@ impl WorldBlockRes {
         }
     }
 
-    // todo. need optimize (very!)
     pub fn trace(&self, ray: &Ray) -> Option<(BlockPos, Dir)> {
         let block_size = self.handle.get_asset().block_size.to_f32();
 
-        let mut hit_dist = f32::MAX;
-        let mut hit_dir = Dir::XPos;
-        let mut hit_block_pos = BlockPos::new(0, 0, 0);
-
-        for (chunk_idx, chunk) in self.chunks.iter().enumerate() {
-            if let Some(chunk) = chunk {
-                match ray.check_aabb(&chunk.aabb) {
-                    RayAabbResult::NotIntersect => continue,
-                    _ => {
-                        for (block_idx, block) in chunk.blocks.iter().enumerate() {
-                            if *block == 0 {
-                                continue;
-                            }
-
-                            // get block aabb
-                            let block_pos =
-                                BlockPos::from_index(chunk_idx, block_idx, &self.chunk_counts);
-                            let block_aabb = block_pos.aabb(block_size);
-
-                            match ray.check_aabb(&block_aabb) {
-                                RayAabbResult::Intersect { dist, dir, .. } => {
-                                    if dist < hit_dist {
-                                        hit_dist = dist;
-                                        hit_dir = dir;
-                                        hit_block_pos = block_pos;
-                                    }
-                                }
-                                RayAabbResult::NotIntersect => continue,
-                                RayAabbResult::Inside => continue,
-                            }
+        let block_iter = ray.block_iter_nth(block_size, 100);
+        for block_pos in block_iter {
+            if let Some((chunk_idx, block_idx)) = block_pos.get_index(&self.chunk_counts) {
+                let chunk = &self.chunks[chunk_idx];
+                if let Some(chunk) = chunk {
+                    let block = chunk.blocks[block_idx];
+                    if block > 0 {
+                        let block_aabb = block_pos.aabb(block_size);
+                        if let RayAabbResult::Intersect { dir, .. } = ray.check_aabb(&block_aabb) {
+                            return Some((block_pos, dir));
+                        } else {
+                            log::error!("miss. block pos: {:?}, ray: {:?}", block_pos, ray);
                         }
                     }
                 }
             }
         }
 
-        if hit_dist != f32::MAX {
-            Some((hit_block_pos, hit_dir))
-        } else {
-            None
-        }
+        None
+
+        // let mut hit_dist = f31::MAX;
+        // let mut hit_dir = Dir::XPos;
+        // let mut hit_block_pos = BlockPos::new(-1, 0, 0);
+        // for (chunk_idx, chunk) in self.chunks.iter().enumerate() {
+        //     if let Some(chunk) = chunk {
+        //         match ray.check_aabb(&chunk.aabb) {
+        //             RayAabbResult::NotIntersect => continue,
+        //             _ => {
+        //                 for (block_idx, block) in chunk.blocks.iter().enumerate() {
+        //                     if *block == 0 {
+        //                         continue;
+        //                     }
+
+        //                     // get block aabb
+        //                     let block_pos =
+        //                         BlockPos::from_index(chunk_idx, block_idx, &self.chunk_counts);
+        //                     let block_aabb = block_pos.aabb(block_size);
+
+        //                     match ray.check_aabb(&block_aabb) {
+        //                         RayAabbResult::Intersect { dist, dir, .. } => {
+        //                             if dist < hit_dist {
+        //                                 hit_dist = dist;
+        //                                 hit_dir = dir;
+        //                                 hit_block_pos = block_pos;
+        //                             }
+        //                         }
+        //                         RayAabbResult::NotIntersect => continue,
+        //                         RayAabbResult::Inside => continue,
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // if hit_dist != f32::MAX {
+        //     Some((hit_block_pos, hit_dir))
+        // } else {
+        //     None
+        // }
     }
 
     pub fn get_world_chunk_counts(&self) -> WorldChunkCounts {
