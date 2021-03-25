@@ -1,4 +1,4 @@
-use super::{chunk::ChunkRenderSystem, commands::Command};
+use super::{chunk::ChunkRenderSystem, commands::Command, DynamicBlockRenderSystem};
 use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
 use std::{
@@ -21,6 +21,7 @@ pub struct Renderer {
     size: winit::dpi::PhysicalSize<u32>,
     depth_texture: Texture,
     chunk_renderer: ChunkRenderSystem,
+    dynamic_block_renderer: DynamicBlockRenderSystem,
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
 }
@@ -75,6 +76,8 @@ impl Renderer {
         });
 
         let chunk_renderer = ChunkRenderSystem::new(&device, asset_manager, &view_proj_buf);
+        let dynamic_block_renderer =
+            DynamicBlockRenderSystem::new(&device, asset_manager, &&view_proj_buf);
 
         Self {
             surface,
@@ -85,6 +88,7 @@ impl Renderer {
             size,
             depth_texture,
             chunk_renderer,
+            dynamic_block_renderer,
             uniforms,
             view_proj_buf,
         }
@@ -99,6 +103,9 @@ impl Renderer {
         );
 
         self.update_camera(&bp.camera);
+        let blocks =
+            self.dynamic_block_renderer
+                .prepare(&bp.dynamic_blocks, &self.device, &self.queue);
 
         let frame = self.swap_chain.get_current_frame()?.output;
 
@@ -135,6 +142,8 @@ impl Renderer {
             });
 
             self.chunk_renderer.render(&chunks, &mut render_pass);
+            self.dynamic_block_renderer
+                .render(&blocks, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -142,6 +151,7 @@ impl Renderer {
         // clear
         {
             self.chunk_renderer.clear();
+            self.dynamic_block_renderer.clear();
         }
 
         Ok(())

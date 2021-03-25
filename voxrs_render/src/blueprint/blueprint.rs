@@ -2,7 +2,7 @@ use voxrs_asset::{AssetHandle, WorldMaterialAsset};
 use voxrs_math::*;
 use voxrs_types::SafeCloner;
 
-use super::Chunk;
+use super::{Chunk, DynamicBlock};
 
 #[derive(Default)]
 pub struct Camera {
@@ -21,6 +21,7 @@ pub struct Blueprint {
     pub block_size: f32,
     pub world_block_mat_handle: Option<AssetHandle<WorldMaterialAsset>>,
     pub chunks: Vec<SafeCloner<Chunk>>,
+    pub dynamic_blocks: Vec<DynamicBlock>,
 }
 
 impl Blueprint {
@@ -30,6 +31,7 @@ impl Blueprint {
             camera: Camera::default(),
             world_block_mat_handle: None,
             chunks: Vec::new(),
+            dynamic_blocks: Vec::new(),
         }
     }
 
