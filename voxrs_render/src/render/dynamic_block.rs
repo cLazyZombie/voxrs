@@ -22,8 +22,8 @@ impl DynamicBlockRenderSystem {
         asset_manager: &mut AssetManager<F>,
         view_proj_buff: &wgpu::Buffer,
     ) -> Self {
-        const VS_PATH: &str = "assets/shaders/block_shader.vert.spv";
-        const FS_PATH: &str = "assets/shaders/block_shader.frag.spv";
+        const VS_PATH: &str = "assets/shaders/block_indicator_shader.vert.spv";
+        const FS_PATH: &str = "assets/shaders/block_indicator_shader.frag.spv";
 
         let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(VS_PATH));
         let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(FS_PATH));
@@ -138,10 +138,10 @@ impl DynamicBlockRenderSystem {
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
                 depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
+                depth_compare: wgpu::CompareFunction::LessEqual,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState {
-                    constant: 0,
+                    constant: -10, // z-fighting when 0 (chunk and indicator use slightly different method to transform as world coordinate)
                     slope_scale: 0.0,
                     clamp: 0.0,
                 },
@@ -158,7 +158,7 @@ impl DynamicBlockRenderSystem {
                 targets: &[wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
                     alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: wgpu::BlendState::REPLACE,
+                    color_blend: COLOR_BLEND_STATE,
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),
@@ -234,6 +234,12 @@ impl DynamicBlockRenderSystem {
     }
 }
 
+const COLOR_BLEND_STATE: wgpu::BlendState = wgpu::BlendState {
+    src_factor: wgpu::BlendFactor::SrcAlpha,
+    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+    operation: wgpu::BlendOperation::Add,
+};
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BlockVertex {
@@ -245,10 +251,10 @@ pub struct BlockVertex {
 #[rustfmt::skip]
 pub const BLOCK_VERTICES: &[BlockVertex]  = &[
     // +y
-    BlockVertex { position: [0.0, 1.0, 1.0], color: [0., 1., 1.], uv: [0.0, 0.0] },
-    BlockVertex { position: [1.0, 1.0, 1.0], color: [0., 1., 1.], uv: [1.0, 0.0] },
-    BlockVertex { position: [0.0, 1.0, 0.0], color: [0., 1., 1.], uv: [0.0, 1.0] },
-    BlockVertex { position: [1.0, 1.0, 0.0], color: [0., 1., 1.], uv: [1.0, 1.0] },
+    BlockVertex { position: [0.0, 1.0, 1.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    BlockVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    BlockVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    BlockVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // -y
     BlockVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
@@ -259,8 +265,8 @@ pub const BLOCK_VERTICES: &[BlockVertex]  = &[
     // +x
     BlockVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
     BlockVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
-    BlockVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
-    BlockVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    BlockVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
+    BlockVertex { position: [1.0, 1.0, 1.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
     
     // -x
     BlockVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
@@ -275,10 +281,10 @@ pub const BLOCK_VERTICES: &[BlockVertex]  = &[
     BlockVertex { position: [1.0, 0.0, 1.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 
     // -z
-    BlockVertex { position: [0.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 0.0] },
-    BlockVertex { position: [0.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 0.0] },
-    BlockVertex { position: [1.0, 0.0, 0.0], color: [1., 0., 1.], uv: [0.0, 1.0] },
-    BlockVertex { position: [1.0, 1.0, 0.0], color: [1., 0., 1.], uv: [1.0, 1.0] },
+    BlockVertex { position: [0.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 0.0] },
+    BlockVertex { position: [0.0, 1.0, 0.0], color: [1., 1., 1.], uv: [1.0, 0.0] },
+    BlockVertex { position: [1.0, 0.0, 0.0], color: [1., 1., 1.], uv: [0.0, 1.0] },
+    BlockVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 ];
 
 const VERTEX_SIZE_PER_BLOCK: u64 =

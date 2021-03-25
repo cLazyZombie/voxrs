@@ -1,5 +1,5 @@
 {
-    "diffuse_tex": "assets/texture.png",
+    "diffuse_tex": "assets/textures/rect.png",
     "vertex_shader": "assets/shaders/block_shader.vert.spv",
     "frag_shader": "assets/shaders/block_shader.frag.spv"
 }
