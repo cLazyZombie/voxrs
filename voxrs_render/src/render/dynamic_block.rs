@@ -65,7 +65,7 @@ impl DynamicBlockRenderSystem {
             }],
         });
 
-        // dynamic block 마다 설정할 uniform값들
+        // uniform buffer for each dynamic block
         let uniform_local_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("local bind group layout for dynamic block"),
