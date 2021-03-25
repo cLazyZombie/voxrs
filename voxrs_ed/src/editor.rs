@@ -6,6 +6,8 @@ use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
+use crate::res::EditorAssetRes;
+
 use super::system;
 
 pub struct Editor {
@@ -48,6 +50,9 @@ impl Editor {
         let mouse_input = MouseInputRes::new();
         res.insert(mouse_input);
 
+        let editor_asset = EditorAssetRes::new(asset_manager);
+        res.insert(editor_asset);
+
         let tick_schedule = Schedule::builder()
             .add_system(system::camera::control_system())
             .add_system(system::world_block_modify::modify_system())
@@ -56,6 +61,7 @@ impl Editor {
         let render_schedule = Schedule::builder()
             .add_system(system::camera::render_system())
             .add_system(system::world_block_render::render_system())
+            .add_system(system::world_block_modify::indicator_render_system())
             .build();
 
         let end_frame_schedule = Schedule::builder()

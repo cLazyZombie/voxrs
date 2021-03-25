@@ -27,5 +27,6 @@ pub use text::TextAsset;
 pub use texture::Texture;
 pub use texture::TextureAsset;
 pub use texture::DEPTH_FORMAT;
+pub use world_block::BlockSize;
 pub use world_block::WorldBlockAsset;
 pub use world_material::WorldMaterialAsset;

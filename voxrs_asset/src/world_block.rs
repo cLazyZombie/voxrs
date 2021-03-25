@@ -156,7 +156,7 @@ struct WorldBlockAssetRaw {
     world_chunks: Vec<WorldChunkRaw>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Copy, Clone)]
 pub enum BlockSize {
     Xs, // 0.25
     S,  // 0.5

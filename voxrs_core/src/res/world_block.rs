@@ -1,7 +1,7 @@
 use enumflags2::BitFlags;
 use rayon::prelude::*;
 
-use voxrs_asset::{AssetHandle, AssetManager, AssetPath, WorldBlockAsset};
+use voxrs_asset::{AssetHandle, AssetManager, AssetPath, BlockSize, WorldBlockAsset};
 use voxrs_math::*;
 use voxrs_types::io::FileSystem;
 
@@ -15,13 +15,16 @@ pub struct WorldBlockRes {
     pub handle: AssetHandle<WorldBlockAsset>,
     pub chunks: Vec<Option<SafeCloner<Chunk>>>,
     pub chunk_counts: WorldChunkCounts,
+    pub block_size: BlockSize,
 }
 
 impl WorldBlockRes {
     pub fn new<F: FileSystem>(path: &AssetPath, asset_manager: &mut AssetManager<F>) -> Self {
         let handle = asset_manager.get::<WorldBlockAsset>(path);
         let mut chunks = Vec::new();
+
         let chunk_counts = handle.get_asset().chunk_counts;
+        let block_size = handle.get_asset().block_size;
 
         {
             let asset = handle.get_asset();
@@ -48,6 +51,7 @@ impl WorldBlockRes {
             handle,
             chunks,
             chunk_counts,
+            block_size,
         }
     }
 

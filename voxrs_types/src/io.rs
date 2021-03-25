@@ -16,6 +16,30 @@ pub struct GeneralFileSystem {}
 #[async_trait]
 impl FileSystem for GeneralFileSystem {
     async fn read_binary(path: &Path) -> Result<Vec<u8>> {
+        let result = Self::read_binary_internal(path).await;
+        match result {
+            Ok(s) => Ok(s),
+            Err(err) => {
+                log::error!("read binary error. path: {:?}, err: {:?}", path, err);
+                Err(err)
+            }
+        }
+    }
+
+    async fn read_text(path: &Path) -> Result<String> {
+        let result = Self::read_text_internal(path).await;
+        match result {
+            Ok(s) => Ok(s),
+            Err(err) => {
+                log::error!("read text error. path: {:?}, err: {:?}", path, err);
+                Err(err)
+            }
+        }
+    }
+}
+
+impl GeneralFileSystem {
+    async fn read_binary_internal(path: &Path) -> Result<Vec<u8>> {
         let mut f = File::open(path)?;
 
         let mut v = Vec::new();
@@ -24,7 +48,7 @@ impl FileSystem for GeneralFileSystem {
         Ok(v)
     }
 
-    async fn read_text(path: &Path) -> Result<String> {
+    async fn read_text_internal(path: &Path) -> Result<String> {
         let mut f = File::open(path)?;
 
         let mut s = String::new();
