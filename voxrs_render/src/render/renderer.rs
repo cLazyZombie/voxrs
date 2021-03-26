@@ -76,8 +76,7 @@ impl Renderer {
         });
 
         let chunk_renderer = ChunkRenderSystem::new(&device, asset_manager, &view_proj_buf);
-        let dynamic_block_renderer =
-            DynamicBlockRenderSystem::new(&device, asset_manager, &view_proj_buf);
+        let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &view_proj_buf);
 
         Self {
             surface,

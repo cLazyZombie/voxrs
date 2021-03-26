@@ -19,6 +19,7 @@ pub use asset_path::AssetPath;
 
 //pub use handle::AssetHandle;
 pub use handle::AssetHandle;
+pub use manager::AssetHash;
 pub use manager::AssetManager;
 
 pub use material::MaterialAsset;

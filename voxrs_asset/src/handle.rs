@@ -1,3 +1,5 @@
+use crate::{AssetHash, AssetPath};
+
 use super::assets::Asset;
 use parking_lot::{Once, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::{
@@ -8,13 +10,15 @@ use std::{
 };
 
 pub struct AssetHandle<T: Asset + 'static> {
+    path: Arc<AssetPath>,
     loader: Arc<(Once, ReceiveType<T>)>,
     asset: Arc<RwLock<Option<T>>>,
 }
 
 impl<T: Asset + 'static> AssetHandle<T> {
-    pub fn new(recv: ReceiveType<T>) -> Self {
+    pub fn new(path: &AssetPath, recv: ReceiveType<T>) -> Self {
         Self {
+            path: Arc::new(path.clone()),
             loader: Arc::new((Once::new(), recv)),
             asset: Arc::new(RwLock::new(None)),
         }
@@ -56,11 +60,20 @@ impl<T: Asset + 'static> AssetHandle<T> {
     pub fn cast<U: Asset + 'static>(&self) -> &AssetHandle<U> {
         (self as &dyn Any).downcast_ref().unwrap()
     }
+
+    pub fn asset_path(&self) -> &AssetPath {
+        &self.path
+    }
+
+    pub fn asset_hash(&self) -> AssetHash {
+        self.path.get_hash()
+    }
 }
 
 impl<T: Asset + 'static> Clone for AssetHandle<T> {
     fn clone(&self) -> Self {
         Self {
+            path: Arc::clone(&self.path),
             loader: Arc::clone(&self.loader),
             asset: Arc::clone(&self.asset),
         }
@@ -143,7 +156,7 @@ mod tests {
             let _ = s.send(Ok(asset));
         });
 
-        let handle = AssetHandle::<TextAsset>::new(r);
+        let handle = AssetHandle::<TextAsset>::new(&"path".into(), r);
         handle
     }
 
@@ -198,7 +211,7 @@ mod tests {
     #[test]
     fn test_cast() {
         let (_, r) = crossbeam_channel::unbounded();
-        let handle = AssetHandle::<TextAsset>::new(r);
+        let handle = AssetHandle::<TextAsset>::new(&"path".into(), r);
         convert::<TextAsset>(&handle);
     }
 
@@ -206,7 +219,7 @@ mod tests {
     #[should_panic]
     fn as_ref_to_other_type_should_panic() {
         let (_, r) = crossbeam_channel::unbounded();
-        let handle = AssetHandle::<TextAsset>::new(r);
+        let handle = AssetHandle::<TextAsset>::new(&"path".into(), r);
         convert::<TextureAsset>(&handle);
     }
 }

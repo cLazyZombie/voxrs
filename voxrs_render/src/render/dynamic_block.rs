@@ -1,38 +1,30 @@
+use std::collections::HashMap;
+
 use crate::blueprint::{self, BlockIdx, DynamicBlock};
-use voxrs_asset::{AssetHandle, AssetManager, AssetPath, ShaderAsset, DEPTH_FORMAT};
+use voxrs_asset::{AssetHandle, ShaderAsset, DEPTH_FORMAT};
 use voxrs_math::*;
-use voxrs_types::io::FileSystem;
 
 use wgpu::util::DeviceExt;
+
+use super::ShaderHash;
 
 pub struct DynamicBlockRenderSystem {
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
-    render_pipeline: wgpu::RenderPipeline,
+    render_pipeline_layout: wgpu::PipelineLayout,
     vertex_buffers: Vec<wgpu::Buffer>,
     vertex_buffer_used: u64,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    render_pipelines: HashMap<ShaderHash, wgpu::RenderPipeline>,
 }
 
 impl DynamicBlockRenderSystem {
-    pub fn new<F: FileSystem>(
+    pub fn new(
         device: &wgpu::Device,
-        asset_manager: &mut AssetManager<F>,
         view_proj_buff: &wgpu::Buffer,
     ) -> Self {
-        const VS_PATH: &str = "assets/shaders/block_indicator_shader.vert.spv";
-        const FS_PATH: &str = "assets/shaders/block_indicator_shader.frag.spv";
-
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(VS_PATH));
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(FS_PATH));
-
-        let vs_asset = vs_handle.get_asset();
-        let fs_asset = fs_handle.get_asset();
-
-        let vs_module = vs_asset.module.as_ref().unwrap();
-        let fs_module = fs_asset.module.as_ref().unwrap();
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -120,9 +112,88 @@ impl DynamicBlockRenderSystem {
                 push_constant_ranges: &[],
             });
 
+        let vertex_buffers = vec![create_block_vertexbuffer(&device)];
+        let (index_buffer, num_indices) = create_block_indexbuffer(BLOCK_INDICES, &device);
+
+        let render_pipelines = HashMap::new();
+
+        Self {
+            uniform_bind_group,
+            uniform_local_bind_group_layout,
+            diffuse_bind_group_layout,
+            render_pipeline_layout,
+            vertex_buffers,
+            vertex_buffer_used: 0,
+            index_buffer,
+            num_indices,
+            render_pipelines,
+        }
+    }
+
+    pub(crate) fn prepare(
+        &mut self,
+        block_bps: &[DynamicBlock],
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> HashMap<ShaderHash, Vec<Block>> {
+        let mut map: HashMap<ShaderHash, Vec<Block>> = HashMap::new();
+
+        for bp in block_bps {
+            let block = Block::from_bp(
+                &bp,
+                device,
+                queue,
+                &mut self.vertex_buffers,
+                &mut self.vertex_buffer_used,
+                &self.diffuse_bind_group_layout,
+                &self.uniform_local_bind_group_layout,
+            );
+
+            let material = bp.material.get_asset();
+            let vs_handle = &material.vertex_shader;
+            let fs_handle = &material.frag_shader;
+            let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+
+            if let Some(vec) = map.get_mut(&shader_hash) {
+                vec.push(block);
+            } else {
+                let mut vec = Vec::new();
+                vec.push(block);
+                map.insert(shader_hash, vec);
+                self.register_render_pipeline(
+                    device,
+                    vs_handle,
+                    fs_handle,
+                );
+            }
+        }
+
+        map
+    }
+
+    fn register_render_pipeline(
+        &mut self,
+        device: &wgpu::Device,
+        vs_handle: &AssetHandle<ShaderAsset>,
+        fs_handle: &AssetHandle<ShaderAsset>,
+    ) {
+        let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+
+        // skip already registered
+        let pipeline = self.render_pipelines.get(&shader_hash);
+        if pipeline.is_some() {
+            return;
+        }
+
+        let vs_asset = vs_handle.get_asset();
+        let fs_asset = fs_handle.get_asset();
+
+        let vs_module = vs_asset.module.as_ref().unwrap();
+        let fs_module = fs_asset.module.as_ref().unwrap();
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("dynamic block render system render pipeline"),
-            layout: Some(&render_pipeline_layout),
+            layout: Some(&self.render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &vs_module,
                 entry_point: "main",
@@ -164,64 +235,55 @@ impl DynamicBlockRenderSystem {
             }),
         });
 
-        let vertex_buffers = vec![create_block_vertexbuffer(&device)];
-        let (index_buffer, num_indices) = create_block_indexbuffer(BLOCK_INDICES, &device);
-
-        Self {
-            uniform_bind_group,
-            uniform_local_bind_group_layout,
-            diffuse_bind_group_layout,
-            render_pipeline,
-            vertex_buffers,
-            vertex_buffer_used: 0,
-            index_buffer,
-            num_indices,
-        }
+        self.render_pipelines.insert(shader_hash, render_pipeline);
     }
 
-    pub fn prepare(
-        &mut self,
-        block_bps: &[DynamicBlock],
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> Vec<Block> {
-        let mut blocks_for_render = Vec::new();
+    pub(crate) fn render<'a>(
+        &'a self,
+        blocks: &'a HashMap<ShaderHash, Vec<Block>>,
+        render_pass: &mut wgpu::RenderPass<'a>,
+    ) {
+        let mut prev_shaderhash: Option<ShaderHash> = None;
+        for (shader_hash, vec) in blocks {
+            if prev_shaderhash != Some(*shader_hash) {
+                prev_shaderhash = Some(*shader_hash);
 
-        for bp in block_bps {
-            // check cached
-            let block = Block::from_bp(
-                &bp,
-                device,
-                queue,
-                &mut self.vertex_buffers,
-                &mut self.vertex_buffer_used,
-                &self.diffuse_bind_group_layout,
-                &self.uniform_local_bind_group_layout,
-            );
+                let render_pipeline = self.render_pipelines.get(shader_hash).unwrap();
+                render_pass.set_pipeline(render_pipeline);
+                render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
+            }
 
-            blocks_for_render.push(block);
+            for block in vec {
+                let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
+                render_pass.set_vertex_buffer(
+                    0,
+                    buffer.slice(
+                        block.vertex_buffer_start
+                            ..(block.vertex_buffer_start + VERTEX_SIZE_PER_BLOCK),
+                    ),
+                );
+                render_pass
+                    .set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
+                render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
+                render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            }
         }
 
-        blocks_for_render
-    }
+        // render_pass.set_pipeline(&self.render_pipeline);
+        // render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
 
-    pub fn render<'a>(&'a self, blocks: &'a [Block], render_pass: &mut wgpu::RenderPass<'a>) {
-        render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-
-        let buffer_size = (std::mem::size_of::<BlockVertex>() * BLOCK_VERTICES.len()) as u64;
-
-        for block in blocks {
-            let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
-            render_pass.set_vertex_buffer(
-                0,
-                buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + buffer_size)),
-            );
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
-            render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        }
+        // for block in blocks {
+        //     let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
+        //     render_pass.set_vertex_buffer(
+        //         0,
+        //         buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + buffer_size)),
+        //     );
+        //     render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        //     render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
+        //     render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
+        //     render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        // }
     }
 
     pub fn clear(&mut self) {

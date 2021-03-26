@@ -119,7 +119,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
 
-        let (handle, sender) = create_asset_handle();
+        let (handle, sender) = create_asset_handle(path);
         //let cloned_handle = handle.as_ref().clone();
         let cloned_handle = handle.cast().clone();
         self.text_assets.insert(hash, handle);
@@ -143,7 +143,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
     fn create_texture<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
-        let (handle, sender) = create_asset_handle();
+        let (handle, sender) = create_asset_handle(path);
         let cloned_handle = handle.cast().clone();
         self.texture_assets.insert(hash, handle);
         let path = path.clone();
@@ -171,7 +171,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
     fn create_shader<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
-        let (handle, sender) = create_asset_handle();
+        let (handle, sender) = create_asset_handle(path);
         let cloned_handle = handle.cast().clone();
         self.shader_assets.insert(hash, handle);
         let path = path.clone();
@@ -203,7 +203,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         mut manager: AssetManager<F>,
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
-        let (handle, s) = create_asset_handle();
+        let (handle, s) = create_asset_handle(path);
         let cloned_handle = handle.cast().clone();
         self.material_assets.insert(hash, handle);
         let path = path.clone();
@@ -230,7 +230,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         mut manager: AssetManager<F>,
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
-        let (handle, s) = create_asset_handle();
+        let (handle, s) = create_asset_handle(path);
         let cloned_handle = handle.cast().clone();
         self.world_material_assets.insert(hash, handle);
         let path = path.clone();
@@ -257,7 +257,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         mut manager: AssetManager<F>,
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
-        let (handle, sender) = create_asset_handle();
+        let (handle, sender) = create_asset_handle(path);
         let cloned_handle = handle.cast().clone();
         self.world_block_assets.insert(hash, handle);
         let path = path.clone();
@@ -338,12 +338,14 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     }
 }
 
-fn create_asset_handle<T: Asset>() -> (
+fn create_asset_handle<T: Asset>(
+    path: &AssetPath,
+) -> (
     AssetHandle<T>,
     crossbeam_channel::Sender<Result<T, AssetLoadError>>,
 ) {
     let (s, r) = crossbeam_channel::unbounded();
-    let handle = AssetHandle::new(r);
+    let handle = AssetHandle::new(path, r);
     (handle, s)
 }
 

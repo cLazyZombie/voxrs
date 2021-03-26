@@ -9,3 +9,6 @@ pub use renderer::Renderer;
 
 mod dynamic_block;
 pub use dynamic_block::DynamicBlockRenderSystem;
+
+mod shader_hash;
+pub(crate) use shader_hash::ShaderHash;
