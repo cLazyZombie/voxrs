@@ -10,6 +10,7 @@ members = [
   "voxrs_render",
   "voxrs_core",
 ]
+resolver = "2"
 
 [profile.release]
 debug = true
