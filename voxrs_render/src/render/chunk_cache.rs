@@ -1,25 +1,24 @@
-use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    hash::Hash,
-};
+use std::collections::{HashMap, HashSet};
 
-pub struct Cache<K, V>
-where
-    K: Eq + Hash + Copy,
-{
-    cached: HashMap<K, Vec<V>>,
-    used: RefCell<HashSet<K>>,
+use voxrs_types::SafeCloner;
+
+use crate::blueprint::{self, ChunkId};
+
+use super::chunk::Chunk;
+
+/// should store with safe cloner for being noticed that safe cloner is changed
+type CachedValue = (Vec<Chunk>, SafeCloner<blueprint::Chunk>);
+
+pub(crate) struct ChunkCache {
+    cached: HashMap<ChunkId, CachedValue>,
+    used: HashSet<ChunkId>,
 }
 
-impl<K, V> Cache<K, V>
-where
-    K: Eq + Hash + Copy,
-{
+impl ChunkCache {
     pub fn new() -> Self {
         Self {
             cached: HashMap::new(),
-            used: RefCell::new(HashSet::new()),
+            used: HashSet::new(),
         }
     }
 
@@ -27,8 +26,13 @@ where
     /// return : replaced flag
     /// if new key, insert value withkey and return false
     /// if key exists, exchange val and return true
-    pub fn add(&mut self, key: K, vec: Vec<V>) -> bool {
-        let prev = self.cached.insert(key, vec);
+    pub fn add(
+        &mut self,
+        key: ChunkId,
+        chunk_bp: SafeCloner<blueprint::Chunk>,
+        chunks: Vec<Chunk>,
+    ) -> bool {
+        let prev = self.cached.insert(key, (chunks, chunk_bp));
         self.set_used(key);
         matches!(prev, Some(_))
     }
@@ -37,8 +41,8 @@ where
     ///
     /// return true if already used
     /// retgurn false if new key
-    pub fn set_used(&self, key: K) -> bool {
-        !self.used.borrow_mut().insert(key)
+    pub fn set_used(&mut self, key: ChunkId) -> bool {
+        !self.used.insert(key)
     }
 
     // pub fn try_iter(&self, key: &K) -> Option<impl Iterator<Item = &V>> {
@@ -51,12 +55,10 @@ where
     //     }
     // }
 
-    pub fn get(&self, key: &K) -> Option<&Vec<V>> {
-        self.set_used(*key);
-
+    pub fn get(&self, key: &ChunkId) -> Option<&Vec<Chunk>> {
         let value = self.cached.get(key);
         match value {
-            Some(v) => Some(v),
+            Some((vec, _)) => Some(vec),
             None => None,
         }
     }
@@ -65,8 +67,7 @@ where
         let remove_count;
         {
             let cached: HashSet<_> = self.cached.iter().map(|(k, _)| *k).collect();
-            let used = &self.used.borrow();
-            let removed: Vec<_> = cached.difference(&used).collect();
+            let removed: Vec<_> = cached.difference(&self.used).collect();
             remove_count = removed.len();
 
             for &k in &removed {
@@ -74,24 +75,41 @@ where
             }
         }
 
-        self.used.get_mut().clear();
+        self.used.clear();
         remove_count
     }
 }
 
 #[cfg(test)]
 mod cache_tests {
+    use voxrs_math::{Aabb, Vector3};
+
     use super::*;
 
     #[test]
     fn clear_unused() {
-        let mut cache = Cache::new();
-
+        let mut cache = ChunkCache::new();
         assert_eq!(cache.set_used(1), false);
-        cache.add(1, vec!["1".to_string()]);
 
-        assert_eq!(cache.set_used(2), false);
-        cache.add(2, vec!["2".to_string()]);
+        let bp_chunk_1 = SafeCloner::new(blueprint::Chunk::new(
+            Vector3::zero(),
+            Aabb::unit(),
+            Vec::new(),
+            Vec::new(),
+        ));
+
+        let chunk_1 = Vec::new();
+        cache.add(1, bp_chunk_1, chunk_1);
+
+        let bp_chunk_2 = SafeCloner::new(blueprint::Chunk::new(
+            Vector3::zero(),
+            Aabb::unit(),
+            Vec::new(),
+            Vec::new(),
+        ));
+
+        let chunk_2 = Vec::new();
+        cache.add(2, bp_chunk_2, chunk_2);
 
         let removed = cache.clear_unused();
         assert_eq!(removed, 0);
@@ -103,14 +121,5 @@ mod cache_tests {
 
         assert!(cache.get(&1).is_none());
         assert!(cache.get(&2).is_some());
-    }
-
-    #[test]
-    fn test_get() {
-        let mut cache = Cache::new();
-        cache.add(1, vec!["1".to_string()]);
-
-        let cached = cache.get(&1).unwrap();
-        assert_eq!(cached.iter().next(), Some(&"1".to_string()));
     }
 }

@@ -23,6 +23,13 @@ impl Aabb {
             && v.y() <= self.max.y()
             && v.z() <= self.max.z()
     }
+
+    pub fn unit() -> Self {
+        Self {
+            min: Vector3::new(0.0, 0.0, 0.0),
+            max: Vector3::new(1.0, 1.0, 1.0),
+        }
+    }
 }
 
 #[cfg(test)]

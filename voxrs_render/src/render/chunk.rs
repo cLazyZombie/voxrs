@@ -2,43 +2,27 @@ use std::collections::HashMap;
 
 use crate::blueprint::{self, BlockIdx, BlockMatIdx, ChunkId};
 use enumflags2::BitFlags;
-use voxrs_asset::{
-    AssetHandle, AssetManager, AssetPath, ShaderAsset, WorldMaterialAsset, DEPTH_FORMAT,
-};
+use voxrs_asset::{AssetHandle, AssetHash, MaterialAsset, WorldMaterialAsset, DEPTH_FORMAT};
 use voxrs_math::*;
-use voxrs_types::{io::FileSystem, SafeCloner};
+use voxrs_types::SafeCloner;
 
 use wgpu::util::DeviceExt;
 
-use super::cache::Cache;
+use super::{ChunkCache, ShaderHash};
 
 pub struct ChunkRenderSystem {
-    cache: Cache<ChunkId, Chunk>,
+    cache: ChunkCache,
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
-    render_pipeline: wgpu::RenderPipeline,
+    render_pipeline_layout: wgpu::PipelineLayout,
+    render_pipelines: HashMap<ShaderHash, wgpu::RenderPipeline>,
+    current_world_material_hash: Option<AssetHash>,
     vertex_buffer: wgpu::Buffer,
 }
 
 impl ChunkRenderSystem {
-    pub fn new<F: FileSystem>(
-        device: &wgpu::Device,
-        asset_manager: &mut AssetManager<F>,
-        view_proj_buff: &wgpu::Buffer,
-    ) -> Self {
-        const VS_PATH: &str = "assets/shaders/block_shader.vert.spv";
-        const FS_PATH: &str = "assets/shaders/block_shader.frag.spv";
-
-        let vs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(VS_PATH));
-        let fs_handle: AssetHandle<ShaderAsset> = asset_manager.get(&AssetPath::from(FS_PATH));
-
-        let vs_asset = vs_handle.get_asset();
-        let fs_asset = fs_handle.get_asset();
-
-        let vs_module = vs_asset.module.as_ref().unwrap();
-        let fs_module = fs_asset.module.as_ref().unwrap();
-
+    pub fn new(device: &wgpu::Device, view_proj_buff: &wgpu::Buffer) -> Self {
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("view projection bind group layout for chunk"),
@@ -125,9 +109,92 @@ impl ChunkRenderSystem {
                 push_constant_ranges: &[],
             });
 
+        let vertex_buffer = create_chunk_vertexbuffer(&device);
+        let render_pipelines = HashMap::new();
+
+        Self {
+            cache: ChunkCache::new(),
+            uniform_bind_group,
+            uniform_local_bind_group_layout,
+            diffuse_bind_group_layout,
+            render_pipeline_layout,
+            render_pipelines,
+            current_world_material_hash: None,
+            vertex_buffer,
+        }
+    }
+
+    pub fn prepare(
+        &mut self,
+        chunks_bps: &[SafeCloner<blueprint::Chunk>],
+        world_material: &AssetHandle<WorldMaterialAsset>,
+        block_size: f32,
+        device: &wgpu::Device,
+    ) -> Vec<ChunkId> {
+        // prepare render pipeline if world material is changed
+        if self.current_world_material_hash != Some(world_material.asset_hash()) {
+            self.current_world_material_hash = Some(world_material.asset_hash());
+
+            let asset = world_material.get_asset();
+            for (_, material_handle) in &asset.material_handles {
+                self.register_render_pipeline(device, material_handle);
+            }
+        }
+
+        // convert to chunk ids
+        let mut chunks_for_render = Vec::new();
+
+        for chunk_bp in chunks_bps {
+            // check cached
+            if self.cache.get(&chunk_bp.id).is_none() {
+                let chunks = Chunk::from_bp(
+                    &chunk_bp,
+                    block_size,
+                    device,
+                    &self.diffuse_bind_group_layout,
+                    &self.uniform_local_bind_group_layout,
+                    world_material,
+                );
+
+                let cloned_chunk_bp = SafeCloner::clone_read(chunk_bp);
+                self.cache.add(chunk_bp.id, cloned_chunk_bp, chunks);
+
+                eprintln!("chunk refreshed. {:?}", chunk_bp.id);
+            }
+
+            self.cache.set_used(chunk_bp.id);
+
+            chunks_for_render.push(chunk_bp.id);
+        }
+
+        chunks_for_render
+    }
+
+    fn register_render_pipeline(
+        &mut self,
+        device: &wgpu::Device,
+        material_handle: &AssetHandle<MaterialAsset>,
+    ) {
+        let asset = material_handle.get_asset();
+        let vs_handle = &asset.vertex_shader;
+        let fs_handle = &asset.frag_shader;
+
+        let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+
+        let pipeline = self.render_pipelines.get(&shader_hash);
+        if pipeline.is_some() {
+            return;
+        }
+
+        let vs_asset = vs_handle.get_asset();
+        let fs_asset = fs_handle.get_asset();
+
+        let vs_module = vs_asset.module.as_ref().unwrap();
+        let fs_module = fs_asset.module.as_ref().unwrap();
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("chunk render system render pipeline"),
-            layout: Some(&render_pipeline_layout),
+            layout: Some(&self.render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &vs_module,
                 entry_point: "main",
@@ -169,56 +236,24 @@ impl ChunkRenderSystem {
             }),
         });
 
-        let vertex_buffer = create_chunk_vertexbuffer(&device);
-
-        Self {
-            cache: Cache::new(),
-            uniform_bind_group,
-            uniform_local_bind_group_layout,
-            diffuse_bind_group_layout,
-            render_pipeline,
-            vertex_buffer,
-        }
-    }
-
-    pub fn prepare(
-        &mut self,
-        chunks_bps: &[SafeCloner<blueprint::Chunk>],
-        world_material: &AssetHandle<WorldMaterialAsset>,
-        block_size: f32,
-        device: &wgpu::Device,
-    ) -> Vec<ChunkId> {
-        let mut chunks_for_render = Vec::new();
-
-        for chunk_bp in chunks_bps {
-            // check cached
-            if self.cache.get(&chunk_bp.id).is_none() {
-                let chunks = Chunk::from_bp(
-                    &chunk_bp,
-                    block_size,
-                    device,
-                    &self.diffuse_bind_group_layout,
-                    &self.uniform_local_bind_group_layout,
-                    world_material,
-                );
-
-                self.cache.add(chunk_bp.id, chunks);
-            }
-
-            chunks_for_render.push(chunk_bp.id);
-        }
-
-        chunks_for_render
+        self.render_pipelines.insert(shader_hash, render_pipeline);
     }
 
     pub fn render<'a>(&'a self, chunks_ids: &[ChunkId], render_pass: &mut wgpu::RenderPass<'a>) {
-        render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        let mut prev_shaderhash: Option<ShaderHash> = None;
 
         for chunk_id in chunks_ids {
             let chunks = self.cache.get(chunk_id).unwrap();
             for chunk in chunks {
+                if prev_shaderhash != Some(chunk.shader_hash) {
+                    prev_shaderhash = Some(chunk.shader_hash);
+
+                    let render_pipeline = self.render_pipelines.get(&chunk.shader_hash).unwrap();
+                    render_pass.set_pipeline(render_pipeline);
+                    render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
+                    render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                }
+
                 render_pass
                     .set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
@@ -405,7 +440,8 @@ pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
     }
 }
 
-pub struct Chunk {
+pub(crate) struct Chunk {
+    pub shader_hash: ShaderHash,
     pub diffuse_bind_group: wgpu::BindGroup,
     pub local_uniform_bind_group: wgpu::BindGroup,
     pub index_buffer: wgpu::Buffer,
@@ -446,7 +482,8 @@ impl Chunk {
         let world_mat = world_material.get_asset();
 
         for (k, v) in mat_blocks {
-            let material = world_mat.material_handles.get(&k).unwrap().get_asset();
+            let material_handle = world_mat.material_handles.get(&k).unwrap();
+            let material = material_handle.get_asset();
 
             let diffuse_asset = material.diffuse_tex.get_asset();
             let diffuse = diffuse_asset.texture.as_ref().unwrap();
@@ -492,8 +529,9 @@ impl Chunk {
             });
 
             let (index_buffer, num_indices) = create_chunk_indexbuffer(&v, device, &bp.vis);
-
+            let shader_hash = ShaderHash::from_material(material_handle);
             let chunk = Self {
+                shader_hash,
                 diffuse_bind_group,
                 local_uniform_bind_group,
                 index_buffer,
