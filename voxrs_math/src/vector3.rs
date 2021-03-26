@@ -186,21 +186,21 @@ mod tests {
     #[test]
     fn new() {
         let v = Vector3::new(1.0, 2.0, 3.0);
-        assert_eq!(v.x(), 1.0);
-        assert_eq!(v.y(), 2.0);
-        assert_eq!(v.z(), 3.0);
+        assert_abs_diff_eq!(v.x(), 1.0);
+        assert_abs_diff_eq!(v.y(), 2.0);
+        assert_abs_diff_eq!(v.z(), 3.0);
     }
 
     #[test]
     fn as_slice() {
         let v = Vector3::new(1.0, 2.0, 3.0);
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 
     #[test]
     fn to_array() {
         let v = Vector3::new(1.0, 2.0, 3.0);
-        assert_eq!(v.to_array(), [1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, [1.0, 2.0, 3.0].into());
     }
 
     #[test]
@@ -209,31 +209,31 @@ mod tests {
         let v2 = Vector3::new(4.0, 5.0, 6.0);
 
         let v3 = v1 + v2;
-        assert_eq!(v3.as_slice(), &[5.0, 7.0, 9.0]);
+        assert_abs_diff_eq!(v3, &[5.0, 7.0, 9.0].into());
 
         v1 += v2;
-        assert_eq!(v1.as_slice(), &[5.0, 7.0, 9.0]);
+        assert_abs_diff_eq!(v1, &[5.0, 7.0, 9.0].into());
     }
 
     #[test]
     fn from_array() {
         let array: [f32; 3] = [1.0, 2.0, 3.0];
         let v: Vector3 = (&array).into();
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 
     #[test]
     fn from_slice() {
         let slice: &[f32] = &[1.0, 2.0, 3.0];
         let v: Vector3 = slice.into();
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 
     #[test]
     fn mul_to_f32() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let v2: Vector3 = v * 3.0;
-        assert_eq!(v2.as_slice(), &[3.0, 6.0, 9.0]);
+        assert_abs_diff_eq!(v2, &[3.0, 6.0, 9.0].into());
     }
 
     #[test]
@@ -248,20 +248,20 @@ mod tests {
     fn test_from_array() {
         let array: [f32; 3] = [1.0, 2.0, 3.0];
         let v: Vector3 = array.into();
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 
     #[test]
     fn test_from_slice() {
         let slice: &[f32] = &[1.0, 2.0, 3.0];
         let v: Vector3 = slice.into();
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 
     #[test]
     fn test_from_tuple() {
         let tup = (1.0_f32, 2.0_f32, 3.0_f32);
         let v: Vector3 = tup.into();
-        assert_eq!(v.as_slice(), &[1.0, 2.0, 3.0]);
+        assert_abs_diff_eq!(v, &[1.0, 2.0, 3.0].into());
     }
 }

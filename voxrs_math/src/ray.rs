@@ -84,11 +84,11 @@ impl Ray {
             tmin = 0.0;
         }
 
-        return RayAabbResult::Intersect {
+        RayAabbResult::Intersect {
             dist: tmin,
             pos: self.origin + self.dir * tmin,
             dir: collision_dir,
-        };
+        }
     }
 
     pub fn block_iter(&self, block_size: f32) -> impl Iterator<Item = BlockPos> + '_ {
@@ -111,6 +111,7 @@ impl Default for Ray {
 /// Inside: ray is inside of aabb
 /// NotIntersect: not intersected
 /// Intersect: with distance and hit direction
+#[must_use]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RayAabbResult {
     Inside,
@@ -197,19 +198,35 @@ impl<'a> Iterator for RayBlockIter<'a> {
             self.nth = Some(nth - 1);
         }
 
-        if self.max_x < self.max_y {
+        enum Xyz {
+            X,
+            Y,
+            Z,
+        }
+        // get smallest one
+        // 0: x, 1: y, 2: z
+        let smallest = if self.max_x < self.max_y {
             if self.max_x < self.max_z {
+                Xyz::X
+            } else {
+                Xyz::Z
+            }
+        } else if self.max_y < self.max_z {
+            Xyz::Y
+        } else {
+            Xyz::Z
+        };
+
+        match smallest {
+            Xyz::X => {
                 self.cur_pos.x += self.step_x;
                 self.max_x += self.delta_x;
-            } else {
-                self.cur_pos.z += self.step_z;
-                self.max_z += self.delta_z;
             }
-        } else {
-            if self.max_y < self.max_z {
+            Xyz::Y => {
                 self.cur_pos.y += self.step_y;
                 self.max_y += self.delta_y;
-            } else {
+            }
+            Xyz::Z => {
                 self.cur_pos.z += self.step_z;
                 self.max_z += self.delta_z;
             }

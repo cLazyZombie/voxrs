@@ -27,8 +27,7 @@ impl Chunk {
 
 fn generate_chunk_id() -> u64 {
     static COUNTER: AtomicU64 = AtomicU64::new(1);
-    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-    id
+    COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
 impl Clone for Chunk {

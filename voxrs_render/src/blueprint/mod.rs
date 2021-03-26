@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod blueprint;
 pub use blueprint::Blueprint;
 pub use blueprint::Camera;

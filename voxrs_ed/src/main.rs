@@ -27,6 +27,7 @@ fn main() {
         &mut asset_manager,
     );
 
+    #[allow(clippy::single_match, clippy::clippy::collapsible_match)]
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             ref event,

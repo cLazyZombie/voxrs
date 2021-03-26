@@ -14,6 +14,7 @@ pub struct CameraRes {
 }
 
 impl CameraRes {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         eye: Vector3,
         horizon: Angle,
@@ -48,8 +49,7 @@ impl CameraRes {
     pub fn view_matrix(&self) -> Matrix4 {
         let (_, y, z) = self.get_xyz();
         let target = self.eye + z;
-        let view = Matrix4::look_at(&self.eye, &target, &y);
-        view
+        Matrix4::look_at(&self.eye, &target, &y)
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -133,19 +133,19 @@ impl CameraRes {
     }
 }
 
-impl Into<blueprint::Camera> for &CameraRes {
-    fn into(self) -> blueprint::Camera {
-        let (_, y, z) = self.get_xyz();
-        let target = self.eye + z;
+impl From<&CameraRes> for blueprint::Camera {
+    fn from(camera_res: &CameraRes) -> Self {
+        let (_, y, z) = camera_res.get_xyz();
+        let target = camera_res.eye + z;
         blueprint::Camera {
-            eye: self.eye,
+            eye: camera_res.eye,
             target,
             up: y,
-            aspect: self.aspect(),
-            fovy: self.fovy,
-            znear: self.znear,
-            zfar: self.zfar,
-            view_proj_mat: self.build_view_projection_matrix(),
+            aspect: camera_res.aspect(),
+            fovy: camera_res.fovy,
+            znear: camera_res.znear,
+            zfar: camera_res.zfar,
+            view_proj_mat: camera_res.build_view_projection_matrix(),
         }
     }
 }

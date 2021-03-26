@@ -63,7 +63,7 @@ impl BlockPos {
     /// return None if out of index
     /// (chunk_index, block_index)
     pub fn get_index(&self, chunk_counts: &WorldChunkCounts) -> Option<(usize, usize)> {
-        if self.is_valid(chunk_counts) == false {
+        if !self.is_valid(chunk_counts) {
             return None;
         }
 

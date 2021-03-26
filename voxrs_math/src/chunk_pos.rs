@@ -23,7 +23,7 @@ impl ChunkPos {
     /// get index of chunk
     /// if index is out of bound, return None
     pub fn get_index(&self, chunk_counts: &WorldChunkCounts) -> Option<usize> {
-        if self.is_valid(chunk_counts) == false {
+        if !self.is_valid(chunk_counts) {
             None
         } else {
             let idx = self.x + self.y * chunk_counts.x + self.z * (chunk_counts.x * chunk_counts.y);
@@ -41,7 +41,7 @@ impl ChunkPos {
     }
 
     pub fn get_neighbor(&self, dir: Dir) -> Self {
-        let mut neighbor = self.clone();
+        let mut neighbor = *self;
 
         match dir {
             Dir::XPos => neighbor.x += 1,

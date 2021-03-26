@@ -29,6 +29,7 @@ pub struct WorldChunkCounts {
     pub(crate) z: i32,
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl WorldChunkCounts {
     pub fn new(x: i32, y: i32, z: i32) -> Self {
         Self { x, y, z }

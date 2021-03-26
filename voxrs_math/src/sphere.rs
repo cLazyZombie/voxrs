@@ -79,13 +79,14 @@ impl Sphere {
 #[cfg(test)]
 mod test {
     use super::*;
+    use approx::*;
 
     #[test]
     fn test_create() {
         let center = Vector3::new(1.0, 2.0, 3.0);
         let sp = Sphere::new(center, 10.0);
-        assert_eq!(sp.c, center);
-        assert_eq!(sp.r, 10.0);
+        assert_abs_diff_eq!(sp.c, center);
+        assert_abs_diff_eq!(sp.r, 10.0);
     }
 
     #[test]

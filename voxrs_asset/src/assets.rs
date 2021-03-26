@@ -8,6 +8,7 @@ pub enum AssetType {
     WorldBlock,
 }
 
+#[must_use]
 pub enum AssetBuildResult<T> {
     NotBuilt,
     Ok(T),

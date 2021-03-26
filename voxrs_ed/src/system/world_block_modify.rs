@@ -11,7 +11,7 @@ pub fn modify(
     #[resource] mouse_input: &MouseInputRes,
     #[resource] key_input: &KeyInputRes,
 ) {
-    if mouse_input.left_click == false {
+    if !mouse_input.left_click {
         return;
     }
 

@@ -1,6 +1,6 @@
 use crate::Vector3;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Matrix4 {
     m: glm::Mat4,
 }
@@ -11,6 +11,7 @@ impl Matrix4 {
     }
 
     #[rustfmt::skip]
+    #[allow(clippy::too_many_arguments)]
     pub fn new( m11: f32, m12: f32, m13: f32, m14: f32,
                 m21: f32, m22: f32, m23: f32, m24: f32,
                 m31: f32, m32: f32, m33: f32, m34: f32,
@@ -116,10 +117,35 @@ impl Default for Matrix4 {
     }
 }
 
+impl approx::AbsDiffEq for Matrix4 {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        0.0001
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        let me = self.as_slice();
+        let you = other.as_slice();
+        if me.len() != you.len() {
+            return false;
+        }
+
+        for idx in 0..me.len() {
+            if (me[idx] - you[idx]).abs() > epsilon {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
     use super::*;
+    use approx::*;
 
     #[test]
     fn new() {
@@ -132,7 +158,7 @@ mod tests {
 
         for c in 0..4_usize {
             for r in 0..4_usize {
-                assert_eq!(m[(r+1, c+1)], (r * 4 + (c + 1)) as f32);
+                assert_abs_diff_eq!(m[(r+1, c+1)], (r * 4 + (c + 1)) as f32);
             }
         }
     }
@@ -140,13 +166,14 @@ mod tests {
     #[test]
     fn create_identity_matrix() {
         let m = Matrix4::identity();
-        assert_eq!(m[(1, 1)], 1.0);
-        assert_eq!(m[(2, 2)], 1.0);
-        assert_eq!(m[(3, 3)], 1.0);
-        assert_eq!(m[(4, 4)], 1.0);
+        assert_abs_diff_eq!(m[(1, 1)], 1.0);
+        assert_abs_diff_eq!(m[(2, 2)], 1.0);
+        assert_abs_diff_eq!(m[(3, 3)], 1.0);
+        assert_abs_diff_eq!(m[(4, 4)], 1.0);
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn as_slice() {
         let m = Matrix4::new(
             1.0, 2.0, 3.0, 4.0, 
@@ -168,6 +195,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn to_array() {
         let m = Matrix4::new(
             1.0, 2.0, 3.0, 4.0, 
@@ -205,15 +233,14 @@ mod tests {
         );
 
         let m3 = m1 * m2;
-        assert_eq!(
-            m3.as_slice(),
+        assert_abs_diff_eq!(
+            m3,
             Matrix4::new(
                 2.0, 4.0, 6.0, 8.0, 
                 10.0, 12.0, 14.0, 16.0, 
                 18.0, 20.0, 22.0, 24.0, 
                 26.0, 28.0, 30.0, 32.0,
             )
-            .as_slice()
         );
     }
 
@@ -236,7 +263,7 @@ mod tests {
         let v = Vector3::new(1.0, 1.0, 1.0);
 
         let v2 = m.transform_point(&v);
-        assert_eq!(v2, Vector3::new(2.0, 3.0, 4.0));
+        assert_abs_diff_eq!(v2, Vector3::new(2.0, 3.0, 4.0));
     }
 
     #[test]
@@ -245,6 +272,6 @@ mod tests {
         let v = Vector3::new(1.0, 0.0, 0.0);
 
         let v2 = m.transform_normal(&v);
-        assert_eq!(v2, v);
+        assert_abs_diff_eq!(v2, v);
     }
 }

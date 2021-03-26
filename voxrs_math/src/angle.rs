@@ -45,7 +45,7 @@ impl Angle {
         let mut radians = self.normalize();
 
         if radians.to_radians() >= PI * 2.0 {
-            radians = radians - Angle::from_radians(PI * 2.0);
+            radians -= Angle::from_radians(PI * 2.0);
         }
         radians
     }

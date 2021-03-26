@@ -18,7 +18,7 @@ impl KeyInputRes {
     }
 
     pub fn on_key_pressed(&mut self, key: VirtualKeyCode) {
-        if self.is_key_pressed(key) == false {
+        if !self.is_key_pressed(key) {
             self.pressed_keys.push(key);
         }
     }

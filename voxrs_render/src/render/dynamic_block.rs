@@ -157,8 +157,7 @@ impl DynamicBlockRenderSystem {
             if let Some(vec) = map.get_mut(&shader_hash) {
                 vec.push(block);
             } else {
-                let mut vec = Vec::new();
-                vec.push(block);
+                let vec = vec![block];
                 map.insert(shader_hash, vec);
                 self.register_render_pipeline(
                     device,
@@ -522,6 +521,7 @@ impl Block {
 }
 
 /// extend BLOCK_VERTICES to aabb
+#[allow(clippy::float_cmp)]
 fn create_vertex(aabb: &Aabb) -> Vec<BlockVertex> {
     let result = BLOCK_VERTICES
         .iter()

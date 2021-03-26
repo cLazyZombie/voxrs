@@ -16,6 +16,7 @@ impl Plane {
         }
     }
 
+    #[allow(clippy::many_single_char_names)]
     pub fn from_unnorm(x: f32, y: f32, z: f32, d: f32) -> Self {
         let v = Vector3::new(x, y, z);
         let mag = v.magnitude();
@@ -94,7 +95,7 @@ mod tests {
     #[test]
     fn test_create() {
         let p1 = Plane::new(1.0, 0.0, 0.0, 1.0);
-        assert_eq!(p1.x(), 1.0);
+        assert_abs_diff_eq!(p1.x(), 1.0);
         assert_abs_diff_eq!(p1, Plane::new(1.0, 0.0, 0.0, 1.0));
     }
 
@@ -116,7 +117,7 @@ mod tests {
             Vector3::new(10.0, 10.0, 10.0),
         );
         let dist = plane.dist_aabb(aabb);
-        assert_eq!(dist, 0.0);
+        assert_abs_diff_eq!(dist, 0.0);
 
         let aabb = Aabb::new(Vector3::new(6.0, 6.0, 6.0), Vector3::new(10.0, 10.0, 10.0));
         let dist = plane.dist_aabb(aabb);

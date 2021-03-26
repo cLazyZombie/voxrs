@@ -156,8 +156,7 @@ mod tests {
             let _ = s.send(Ok(asset));
         });
 
-        let handle = AssetHandle::<TextAsset>::new(&"path".into(), r);
-        handle
+        AssetHandle::<TextAsset>::new(&"path".into(), r)
     }
 
     #[test]

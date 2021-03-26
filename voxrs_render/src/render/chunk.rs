@@ -140,7 +140,7 @@ impl ChunkRenderSystem {
 
             // register new materials in world material
             let asset = world_material.get_asset();
-            for (_, material_handle) in &asset.material_handles {
+            for material_handle in asset.material_handles.values() {
                 self.register_render_pipeline(device, material_handle);
             }
         }
@@ -478,8 +478,7 @@ impl Chunk {
                 if let Some(blocks) = mat_blocks.get_mut(mat_idx) {
                     blocks.push(idx as BlockIdx);
                 } else {
-                    let mut blocks = Vec::new();
-                    blocks.push(idx as BlockIdx);
+                    let blocks = vec![idx as BlockIdx];
                     mat_blocks.insert(*mat_idx, blocks);
                 }
             }
