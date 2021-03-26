@@ -192,8 +192,7 @@ impl ChunkRenderSystem {
 
         for chunk_bp in chunks_bps {
             // check cached
-            let cached = self.cache.refresh(chunk_bp.id);
-            if !cached {
+            if self.cache.get(&chunk_bp.id).is_none() {
                 let chunks = Chunk::from_bp(
                     &chunk_bp,
                     block_size,

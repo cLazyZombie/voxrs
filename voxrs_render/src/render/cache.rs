@@ -1,4 +1,5 @@
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
     hash::Hash,
 };
@@ -8,7 +9,7 @@ where
     K: Eq + Hash + Copy,
 {
     cached: HashMap<K, Vec<V>>,
-    used: HashSet<K>,
+    used: RefCell<HashSet<K>>,
 }
 
 impl<K, V> Cache<K, V>
@@ -18,16 +19,17 @@ where
     pub fn new() -> Self {
         Self {
             cached: HashMap::new(),
-            used: HashSet::new(),
+            used: RefCell::new(HashSet::new()),
         }
     }
 
     /// add val vec with key to cache
     /// return : replaced flag
     /// if new key, insert value withkey and return false
-    /// if key exists, exchage val and return true
+    /// if key exists, exchange val and return true
     pub fn add(&mut self, key: K, vec: Vec<V>) -> bool {
         let prev = self.cached.insert(key, vec);
+        self.set_used(key);
         matches!(prev, Some(_))
     }
 
@@ -35,30 +37,44 @@ where
     ///
     /// return true if already used
     /// retgurn false if new key
-    pub fn refresh(&mut self, key: K) -> bool {
-        !self.used.insert(key)
+    pub fn set_used(&self, key: K) -> bool {
+        !self.used.borrow_mut().insert(key)
     }
 
-    pub fn get(&self, key: &K) -> Option<impl Iterator<Item = &V>> {
+    // pub fn try_iter(&self, key: &K) -> Option<impl Iterator<Item = &V>> {
+    //     self.set_used(*key);
+
+    //     let value = self.cached.get(key);
+    //     match value {
+    //         Some(v) => Some(v.iter()),
+    //         None => None,
+    //     }
+    // }
+
+    pub fn get(&self, key: &K) -> Option<&Vec<V>> {
+        self.set_used(*key);
+
         let value = self.cached.get(key);
         match value {
-            Some(v) => Some(v.iter()),
+            Some(v) => Some(v),
             None => None,
         }
     }
 
     pub fn clear_unused(&mut self) -> usize {
-        let cached: HashSet<_> = self.cached.iter().map(|(k, _)| *k).collect();
-        let removed: Vec<_> = cached.difference(&self.used).collect();
+        let remove_count;
+        {
+            let cached: HashSet<_> = self.cached.iter().map(|(k, _)| *k).collect();
+            let used = &self.used.borrow();
+            let removed: Vec<_> = cached.difference(&used).collect();
+            remove_count = removed.len();
 
-        for &k in &removed {
-            self.cached.remove(k);
+            for &k in &removed {
+                self.cached.remove(k);
+            }
         }
 
-        let remove_count = removed.len();
-
-        self.used.clear();
-
+        self.used.get_mut().clear();
         remove_count
     }
 }
@@ -71,16 +87,16 @@ mod cache_tests {
     fn clear_unused() {
         let mut cache = Cache::new();
 
-        assert_eq!(cache.refresh(1), false);
+        assert_eq!(cache.set_used(1), false);
         cache.add(1, vec!["1".to_string()]);
 
-        assert_eq!(cache.refresh(2), false);
+        assert_eq!(cache.set_used(2), false);
         cache.add(2, vec!["2".to_string()]);
 
         let removed = cache.clear_unused();
         assert_eq!(removed, 0);
 
-        cache.refresh(2);
+        cache.set_used(2);
 
         let removed = cache.clear_unused();
         assert_eq!(removed, 1);
@@ -94,7 +110,7 @@ mod cache_tests {
         let mut cache = Cache::new();
         cache.add(1, vec!["1".to_string()]);
 
-        let mut cached = cache.get(&1).unwrap();
-        assert_eq!(cached.next(), Some(&"1".to_string()));
+        let cached = cache.get(&1).unwrap();
+        assert_eq!(cached.iter().next(), Some(&"1".to_string()));
     }
 }
