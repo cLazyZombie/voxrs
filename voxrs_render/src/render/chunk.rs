@@ -131,10 +131,14 @@ impl ChunkRenderSystem {
         block_size: f32,
         device: &wgpu::Device,
     ) -> Vec<ChunkId> {
-        // prepare render pipeline if world material is changed
+        // prepare render pipeline
         if self.current_world_material_hash != Some(world_material.asset_hash()) {
             self.current_world_material_hash = Some(world_material.asset_hash());
 
+            // clear previous render pipeline if world material is changed
+            self.clear_render_pipeline();
+
+            // register new materials in world material
             let asset = world_material.get_asset();
             for (_, material_handle) in &asset.material_handles {
                 self.register_render_pipeline(device, material_handle);
@@ -158,10 +162,9 @@ impl ChunkRenderSystem {
 
                 let cloned_chunk_bp = SafeCloner::clone_read(chunk_bp);
                 self.cache.add(chunk_bp.id, cloned_chunk_bp, chunks);
-
-                eprintln!("chunk refreshed. {:?}", chunk_bp.id);
             }
 
+            // add to used chunk for prevent remove when cache.clear_unused() called
             self.cache.set_used(chunk_bp.id);
 
             chunks_for_render.push(chunk_bp.id);
@@ -237,6 +240,10 @@ impl ChunkRenderSystem {
         });
 
         self.render_pipelines.insert(shader_hash, render_pipeline);
+    }
+
+    fn clear_render_pipeline(&mut self) {
+        self.render_pipelines.clear();
     }
 
     pub fn render<'a>(&'a self, chunks_ids: &[ChunkId], render_pass: &mut wgpu::RenderPass<'a>) {
