@@ -20,7 +20,7 @@ parking_lot = "0.11"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 tokio = {version = "1.4", features = ["full"]}
-wgpu = "0.7"
+wgpu = {git = "https://github.com/gfx-rs/wgpu-rs", branch = "master"}
 
 [dev-dependencies]
 voxrs_types = {version = "0.1", path = "../voxrs_types", features = ["test"]}

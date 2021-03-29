@@ -1,4 +1,6 @@
-use wgpu::{util::make_spirv, ShaderFlags, ShaderModuleDescriptor};
+use std::borrow::Cow;
+
+use wgpu::{ShaderFlags, ShaderModuleDescriptor};
 
 use super::{
     assets::{Asset, AssetType},
@@ -7,12 +9,12 @@ use super::{
 
 #[derive(Asset)]
 pub struct ShaderAsset {
-    pub buf: Vec<u8>,
+    pub buf: String,
     pub module: AssetBuildResult<wgpu::ShaderModule>,
 }
 
 impl ShaderAsset {
-    pub fn new(buf: Vec<u8>) -> Self {
+    pub fn new(buf: String) -> Self {
         Self {
             buf,
             module: AssetBuildResult::NotBuilt,
@@ -20,11 +22,12 @@ impl ShaderAsset {
     }
 
     pub fn build(&mut self, device: &wgpu::Device, _queue: &wgpu::Queue) {
-        let shader_source = make_spirv(&self.buf);
+        let shader_source = wgpu::ShaderSource::Wgsl(Cow::from(&self.buf));
+
         let module = device.create_shader_module(&ShaderModuleDescriptor {
             label: None,
             source: shader_source,
-            flags: ShaderFlags::VALIDATION,
+            flags: ShaderFlags::VALIDATION | wgpu::ShaderFlags::EXPERIMENTAL_TRANSLATION,
         });
         self.module = AssetBuildResult::Ok(module);
     }

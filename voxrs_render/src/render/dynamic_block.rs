@@ -150,9 +150,8 @@ impl DynamicBlockRenderSystem {
             );
 
             let material = bp.material.get_asset();
-            let vs_handle = &material.vertex_shader;
-            let fs_handle = &material.frag_shader;
-            let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+            let shader_handle = &material.shader;
+            let shader_hash = ShaderHash::from_hash(shader_handle.asset_hash());
 
             if let Some(vec) = map.get_mut(&shader_hash) {
                 vec.push(block);
@@ -161,8 +160,7 @@ impl DynamicBlockRenderSystem {
                 map.insert(shader_hash, vec);
                 self.register_render_pipeline(
                     device,
-                    vs_handle,
-                    fs_handle,
+                    shader_handle,
                 );
             }
         }
@@ -173,10 +171,9 @@ impl DynamicBlockRenderSystem {
     fn register_render_pipeline(
         &mut self,
         device: &wgpu::Device,
-        vs_handle: &AssetHandle<ShaderAsset>,
-        fs_handle: &AssetHandle<ShaderAsset>,
+        shader_handle: &AssetHandle<ShaderAsset>,
     ) {
-        let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+        let shader_hash = ShaderHash::from_hash(shader_handle.asset_hash());
 
         // skip already registered
         let pipeline = self.render_pipelines.get(&shader_hash);
@@ -184,26 +181,24 @@ impl DynamicBlockRenderSystem {
             return;
         }
 
-        let vs_asset = vs_handle.get_asset();
-        let fs_asset = fs_handle.get_asset();
-
-        let vs_module = vs_asset.module.as_ref().unwrap();
-        let fs_module = fs_asset.module.as_ref().unwrap();
+        let shader_asset = shader_handle.get_asset();
+        let shader_module = shader_asset.module.as_ref().unwrap();
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("dynamic block render system render pipeline"),
             layout: Some(&self.render_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vs_module,
-                entry_point: "main",
+                module: &shader_module,
+                entry_point: "vs_main",
                 buffers: &[create_block_vertexbuffer_desc()],
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: Some(wgpu::IndexFormat::Uint16),
+                strip_index_format: None,
                 front_face: wgpu::FrontFace::Cw,
-                cull_mode: wgpu::CullMode::Back,
+                cull_mode: Some(wgpu::Face::Back),
                 polygon_mode: wgpu::PolygonMode::Fill,
+                conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
@@ -223,12 +218,14 @@ impl DynamicBlockRenderSystem {
                 alpha_to_coverage_enabled: false,
             },
             fragment: Some(wgpu::FragmentState {
-                module: &fs_module,
-                entry_point: "main",
+                module: &shader_module,
+                entry_point: "fs_main",
                 targets: &[wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                    alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: COLOR_BLEND_STATE,
+                    blend: Some(wgpu::BlendState {
+                        alpha: wgpu::BlendComponent::REPLACE,
+                        color: COLOR_BLEND,
+                    }),
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),
@@ -268,21 +265,6 @@ impl DynamicBlockRenderSystem {
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
             }
         }
-
-        // render_pass.set_pipeline(&self.render_pipeline);
-        // render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-
-        // for block in blocks {
-        //     let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
-        //     render_pass.set_vertex_buffer(
-        //         0,
-        //         buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + buffer_size)),
-        //     );
-        //     render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        //     render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
-        //     render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
-        //     render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        // }
     }
 
     pub fn clear(&mut self) {
@@ -295,7 +277,7 @@ impl DynamicBlockRenderSystem {
     }
 }
 
-const COLOR_BLEND_STATE: wgpu::BlendState = wgpu::BlendState {
+const COLOR_BLEND: wgpu::BlendComponent = wgpu::BlendComponent {
     src_factor: wgpu::BlendFactor::SrcAlpha,
     dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
     operation: wgpu::BlendOperation::Add,
@@ -415,18 +397,18 @@ pub fn create_block_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
             wgpu::VertexAttribute {
                 offset: 0,
                 shader_location: 0,
-                format: wgpu::VertexFormat::Float3,
+                format: wgpu::VertexFormat::Float32x3,
             },
             wgpu::VertexAttribute {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
-                format: wgpu::VertexFormat::Float3,
+                format: wgpu::VertexFormat::Float32x3,
             },
             wgpu::VertexAttribute {
                 offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
                     as wgpu::BufferAddress,
                 shader_location: 2,
-                format: wgpu::VertexFormat::Float2,
+                format: wgpu::VertexFormat::Float32x2,
             },
         ],
     }

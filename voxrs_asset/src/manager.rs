@@ -181,7 +181,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             let _logger = AssetLoadLogger::new(&path);
 
             let result;
-            if let Ok(v) = F::read_binary(&path).await {
+            if let Ok(v) = F::read_text(&path).await {
                 let mut shader = ShaderAsset::new(v);
                 if let (Some(device), Some(queue)) = (device, queue) {
                     shader.build(&device, &queue);

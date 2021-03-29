@@ -179,36 +179,33 @@ impl ChunkRenderSystem {
         material_handle: &AssetHandle<MaterialAsset>,
     ) {
         let asset = material_handle.get_asset();
-        let vs_handle = &asset.vertex_shader;
-        let fs_handle = &asset.frag_shader;
+        let shader_handle = &asset.shader;
 
-        let shader_hash = ShaderHash::from_hash(vs_handle.asset_hash(), fs_handle.asset_hash());
+        let shader_hash = ShaderHash::from_hash(shader_handle.asset_hash());
 
         let pipeline = self.render_pipelines.get(&shader_hash);
         if pipeline.is_some() {
             return;
         }
 
-        let vs_asset = vs_handle.get_asset();
-        let fs_asset = fs_handle.get_asset();
-
-        let vs_module = vs_asset.module.as_ref().unwrap();
-        let fs_module = fs_asset.module.as_ref().unwrap();
+        let shader_asset = shader_handle.get_asset();
+        let shader_module = shader_asset.module.as_ref().unwrap();
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("chunk render system render pipeline"),
             layout: Some(&self.render_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vs_module,
-                entry_point: "main",
+                module: &shader_module,
+                entry_point: "vs_main",
                 buffers: &[create_chunk_vertexbuffer_desc()],
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: Some(wgpu::IndexFormat::Uint32),
+                strip_index_format: None,
                 front_face: wgpu::FrontFace::Cw,
-                cull_mode: wgpu::CullMode::Back,
+                cull_mode: Some(wgpu::Face::Back),
                 polygon_mode: wgpu::PolygonMode::Fill,
+                conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
@@ -228,12 +225,14 @@ impl ChunkRenderSystem {
                 alpha_to_coverage_enabled: false,
             },
             fragment: Some(wgpu::FragmentState {
-                module: &fs_module,
-                entry_point: "main",
+                module: &shader_module,
+                entry_point: "fs_main",
                 targets: &[wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                    alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: wgpu::BlendState::REPLACE,
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent::REPLACE,
+                        alpha: wgpu::BlendComponent::REPLACE,
+                    }),
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),
@@ -430,18 +429,18 @@ pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
             wgpu::VertexAttribute {
                 offset: 0,
                 shader_location: 0,
-                format: wgpu::VertexFormat::Float3,
+                format: wgpu::VertexFormat::Float32x3,
             },
             wgpu::VertexAttribute {
                 offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 shader_location: 1,
-                format: wgpu::VertexFormat::Float3,
+                format: wgpu::VertexFormat::Float32x3,
             },
             wgpu::VertexAttribute {
                 offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
                     as wgpu::BufferAddress,
                 shader_location: 2,
-                format: wgpu::VertexFormat::Float2,
+                format: wgpu::VertexFormat::Float32x2,
             },
         ],
     }
