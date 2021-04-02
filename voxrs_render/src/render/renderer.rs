@@ -6,8 +6,9 @@ use std::{
     thread::{self, JoinHandle},
 };
 use std::{iter, sync::Arc};
-use voxrs_asset::{AssetManager, Texture};
+use voxrs_asset::AssetManager;
 use voxrs_math::*;
+use voxrs_rhi::Texture;
 use voxrs_types::io::FileSystem;
 use wgpu::util::DeviceExt;
 use winit::window::Window;

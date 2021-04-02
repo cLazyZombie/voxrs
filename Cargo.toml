@@ -9,6 +9,7 @@ members = [
   "voxrs_asset",
   "voxrs_render",
   "voxrs_core",
+  "voxrs_rhi",
 ]
 resolver = "2"
 

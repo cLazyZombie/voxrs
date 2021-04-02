@@ -1,0 +1,12 @@
+[package]
+authors = ["cLazyZombie <rusad96@gmail.com>"]
+edition = "2018"
+name = "voxrs_rhi"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+image = "0.23"
+wgpu = "0.7"

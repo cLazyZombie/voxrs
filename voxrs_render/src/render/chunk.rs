@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::blueprint::{self, BlockIdx, BlockMatIdx, ChunkId};
 use enumflags2::BitFlags;
-use voxrs_asset::{AssetHandle, AssetHash, MaterialAsset, WorldMaterialAsset, DEPTH_FORMAT};
+use voxrs_asset::{AssetHandle, AssetHash, MaterialAsset, WorldMaterialAsset};
 use voxrs_math::*;
+use voxrs_rhi::DEPTH_FORMAT;
 use voxrs_types::SafeCloner;
 
 use wgpu::util::DeviceExt;

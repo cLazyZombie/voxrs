@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use crate::blueprint::{self, BlockIdx, DynamicBlock};
-use voxrs_asset::{AssetHandle, ShaderAsset, DEPTH_FORMAT};
+use voxrs_asset::{AssetHandle, ShaderAsset};
 use voxrs_math::*;
 
+use voxrs_rhi::DEPTH_FORMAT;
 use wgpu::util::DeviceExt;
 
 use super::ShaderHash;
