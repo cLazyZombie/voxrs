@@ -29,3 +29,6 @@ pub use texture::TextureAsset;
 pub use world_block::BlockSize;
 pub use world_block::WorldBlockAsset;
 pub use world_material::WorldMaterialAsset;
+
+mod font;
+pub use font::FontAsset;

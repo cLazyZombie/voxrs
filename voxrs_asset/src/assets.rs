@@ -6,6 +6,7 @@ pub enum AssetType {
     Material,
     WorldMaterial,
     WorldBlock,
+    Font,
 }
 
 #[must_use]

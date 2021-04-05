@@ -10,7 +10,7 @@ use voxrs_types::io::FileSystem;
 use super::{
     assets::{Asset, AssetType},
     handle::{AssetHandle, AssetLoadError},
-    AssetPath, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset,
+    AssetPath, FontAsset, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset,
     WorldMaterialAsset,
 };
 pub struct AssetManager<F: FileSystem + 'static> {
@@ -63,6 +63,7 @@ pub struct AssetManagerInternal<F: FileSystem + 'static> {
     material_assets: HashMap<AssetHash, AssetHandle<MaterialAsset>>,
     world_material_assets: HashMap<AssetHash, AssetHandle<WorldMaterialAsset>>,
     world_block_assets: HashMap<AssetHash, AssetHandle<WorldBlockAsset>>,
+    font_assets: HashMap<AssetHash, AssetHandle<FontAsset>>,
 
     device: Option<Arc<wgpu::Device>>,
     queue: Option<Arc<wgpu::Queue>>,
@@ -86,6 +87,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             material_assets: HashMap::new(),
             world_material_assets: HashMap::new(),
             world_block_assets: HashMap::new(),
+            font_assets: HashMap::new(),
 
             device: None,
             queue: None,
@@ -112,6 +114,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             AssetType::Material => self.create_material(path, manager),
             AssetType::WorldMaterial => self.create_world_block_material(path, manager),
             AssetType::WorldBlock => self.create_world_block(path, manager),
+            AssetType::Font => self.create_font(path),
         }
     }
 
@@ -278,6 +281,29 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         cloned_handle
     }
 
+    fn create_font<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
+        let hash = path.get_hash();
+        let (handle, sender) = create_asset_handle(path);
+        let cloned_handle = handle.cast().clone();
+        self.font_assets.insert(hash, handle);
+        let path = path.clone();
+
+        self.async_rt.spawn(async move {
+            let _logger = AssetLoadLogger::new(&path);
+
+            let result;
+            if let Ok(buf) = F::read_binary(&path).await {
+                result = Ok(FontAsset::new(buf));
+            } else {
+                result = Err(AssetLoadError::Failed);
+            }
+
+            let _ = sender.send(result);
+        });
+
+        cloned_handle
+    }
+
     fn clone_wgpu(&self) -> (Option<Arc<wgpu::Device>>, Option<Arc<wgpu::Queue>>) {
         let cloned_device = if let Some(device) = &self.device {
             let device = Arc::clone(device);
@@ -332,6 +358,10 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
             }
             AssetType::WorldBlock => {
                 let handle = self.world_block_assets.get(hash)?;
+                Some(handle.cast())
+            }
+            AssetType::Font => {
+                let handle = self.font_assets.get(hash)?;
                 Some(handle.cast())
             }
         }
