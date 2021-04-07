@@ -1,10 +1,14 @@
 mod chunk;
-mod commands;
-mod renderer;
 
+mod commands;
 pub use commands::Command;
+
+mod renderer;
 pub use renderer::create_rendering_thread;
 pub use renderer::Renderer;
+
+mod text;
+pub(crate) use text::TextRenderer;
 
 mod dynamic_block;
 pub(crate) use dynamic_block::DynamicBlockRenderSystem;

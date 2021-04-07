@@ -101,6 +101,15 @@ impl std::ops::Index<(usize, usize)> for Matrix4 {
     }
 }
 
+impl std::ops::IndexMut<(usize, usize)> for Matrix4 {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        assert!(index.0 > 0 && index.0 <= 4);
+        assert!(index.1 > 0 && index.1 <= 4);
+
+        self.m.index_mut((index.0 - 1) + (index.1 - 1) * 4)
+    }
+}
+
 impl std::ops::Mul for Matrix4 {
     type Output = Matrix4;
 

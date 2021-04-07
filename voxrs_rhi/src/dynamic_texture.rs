@@ -1,3 +1,5 @@
+use guillotiere::{Allocation, AtlasAllocator};
+
 /// DynamicTexture
 /// can write runtime
 /// only support rgba8 right now
@@ -9,9 +11,11 @@ pub struct DynamicTexture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
+    allocator: AtlasAllocator,
 }
 
 const DYNANIC_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Uint;
+const PADDING: u32 = 2;
 
 impl DynamicTexture {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Self {
@@ -44,6 +48,8 @@ impl DynamicTexture {
             ..Default::default()
         });
 
+        let allocator = AtlasAllocator::new((width as i32, height as i32).into());
+
         Self {
             width,
             height,
@@ -52,7 +58,13 @@ impl DynamicTexture {
             texture,
             view,
             sampler,
+            allocator,
         }
+    }
+
+    pub fn allocate(&mut self, width: u32, height: u32) -> Option<Allocation> {
+        self.allocator
+            .allocate(((width + PADDING) as i32, (height + PADDING) as i32).into())
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: u32) {
@@ -91,7 +103,7 @@ impl DynamicTexture {
             wgpu::TextureDataLayout {
                 offset: 0,
                 bytes_per_row: 4 * self.width,
-                rows_per_image: self.height,
+                rows_per_image: 0,
             },
             size,
         );

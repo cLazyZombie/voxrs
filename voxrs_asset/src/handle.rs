@@ -80,6 +80,25 @@ impl<T: Asset + 'static> Clone for AssetHandle<T> {
     }
 }
 
+impl<T: Asset + 'static> std::fmt::Debug for AssetHandle<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.path)
+    }
+}
+
+impl<T: Asset + 'static> std::cmp::Eq for AssetHandle<T> {}
+impl<T: Asset + 'static> std::cmp::PartialEq for AssetHandle<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+
+impl<T: Asset + 'static> std::hash::Hash for AssetHandle<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.path.hash(state);
+    }
+}
+
 pub struct AssetRLock<'a, T: Asset + 'static> {
     lock: RwLockReadGuard<'a, Option<T>>,
 }

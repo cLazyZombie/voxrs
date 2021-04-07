@@ -1,4 +1,4 @@
-use super::{chunk::ChunkRenderSystem, commands::Command, DynamicBlockRenderSystem};
+use super::{chunk::ChunkRenderSystem, commands::Command, DynamicBlockRenderSystem, TextRenderer};
 use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
 use std::{
@@ -6,10 +6,11 @@ use std::{
     thread::{self, JoinHandle},
 };
 use std::{iter, sync::Arc};
-use voxrs_asset::AssetManager;
+use voxrs_asset::{AssetHandle, AssetManager, FontAsset};
 use voxrs_math::*;
 use voxrs_rhi::Texture;
 use voxrs_types::io::FileSystem;
+use voxrs_ui::{TextDesc, TextHandle, TextSectionDesc};
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
@@ -23,8 +24,12 @@ pub struct Renderer {
     depth_texture: Texture,
     chunk_renderer: ChunkRenderSystem,
     dynamic_block_renderer: DynamicBlockRenderSystem,
+    text_renderer: TextRenderer,
     uniforms: Uniforms,
     view_proj_buf: wgpu::Buffer,
+    screen_to_ndc: ScreenToNdc,
+    screen_to_ndc_buf: wgpu::Buffer,
+    font: AssetHandle<FontAsset>,
 }
 
 impl Renderer {
@@ -76,8 +81,17 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
+        let screen_to_ndc = ScreenToNdc::default();
+        let screen_to_ndc_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("screen to ndc buffer"),
+            contents: bytemuck::cast_slice(&[screen_to_ndc]),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
+
         let chunk_renderer = ChunkRenderSystem::new(&device, &view_proj_buf);
         let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &view_proj_buf);
+        let text_renderer = TextRenderer::new(&device, &screen_to_ndc_buf, asset_manager);
+        let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
 
         Self {
             surface,
@@ -89,8 +103,12 @@ impl Renderer {
             depth_texture,
             chunk_renderer,
             dynamic_block_renderer,
+            text_renderer,
             uniforms,
             view_proj_buf,
+            screen_to_ndc,
+            screen_to_ndc_buf,
+            font,
         }
     }
 
@@ -106,6 +124,17 @@ impl Renderer {
         let blocks =
             self.dynamic_block_renderer
                 .prepare(&bp.dynamic_blocks, &self.device, &self.queue);
+
+        let text = TextHandle::new(TextDesc {
+            sections: vec![TextSectionDesc {
+                font: self.font.clone(),
+                font_size: 40,
+                text: "Test".to_string(),
+            }],
+        });
+        let text_render_infos = self
+            .text_renderer
+            .prepare(vec![text], &self.device, &self.queue);
 
         let frame = self.swap_chain.get_current_frame()?.output;
 
@@ -142,8 +171,12 @@ impl Renderer {
             });
 
             self.chunk_renderer.render(&chunks, &mut render_pass);
+
             self.dynamic_block_renderer
                 .render(&blocks, &mut render_pass);
+
+            self.text_renderer
+                .render(&text_render_infos, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -152,6 +185,7 @@ impl Renderer {
         {
             self.chunk_renderer.clear();
             self.dynamic_block_renderer.clear();
+            self.text_renderer.clear();
         }
 
         Ok(())
@@ -168,6 +202,13 @@ impl Renderer {
 
         self.depth_texture =
             Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
+
+        self.screen_to_ndc.update(new_size.width, new_size.height);
+        self.queue.write_buffer(
+            &self.screen_to_ndc_buf,
+            0,
+            bytemuck::cast_slice(&[self.screen_to_ndc]),
+        );
     }
 
     pub fn resize_self(&mut self) {
@@ -201,6 +242,38 @@ impl Default for Uniforms {
     fn default() -> Self {
         Self {
             view_proj: Matrix4::identity().to_array(),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct ScreenToNdc {
+    matrix: [f32; 16],
+}
+
+impl ScreenToNdc {
+    pub fn update(&mut self, screen_width: u32, screen_height: u32) {
+        // x' = x * (1/width) * 2 - 1
+        // y' = y * (1/height) * -2 + 1
+        let width = screen_width as f32;
+        let height = screen_height as f32;
+        let mut matrix = Matrix4::identity();
+
+        matrix[(1, 1)] = 1.0 / width * 2.0;
+        matrix[(1, 4)] = -1.0;
+
+        matrix[(2, 2)] = 1.0 / height * -2.0;
+        matrix[(2, 4)] = 1.0;
+
+        self.matrix = matrix.as_slice().try_into().unwrap();
+    }
+}
+
+impl Default for ScreenToNdc {
+    fn default() -> Self {
+        Self {
+            matrix: Matrix4::identity().to_array(),
         }
     }
 }
