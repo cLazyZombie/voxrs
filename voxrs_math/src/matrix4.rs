@@ -283,4 +283,12 @@ mod tests {
         let v2 = m.transform_normal(&v);
         assert_abs_diff_eq!(v2, v);
     }
+
+    #[test]
+    fn test_index() {
+        let m = Matrix4::translate(&Vector3::new(1.0, 2.0, 3.0));
+        assert_abs_diff_eq!(m[(1, 4)], 1.0);
+        assert_abs_diff_eq!(m[(2, 4)], 2.0);
+        assert_abs_diff_eq!(m[(3, 4)], 3.0);
+    }
 }

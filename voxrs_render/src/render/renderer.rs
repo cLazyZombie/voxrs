@@ -81,7 +81,8 @@ impl Renderer {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
-        let screen_to_ndc = ScreenToNdc::default();
+        let mut screen_to_ndc = ScreenToNdc::default();
+        screen_to_ndc.update(size.width, size.height);
         let screen_to_ndc_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("screen to ndc buffer"),
             contents: bytemuck::cast_slice(&[screen_to_ndc]),
@@ -256,14 +257,14 @@ impl ScreenToNdc {
     pub fn update(&mut self, screen_width: u32, screen_height: u32) {
         // x' = x * (1/width) * 2 - 1
         // y' = y * (1/height) * -2 + 1
-        let width = screen_width as f32;
-        let height = screen_height as f32;
+        let div_width = 1.0 / screen_width as f32;
+        let div_height = 1.0 / screen_height as f32;
         let mut matrix = Matrix4::identity();
 
-        matrix[(1, 1)] = 1.0 / width * 2.0;
+        matrix[(1, 1)] = div_width * 2.0;
         matrix[(1, 4)] = -1.0;
 
-        matrix[(2, 2)] = 1.0 / height * -2.0;
+        matrix[(2, 2)] = div_height * -2.0;
         matrix[(2, 4)] = 1.0;
 
         self.matrix = matrix.as_slice().try_into().unwrap();

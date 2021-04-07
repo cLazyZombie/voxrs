@@ -9,6 +9,5 @@ layout(set = 1, binding = 1) uniform sampler s_font_atlas;
 layout(location=0) out vec4 f_color;
 
 void main() {
-    //f_color = vec4(v_color, 1.0) * texture(sampler2D(t_font_atlas, s_font_atlas), v_uv);
-    f_color = vec4(1.0, 1.0, 1.0, 1.0);
+    f_color = vec4(v_color, 1.0) * texture(sampler2D(t_font_atlas, s_font_atlas), v_uv);
 }

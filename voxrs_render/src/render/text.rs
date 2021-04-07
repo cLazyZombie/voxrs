@@ -129,6 +129,12 @@ impl TextRenderer {
         let vs_module = vs_asset.module.as_ref().unwrap();
         let fs_module = fs_asset.module.as_ref().unwrap();
 
+        const COLOR_BLEND_STATE: wgpu::BlendState = wgpu::BlendState {
+            src_factor: wgpu::BlendFactor::SrcAlpha,
+            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+            operation: wgpu::BlendOperation::Add,
+        };
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("text render pipeline"),
             layout: Some(&render_pipeline_layout),
@@ -163,7 +169,7 @@ impl TextRenderer {
                 targets: &[wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
                     alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: wgpu::BlendState::REPLACE,
+                    color_blend: COLOR_BLEND_STATE,
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),
@@ -257,6 +263,52 @@ impl TextRenderer {
                         uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
                     },
                 ];
+
+                // let vertices = [
+                //     TextVertex {
+                //         position: [0.0, 0.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
+                //     },
+                //     TextVertex {
+                //         position: [100.0, 0.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
+                //     },
+                //     TextVertex {
+                //         position: [100.0, 100.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
+                //     },
+                //     TextVertex {
+                //         position: [0.0, 100.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
+                //     },
+                // ];
+
+                // let vertices = [
+                //     TextVertex {
+                //         position: [-1.0, 1.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
+                //     },
+                //     TextVertex {
+                //         position: [1.0, 1.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
+                //     },
+                //     TextVertex {
+                //         position: [1.0, -1.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
+                //     },
+                //     TextVertex {
+                //         position: [-1.0, -1.0],
+                //         color: [1.0, 1.0, 1.0],
+                //         uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
+                //     },
+                // ];
 
                 let (buffer_idx, buffer_start) = add_to_vertex_buffer(
                     &mut self.vertex_buffers,
@@ -445,32 +497,6 @@ fn add_to_vertex_buffer(
 
     (vertex_buffer_idx, vertex_buffer_start)
 }
-
-// fn get_vertices(glyph: &GlyphPos) -> Vec<TextVertex> {
-//     let mut vertices = Vec::new();
-//     vertices.reserve(4);
-//     vertices.push(TextVertex {
-//         position: [glyph.pos.0, glyph.pos.1],
-//         color: [1.0, 1.0, 1.0],
-//         uv: [glyph.atlas_info.uv_start.0, glyph.atlas_info.uv_start.1],
-//     });
-//     vertices.push(TextVertex {
-//         position: [glyph.pos.0 + glyph.size.0, glyph.pos.1],
-//         color: [1.0, 1.0, 1.0],
-//         uv: [glyph.atlas_info.uv_end.0, glyph.atlas_info.uv_start.1],
-//     });
-//     vertices.push(TextVertex {
-//         position: [glyph.pos.0 + glyph.size.0, glyph.pos.1 + glyph.size.1],
-//         color: [1.0, 1.0, 1.0],
-//         uv: [glyph.atlas_info.uv_end.0, glyph.atlas_info.uv_end.1],
-//     });
-//     vertices.push(TextVertex {
-//         position: [glyph.pos.0, glyph.pos.1 + glyph.size.1],
-//         color: [1.0, 1.0, 1.0],
-//         uv: [glyph.atlas_info.uv_end.0, glyph.atlas_info.uv_start.1],
-//     });
-//     vertices
-// }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]

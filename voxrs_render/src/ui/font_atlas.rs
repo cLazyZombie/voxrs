@@ -207,12 +207,21 @@ impl FontAtlas {
 
 fn alpha_to_color(alpha: f32) -> u32 {
     let array = [255, 255, 255, (alpha * 255.0) as u8];
-    let mut color: u32 = 0;
-    unsafe {
-        let src = array.as_ptr();
-        let dst = (&mut color as *mut u32) as *mut u8;
-        std::ptr::copy_nonoverlapping(src, dst, 4);
-    }
+    let color = bytemuck::cast(array);
 
     color
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_alpha_to_color() {
+        let c = alpha_to_color(0.0);
+        assert_eq!(c, 0x00ffffff);
+
+        let c = alpha_to_color(1.0);
+        assert_eq!(c, 0xffffffff);
+    }
 }

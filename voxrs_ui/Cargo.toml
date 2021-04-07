@@ -9,4 +9,3 @@ version = "0.1.0"
 [dependencies]
 voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
 
-guillotiere = "0.6"

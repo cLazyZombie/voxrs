@@ -14,8 +14,9 @@ pub struct DynamicTexture {
     allocator: AtlasAllocator,
 }
 
-const DYNANIC_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Uint;
+const DYNANIC_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 const PADDING: u32 = 2;
+const BYTE_PER_PIXEL: u32 = 4;
 
 impl DynamicTexture {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Self {
@@ -71,7 +72,7 @@ impl DynamicTexture {
         assert!(x < self.width);
         assert!(y < self.height);
 
-        let idx = (x + y * self.width) as usize;
+        let idx = ((x + y * self.width) * BYTE_PER_PIXEL) as usize;
         let array = u32_to_u8_array(color);
         self.buffer[idx] = array[0];
         self.buffer[idx + 1] = array[1];
@@ -111,14 +112,7 @@ impl DynamicTexture {
 }
 
 fn u32_to_u8_array(color: u32) -> [u8; 4] {
-    let mut array = [0_u8; 4];
-    unsafe {
-        let src = &color as *const u32;
-        let src = src as *const u8;
-        let dest = array.as_mut_ptr();
-        std::ptr::copy_nonoverlapping(src, dest, std::mem::size_of::<u32>());
-    }
-
+    let array: [u8; 4] = bytemuck::cast(color);
     array
 }
 

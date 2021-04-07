@@ -2327,6 +2327,7 @@ name = "voxrs_rhi"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytemuck",
  "guillotiere",
  "image",
  "wgpu",
@@ -2348,7 +2349,6 @@ dependencies = [
 name = "voxrs_ui"
 version = "0.1.0"
 dependencies = [
- "guillotiere",
  "voxrs_asset",
 ]
 
