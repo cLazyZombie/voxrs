@@ -8,7 +8,7 @@ use std::thread::{self, JoinHandle};
 use std::{iter, sync::Arc};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset};
 use voxrs_rhi::Texture;
-use voxrs_types::io::FileSystem;
+use voxrs_types::{io::FileSystem, Fps};
 use voxrs_ui::{TextDesc, TextHandle, TextSectionDesc};
 use winit::window::Window;
 
@@ -25,6 +25,7 @@ pub struct Renderer {
     text_renderer: TextRenderer,
     common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
+    fps: Fps,
 }
 
 impl Renderer {
@@ -63,6 +64,7 @@ impl Renderer {
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
+            //present_mode: wgpu::PresentMode::Immediate,
         };
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
@@ -76,6 +78,7 @@ impl Renderer {
         let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &common_uniforms);
         let text_renderer = TextRenderer::new(&device, &common_uniforms, asset_manager);
         let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
+        let fps = Fps::new();
 
         Self {
             surface,
@@ -90,6 +93,7 @@ impl Renderer {
             text_renderer,
             common_uniforms,
             font,
+            fps,
         }
     }
 
@@ -106,11 +110,14 @@ impl Renderer {
             self.dynamic_block_renderer
                 .prepare(&bp.dynamic_blocks, &self.device, &self.queue);
 
+        // render fps (temp)
+        self.fps.tick();
+        let fps = format!("fps: {:.1}", self.fps.get_fps());
         let text = TextHandle::new(TextDesc {
             sections: vec![TextSectionDesc {
                 font: self.font.clone(),
-                font_size: 40,
-                text: "Test".to_string(),
+                font_size: 20,
+                text: fps,
             }],
         });
         let text_render_infos = self

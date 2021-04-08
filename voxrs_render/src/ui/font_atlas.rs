@@ -76,33 +76,18 @@ impl FontAtlas {
         font_id: FontId,
         weight: u32,
         device: &Device,
-    ) -> GlyphAtlasInfo {
-        // if this is new font, add it
-        // let mut font = self
-        //     .fonts
-        //     .iter()
-        //     .find(|(asset, font)| asset == font_asset)
-        //     .map(|(_, font)| font)
-        //     .unwrap();
-
+    ) -> Option<GlyphAtlasInfo> {
         let font = &self.fonts[font_id.0].1;
-
-        // if font_idx.is_none() {
-        //     self.font_assets.push(font_asset.clone());
-        //     self.fonts.push(font_asset.get_asset().font.clone());
-        //     font_idx = Some(self.fonts.len() - 1);
-        // }
-        // let font_idx = font_idx.unwrap();
 
         // find cache
         let glyph_key = GlyphKey::new(font_id, weight, glyph_id);
         if let Some(atlas_info) = self.cached.get(&glyph_key) {
-            return *atlas_info;
+            return Some(*atlas_info);
         }
 
         // allocate to dynamic texture
         let glyph = glyph_id.with_scale(weight as f32);
-        let outline_glyph = font.outline_glyph(glyph).unwrap();
+        let outline_glyph = font.outline_glyph(glyph)?; // skip if glyph is not valid (e.g. space...)
         let bounds = outline_glyph.px_bounds();
 
         let mut allocated =
@@ -158,7 +143,7 @@ impl FontAtlas {
 
         log::info!("Glyph created in FontAtlas. {:?}", glyph_atlas_info);
 
-        glyph_atlas_info
+        Some(glyph_atlas_info)
     }
 
     pub fn get_texture(&self, atlas_idx: usize) -> &DynamicTexture {

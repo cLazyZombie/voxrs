@@ -233,6 +233,12 @@ impl TextRenderer {
                     device,
                 );
 
+                if atlas_info.is_none() {
+                    continue;
+                }
+
+                let atlas_info = atlas_info.unwrap();
+
                 // vertex
                 let font = self.font_atlas.get_font(section_glyph.font_id);
                 let outline_glyph = font.outline_glyph(section_glyph.glyph.clone()).unwrap();
