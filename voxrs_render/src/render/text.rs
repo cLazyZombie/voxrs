@@ -8,6 +8,8 @@ use wgpu::BufferAddress;
 
 use crate::ui::{FontAtlas, GlyphAtlasInfo};
 
+use super::CommonUniforms;
+
 pub struct TextRenderer {
     uniform_bind_group: wgpu::BindGroup,
     font_texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -31,7 +33,7 @@ pub struct GlyphAtlasRenderInfo {
 impl TextRenderer {
     pub fn new<F: FileSystem>(
         device: &wgpu::Device,
-        screen_to_ndc_buff: &wgpu::Buffer,
+        common_uniforms: &CommonUniforms,
         asset_manager: &mut AssetManager<F>,
     ) -> Self {
         let uniform_bind_group_layout =
@@ -54,11 +56,7 @@ impl TextRenderer {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
-                    buffer: screen_to_ndc_buff,
-                    offset: 0,
-                    size: None,
-                },
+                resource: common_uniforms.get_screen_to_ndc_buffer(),
             }],
         });
 
@@ -264,52 +262,6 @@ impl TextRenderer {
                     },
                 ];
 
-                // let vertices = [
-                //     TextVertex {
-                //         position: [0.0, 0.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
-                //     },
-                //     TextVertex {
-                //         position: [100.0, 0.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
-                //     },
-                //     TextVertex {
-                //         position: [100.0, 100.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
-                //     },
-                //     TextVertex {
-                //         position: [0.0, 100.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
-                //     },
-                // ];
-
-                // let vertices = [
-                //     TextVertex {
-                //         position: [-1.0, 1.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
-                //     },
-                //     TextVertex {
-                //         position: [1.0, 1.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
-                //     },
-                //     TextVertex {
-                //         position: [1.0, -1.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
-                //     },
-                //     TextVertex {
-                //         position: [-1.0, -1.0],
-                //         color: [1.0, 1.0, 1.0],
-                //         uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
-                //     },
-                // ];
-
                 let (buffer_idx, buffer_start) = add_to_vertex_buffer(
                     &mut self.vertex_buffers,
                     &mut self.vertex_buffer_used,
@@ -398,54 +350,6 @@ impl TextRenderer {
                 render_pass.draw_indexed(0..6, 0, 0..1);
             }
         }
-
-        // for glyph in glyphs {
-        //     // create vertex
-        //     let vertices = get_vertices(glyph);
-        //     queue.write_buffer(
-        //         &self.vertex_buffer,
-        //         self.vertex_buffer_offset,
-        //         bytemuck::cast_slice(&vertices),
-        //     );
-
-        //     let vertex_buffer_offset_add =
-        //         (std::mem::size_of::<TextVertex>() * vertices.len()) as u64;
-
-        //     render_pass.set_vertex_buffer(
-        //         0,
-        //         self.vertex_buffer.slice(
-        //             self.vertex_buffer_offset
-        //                 ..(self.vertex_buffer_offset + vertex_buffer_offset_add),
-        //         ),
-        //     );
-
-        //     self.vertex_buffer_offset += vertex_buffer_offset_add;
-
-        //     // set index buffer
-
-        //     // set texture
-        //     let font_texture: &DynamicTexture =
-        //         self.font_textures.get_texture(glyph.atlas_info.atlas_idx);
-        //     let font_texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        //         label: Some("font texture bind group"),
-        //         layout: &self.font_texture_bind_group_layout,
-        //         entries: &[
-        //             wgpu::BindGroupEntry {
-        //                 binding: 0,
-        //                 resource: wgpu::BindingResource::TextureView(&font_texture.view),
-        //             },
-        //             wgpu::BindGroupEntry {
-        //                 binding: 1,
-        //                 resource: wgpu::BindingResource::Sampler(&font_texture.sampler),
-        //             },
-        //         ],
-        //     });
-
-        //     //render_pass.set_bind_group(0, &font_texture_bind_group, &[]);
-
-        //     // draw
-        //     render_pass.draw_indexed(0..6, 0, 0..1);
-        // }
     }
 
     pub fn clear(&mut self) {

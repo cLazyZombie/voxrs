@@ -18,3 +18,6 @@ pub(crate) use shader_hash::ShaderHash;
 
 mod chunk_cache;
 pub(crate) use chunk_cache::ChunkCache;
+
+mod common_uniforms;
+pub(crate) use common_uniforms::CommonUniforms;

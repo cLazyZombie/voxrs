@@ -1,17 +1,15 @@
-use super::{chunk::ChunkRenderSystem, commands::Command, DynamicBlockRenderSystem, TextRenderer};
+use super::{
+    chunk::ChunkRenderSystem, commands::Command, CommonUniforms, DynamicBlockRenderSystem,
+    TextRenderer,
+};
 use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
-use std::{
-    convert::TryInto,
-    thread::{self, JoinHandle},
-};
+use std::thread::{self, JoinHandle};
 use std::{iter, sync::Arc};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset};
-use voxrs_math::*;
 use voxrs_rhi::Texture;
 use voxrs_types::io::FileSystem;
 use voxrs_ui::{TextDesc, TextHandle, TextSectionDesc};
-use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 pub struct Renderer {
@@ -25,10 +23,7 @@ pub struct Renderer {
     chunk_renderer: ChunkRenderSystem,
     dynamic_block_renderer: DynamicBlockRenderSystem,
     text_renderer: TextRenderer,
-    uniforms: Uniforms,
-    view_proj_buf: wgpu::Buffer,
-    screen_to_ndc: ScreenToNdc,
-    screen_to_ndc_buf: wgpu::Buffer,
+    common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
 }
 
@@ -74,24 +69,12 @@ impl Renderer {
         let depth_texture =
             Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
-        let uniforms = Uniforms::default();
-        let view_proj_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("view_proj buffer"),
-            contents: bytemuck::cast_slice(&[uniforms]),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        });
+        let mut common_uniforms = CommonUniforms::new(&device);
+        common_uniforms.set_screen_to_ndc_mat(size.width, size.height, &queue);
 
-        let mut screen_to_ndc = ScreenToNdc::default();
-        screen_to_ndc.update(size.width, size.height);
-        let screen_to_ndc_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("screen to ndc buffer"),
-            contents: bytemuck::cast_slice(&[screen_to_ndc]),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        });
-
-        let chunk_renderer = ChunkRenderSystem::new(&device, &view_proj_buf);
-        let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &view_proj_buf);
-        let text_renderer = TextRenderer::new(&device, &screen_to_ndc_buf, asset_manager);
+        let chunk_renderer = ChunkRenderSystem::new(&device, &common_uniforms);
+        let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &common_uniforms);
+        let text_renderer = TextRenderer::new(&device, &common_uniforms, asset_manager);
         let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
 
         Self {
@@ -105,10 +88,7 @@ impl Renderer {
             chunk_renderer,
             dynamic_block_renderer,
             text_renderer,
-            uniforms,
-            view_proj_buf,
-            screen_to_ndc,
-            screen_to_ndc_buf,
+            common_uniforms,
             font,
         }
     }
@@ -204,12 +184,8 @@ impl Renderer {
         self.depth_texture =
             Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
 
-        self.screen_to_ndc.update(new_size.width, new_size.height);
-        self.queue.write_buffer(
-            &self.screen_to_ndc_buf,
-            0,
-            bytemuck::cast_slice(&[self.screen_to_ndc]),
-        );
+        self.common_uniforms
+            .set_screen_to_ndc_mat(new_size.width, new_size.height, &self.queue);
     }
 
     pub fn resize_self(&mut self) {
@@ -218,64 +194,8 @@ impl Renderer {
     }
 
     fn update_camera(&mut self, camera: &Camera) {
-        self.uniforms.update_view_proj(camera);
-        self.queue.write_buffer(
-            &self.view_proj_buf,
-            0,
-            bytemuck::cast_slice(&[self.uniforms]),
-        );
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Uniforms {
-    view_proj: [f32; 16],
-}
-
-impl Uniforms {
-    pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.view_proj_mat.as_slice().try_into().unwrap();
-    }
-}
-
-impl Default for Uniforms {
-    fn default() -> Self {
-        Self {
-            view_proj: Matrix4::identity().to_array(),
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct ScreenToNdc {
-    matrix: [f32; 16],
-}
-
-impl ScreenToNdc {
-    pub fn update(&mut self, screen_width: u32, screen_height: u32) {
-        // x' = x * (1/width) * 2 - 1
-        // y' = y * (1/height) * -2 + 1
-        let div_width = 1.0 / screen_width as f32;
-        let div_height = 1.0 / screen_height as f32;
-        let mut matrix = Matrix4::identity();
-
-        matrix[(1, 1)] = div_width * 2.0;
-        matrix[(1, 4)] = -1.0;
-
-        matrix[(2, 2)] = div_height * -2.0;
-        matrix[(2, 4)] = 1.0;
-
-        self.matrix = matrix.as_slice().try_into().unwrap();
-    }
-}
-
-impl Default for ScreenToNdc {
-    fn default() -> Self {
-        Self {
-            matrix: Matrix4::identity().to_array(),
-        }
+        self.common_uniforms
+            .set_view_proj(camera.view_proj_mat, &self.queue);
     }
 }
 

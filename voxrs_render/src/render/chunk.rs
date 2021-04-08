@@ -9,7 +9,7 @@ use voxrs_types::SafeCloner;
 
 use wgpu::util::DeviceExt;
 
-use super::{ChunkCache, ShaderHash};
+use super::{ChunkCache, CommonUniforms, ShaderHash};
 
 pub struct ChunkRenderSystem {
     cache: ChunkCache,
@@ -23,7 +23,7 @@ pub struct ChunkRenderSystem {
 }
 
 impl ChunkRenderSystem {
-    pub fn new(device: &wgpu::Device, view_proj_buff: &wgpu::Buffer) -> Self {
+    pub fn new(device: &wgpu::Device, common_uniforms: &CommonUniforms) -> Self {
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("view projection bind group layout for chunk"),
@@ -47,11 +47,7 @@ impl ChunkRenderSystem {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
-                    buffer: view_proj_buff,
-                    offset: 0,
-                    size: None,
-                },
+                resource: common_uniforms.get_view_proj_buffer(),
             }],
         });
 

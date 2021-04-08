@@ -7,7 +7,7 @@ use voxrs_math::*;
 use voxrs_rhi::DEPTH_FORMAT;
 use wgpu::util::DeviceExt;
 
-use super::ShaderHash;
+use super::{ShaderHash, CommonUniforms};
 
 pub struct DynamicBlockRenderSystem {
     uniform_bind_group: wgpu::BindGroup,
@@ -24,7 +24,7 @@ pub struct DynamicBlockRenderSystem {
 impl DynamicBlockRenderSystem {
     pub fn new(
         device: &wgpu::Device,
-        view_proj_buff: &wgpu::Buffer,
+        common_uniforms: &CommonUniforms
     ) -> Self {
 
         let uniform_bind_group_layout =
@@ -50,11 +50,7 @@ impl DynamicBlockRenderSystem {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
-                    buffer: view_proj_buff,
-                    offset: 0,
-                    size: None,
-                },
+                resource: common_uniforms.get_view_proj_buffer(),
             }],
         });
 
