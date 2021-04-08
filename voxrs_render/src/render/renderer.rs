@@ -114,6 +114,7 @@ impl Renderer {
         self.fps.tick();
         let fps = format!("fps: {:.1}", self.fps.get_fps());
         let text = TextHandle::new(TextDesc {
+            pos: (20, 20),
             sections: vec![TextSectionDesc {
                 font: self.font.clone(),
                 font_size: 20,

@@ -12,6 +12,7 @@ use voxrs_asset::{AssetHandle, FontAsset};
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct TextDesc {
+    pub pos: (i32, i32),
     pub sections: Vec<TextSectionDesc>,
 }
 

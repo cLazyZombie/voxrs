@@ -220,7 +220,10 @@ impl TextRenderer {
                 .h_align(HorizontalAlign::Left)
                 .calculate_glyphs(
                     &self.font_atlas.get_fonts(),
-                    &SectionGeometry::default(),
+                    &SectionGeometry {
+                        screen_position: (text_desc.pos.0 as f32, text_desc.pos.1 as f32),
+                        ..Default::default()
+                    },
                     &sections,
                 );
 
