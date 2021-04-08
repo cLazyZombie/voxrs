@@ -1,10 +1,9 @@
 use glyph_brush_layout::{ab_glyph::*, *};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset, ShaderAsset};
-use voxrs_rhi::DEPTH_FORMAT;
+use voxrs_rhi::{DynamicBuffer, DEPTH_FORMAT};
 use voxrs_types::io::FileSystem;
 use voxrs_ui::TextHandle;
 use wgpu::util::DeviceExt;
-use wgpu::BufferAddress;
 
 use crate::ui::{FontAtlas, GlyphAtlasInfo};
 
@@ -14,8 +13,7 @@ pub struct TextRenderer {
     uniform_bind_group: wgpu::BindGroup,
     font_texture_bind_group_layout: wgpu::BindGroupLayout,
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffers: Vec<wgpu::Buffer>,
-    vertex_buffer_used: wgpu::BufferAddress,
+    vertex_buffer: DynamicBuffer<TextVertex>,
     index_buffer: wgpu::Buffer,
     font_atlas: FontAtlas,
 }
@@ -175,6 +173,12 @@ impl TextRenderer {
 
         let font_textures = FontAtlas::new();
 
+        let vertex_buffer = DynamicBuffer::new(
+            "text vertex buffer",
+            TEXT_VERTEX_BUFFER_SIZE,
+            wgpu::BufferUsage::VERTEX,
+        );
+
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("font texture index buffer"),
             contents: bytemuck::cast_slice(&[0_u32, 1, 2, 2, 3, 0]),
@@ -185,8 +189,7 @@ impl TextRenderer {
             uniform_bind_group,
             font_texture_bind_group_layout,
             render_pipeline,
-            vertex_buffers: Vec::new(),
-            vertex_buffer_used: 0,
+            vertex_buffer,
             font_atlas: font_textures,
             index_buffer,
         }
@@ -271,13 +274,8 @@ impl TextRenderer {
                     },
                 ];
 
-                let (buffer_idx, buffer_start) = add_to_vertex_buffer(
-                    &mut self.vertex_buffers,
-                    &mut self.vertex_buffer_used,
-                    &vertices,
-                    device,
-                    queue,
-                );
+                let (buffer_idx, buffer_start) =
+                    self.vertex_buffer.add_slice(&vertices, device, queue);
 
                 // add to result
                 let mut render_info = render_infos
@@ -349,11 +347,11 @@ impl TextRenderer {
         for (_, glyph_render_info) in &render_infos.textured_render_infos {
             render_pass.set_bind_group(1, &glyph_render_info.font_texture_bind_group, &[]);
 
-            for (_, buffer_idx, buffer_start) in &glyph_render_info.glyph_infos {
-                let vertex_buffer = &self.vertex_buffers[*buffer_idx];
+            for &(_, buffer_idx, buffer_start) in &glyph_render_info.glyph_infos {
+                let vertex_buffer = &self.vertex_buffer.get_buffer(buffer_idx);
                 render_pass.set_vertex_buffer(
                     0,
-                    vertex_buffer.slice(*buffer_start..(*buffer_start + VERTEX_SIZE)),
+                    vertex_buffer.slice(buffer_start..(buffer_start + VERTEX_SIZE)),
                 );
 
                 render_pass.draw_indexed(0..6, 0, 0..1);
@@ -362,53 +360,12 @@ impl TextRenderer {
     }
 
     pub fn clear(&mut self) {
-        self.vertex_buffers.drain(1..);
-        self.vertex_buffer_used = 0;
+        self.vertex_buffer.clear();
     }
 
     fn get_font_id(&mut self, font_asset: &AssetHandle<FontAsset>) -> FontId {
         self.font_atlas.register_font(font_asset)
     }
-}
-
-fn add_to_vertex_buffer(
-    vertex_buffers: &mut Vec<wgpu::Buffer>,
-    vertex_buffer_used: &mut wgpu::BufferAddress,
-    vertices: &[TextVertex],
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-) -> (usize, BufferAddress) {
-    let remain_buffer = TEXT_VERTEX_BUFFER_SIZE - *vertex_buffer_used;
-    let required_space = (vertices.len() * std::mem::size_of::<TextVertex>()) as BufferAddress;
-
-    // create new vertex buffer if no space available
-    if vertex_buffers.is_empty() || remain_buffer < required_space {
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("text vertex buffer"),
-            size: TEXT_VERTEX_BUFFER_SIZE,
-            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
-            mapped_at_creation: false,
-        });
-        vertex_buffers.push(vertex_buffer);
-        *vertex_buffer_used = 0;
-
-        log::info!(
-            "vertex buffer for text is created. count: {}",
-            vertex_buffers.len()
-        );
-    }
-
-    assert!(TEXT_VERTEX_BUFFER_SIZE - *vertex_buffer_used >= required_space);
-
-    let buffer = &vertex_buffers[vertex_buffers.len() - 1];
-    queue.write_buffer(buffer, *vertex_buffer_used, bytemuck::cast_slice(vertices));
-
-    let vertex_buffer_idx = vertex_buffers.len() - 1;
-    let vertex_buffer_start = *vertex_buffer_used;
-
-    *vertex_buffer_used += required_space;
-
-    (vertex_buffer_idx, vertex_buffer_start)
 }
 
 #[repr(C)]

@@ -4,7 +4,7 @@ use crate::blueprint::{self, BlockIdx, DynamicBlock};
 use voxrs_asset::{AssetHandle, ShaderAsset};
 use voxrs_math::*;
 
-use voxrs_rhi::DEPTH_FORMAT;
+use voxrs_rhi::{DEPTH_FORMAT, DynamicBuffer};
 use wgpu::util::DeviceExt;
 
 use super::{ShaderHash, CommonUniforms};
@@ -14,8 +14,7 @@ pub struct DynamicBlockRenderSystem {
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
     render_pipeline_layout: wgpu::PipelineLayout,
-    vertex_buffers: Vec<wgpu::Buffer>,
-    vertex_buffer_used: u64,
+    vertex_buffer: DynamicBuffer<BlockVertex>,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
     render_pipelines: HashMap<ShaderHash, wgpu::RenderPipeline>,
@@ -109,9 +108,8 @@ impl DynamicBlockRenderSystem {
                 push_constant_ranges: &[],
             });
 
-        let vertex_buffers = vec![create_block_vertexbuffer(&device)];
+        let vertex_buffer = DynamicBuffer::new("dynamic block vertex buffer", BLOCK_VERTEX_BUFFER_SIZE, wgpu::BufferUsage::VERTEX);
         let (index_buffer, num_indices) = create_block_indexbuffer(BLOCK_INDICES, &device);
-
         let render_pipelines = HashMap::new();
 
         Self {
@@ -119,8 +117,7 @@ impl DynamicBlockRenderSystem {
             uniform_local_bind_group_layout,
             diffuse_bind_group_layout,
             render_pipeline_layout,
-            vertex_buffers,
-            vertex_buffer_used: 0,
+            vertex_buffer,
             index_buffer,
             num_indices,
             render_pipelines,
@@ -140,8 +137,7 @@ impl DynamicBlockRenderSystem {
                 &bp,
                 device,
                 queue,
-                &mut self.vertex_buffers,
-                &mut self.vertex_buffer_used,
+                &mut self.vertex_buffer,
                 &self.diffuse_bind_group_layout,
                 &self.uniform_local_bind_group_layout,
             );
@@ -250,7 +246,7 @@ impl DynamicBlockRenderSystem {
             }
 
             for block in vec {
-                let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
+                let buffer = self.vertex_buffer.get_buffer(block.vertex_buffer_idx);
                 render_pass.set_vertex_buffer(
                     0,
                     buffer.slice(
@@ -265,30 +261,10 @@ impl DynamicBlockRenderSystem {
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
             }
         }
-
-        // render_pass.set_pipeline(&self.render_pipeline);
-        // render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-
-        // for block in blocks {
-        //     let buffer = &self.vertex_buffers[block.vertex_buffer_idx];
-        //     render_pass.set_vertex_buffer(
-        //         0,
-        //         buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + buffer_size)),
-        //     );
-        //     render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        //     render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
-        //     render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
-        //     render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        // }
     }
 
     pub fn clear(&mut self) {
-        // remove previous used vertex buffers except current one
-        let last = self.vertex_buffers.pop();
-        if let Some(last) = last {
-            self.vertex_buffers.clear();
-            self.vertex_buffers.push(last);
-        }
+        self.vertex_buffer.clear();
     }
 }
 
@@ -377,15 +353,6 @@ pub const BLOCK_INDICES: &[u16] = &[
 
 const BLOCK_VERTEX_BUFFER_SIZE: wgpu::BufferAddress = 1024 * 1024; // 1 MB
 
-pub fn create_block_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
-    device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("block vertex buffer"),
-        size: BLOCK_VERTEX_BUFFER_SIZE,
-        usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
-        mapped_at_creation: false,
-    })
-}
-
 /// #Inputs
 /// block_indices: (idx, mat_idx)
 /// #Returns
@@ -442,8 +409,7 @@ impl Block {
         bp: &blueprint::DynamicBlock,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        vertex_buffers: &mut Vec<wgpu::Buffer>,
-        vertex_buffer_used: &mut u64,
+        vertex_buffer: &mut DynamicBuffer<BlockVertex>,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
         uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
@@ -489,24 +455,7 @@ impl Block {
             }],
         });
 
-        // create new vertex buffer if not enough space
-        if BLOCK_VERTEX_BUFFER_SIZE < *vertex_buffer_used + VERTEX_SIZE_PER_BLOCK {
-            let vertex_buffer = create_block_vertexbuffer(device);
-            vertex_buffers.push(vertex_buffer);
-            *vertex_buffer_used = 0;
-        }
-
-        let buffer = &vertex_buffers[vertex_buffers.len() - 1];
-        queue.write_buffer(
-            buffer,
-            *vertex_buffer_used,
-            bytemuck::cast_slice(&create_vertex(&bp.aabb)),
-            //bytemuck::cast_slice(BLOCK_VERTICES),
-        );
-
-        let vertex_buffer_idx = vertex_buffers.len() - 1;
-        let vertex_buffer_start = *vertex_buffer_used;
-        *vertex_buffer_used += VERTEX_SIZE_PER_BLOCK;
+        let (vertex_buffer_idx, vertex_buffer_start) = vertex_buffer.add_slice(&create_vertex(&bp.aabb), device, queue);
 
         Self {
             diffuse_bind_group,
