@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{
     cmp::PartialEq,
     collections::{hash_map::DefaultHasher, HashMap},
@@ -87,7 +89,10 @@ impl TextCacheInternal {
     fn register(&mut self, desc: TextDesc) -> TextHandle {
         let hash = desc.get_hash();
 
-        let handle = self.texts.entry(hash).or_insert(TextHandle::new(desc));
+        let handle = self
+            .texts
+            .entry(hash)
+            .or_insert_with(|| TextHandle::new(desc));
         handle.clone()
     }
 }

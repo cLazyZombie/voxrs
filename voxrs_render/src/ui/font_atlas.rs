@@ -179,7 +179,7 @@ impl FontAtlas {
                 let idx = self.fonts.len() - 1;
                 FontId(idx)
             },
-            |idx| FontId(idx),
+            FontId,
         )
     }
 
@@ -207,9 +207,13 @@ impl FontAtlas {
 
 fn alpha_to_color(alpha: f32) -> u32 {
     let array = [255, 255, 255, (alpha * 255.0) as u8];
-    let color = bytemuck::cast(array);
+    bytemuck::cast(array)
+}
 
-    color
+impl Default for FontAtlas {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]

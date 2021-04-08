@@ -469,7 +469,7 @@ fn add_to_vertex_buffer(
     let required_space = (vertices.len() * std::mem::size_of::<TextVertex>()) as BufferAddress;
 
     // create new vertex buffer if no space available
-    if vertex_buffers.len() == 0 || remain_buffer < required_space {
+    if vertex_buffers.is_empty() || remain_buffer < required_space {
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("text vertex buffer"),
             size: TEXT_VERTEX_BUFFER_SIZE,
