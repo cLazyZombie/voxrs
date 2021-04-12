@@ -1,5 +1,5 @@
 use enumflags2::BitFlags;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use voxrs_types::io::FileSystem;
 
 use voxrs_math::*;
@@ -148,7 +148,7 @@ fn is_visible_dir(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct WorldBlockAssetRaw {
     block_counts: WorldBlockCounts,
     block_size: BlockSize,
@@ -156,7 +156,7 @@ struct WorldBlockAssetRaw {
     world_chunks: Vec<WorldChunkRaw>,
 }
 
-#[derive(Deserialize, Copy, Clone)]
+#[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Debug)]
 pub enum BlockSize {
     Xs, // 0.25
     S,  // 0.5
@@ -193,7 +193,7 @@ impl WorldBlockAssetRaw {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 pub struct WorldChunkRaw {
     pub idx: i32,        // chunk index (x, y, z order)
     pub blocks: Vec<u8>, // == TOTAL_BLOCK_COUNTS_IN_CHUNK
@@ -208,5 +208,25 @@ mod tests {
         let s = r#"{ "idx": 1, "blocks": [1, 2, 3, 4] }"#;
         let world_chunk: WorldChunkRaw = serde_json::from_str(s).unwrap();
         assert_eq!(world_chunk.idx, 1);
+    }
+
+    #[test]
+    fn serialize_world_chunk() {
+        let world_chunk = WorldChunkRaw {
+            idx: 0,
+            blocks: vec![1, 2, 3, 4],
+        };
+
+        let world_block = WorldBlockAssetRaw {
+            block_counts: WorldBlockCounts::new(1, 1, 1),
+            block_size: BlockSize::M,
+            world_material: "world_material.wmt".to_string(),
+            world_chunks: vec![world_chunk],
+        };
+
+        let s = serde_json::to_string(&world_block).unwrap();
+        let read: WorldBlockAssetRaw = serde_json::from_str(&s).unwrap();
+
+        assert_eq!(read, world_block);
     }
 }

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// block count in chunk direction (x, y, z)
 pub const BLOCK_COUNT_IN_CHUNKSIDE: usize = 16;
@@ -8,7 +8,7 @@ pub const TOTAL_BLOCK_COUNTS_IN_CHUNK: usize =
     BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE * BLOCK_COUNT_IN_CHUNKSIDE;
 
 /// block count in world in each direction (x, y, z)
-#[derive(Copy, Clone, Debug, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct WorldBlockCounts {
     pub x: i32,
     pub y: i32,
