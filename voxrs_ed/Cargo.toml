@@ -11,8 +11,9 @@ voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
 voxrs_core = {version = "0.1", path = "../voxrs_core"}
 voxrs_derive = {version = "0.1", path = "../voxrs_derive"}
 voxrs_math = {version = "0.1", path = "../voxrs_math"}
-voxrs_render = {version = "0.1", path = "../voxrs_render"}
+voxrs_render = {version = "0.1", path = "../voxrs_render", features = ["iced"]}
 voxrs_types = {version = "0.1", path = "../voxrs_types"}
+voxrs_ui = {version = "0.1", path = "../voxrs_ui", features = ["iced"]}
 
 anyhow = "1"
 crossbeam-channel = "0.5"

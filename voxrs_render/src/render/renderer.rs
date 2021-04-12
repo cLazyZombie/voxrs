@@ -4,11 +4,17 @@ use super::{
 };
 use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
+#[cfg(feature = "iced")]
+use futures::executor::LocalPool;
+#[cfg(feature = "iced")]
+use futures::task::SpawnExt;
 use std::thread::{self, JoinHandle};
 use std::{iter, sync::Arc};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset};
 use voxrs_rhi::Texture;
 use voxrs_types::{io::FileSystem, Fps};
+#[cfg(feature = "iced")]
+use voxrs_ui::{iced_wgpu, iced_winit};
 use voxrs_ui::{TextDesc, TextHandle, TextSectionDesc};
 use winit::window::Window;
 
@@ -26,6 +32,10 @@ pub struct Renderer {
     common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
     fps: Fps,
+    #[cfg(feature = "iced")]
+    iced_renderer: iced_wgpu::Renderer,
+    #[cfg(feature = "iced")]
+    staging_belt: wgpu::util::StagingBelt,
 }
 
 impl Renderer {
@@ -80,24 +90,85 @@ impl Renderer {
         let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
         let fps = Fps::new();
 
-        Self {
-            surface,
-            device,
-            queue,
-            swap_chain_desc,
-            swap_chain,
-            size,
-            depth_texture,
-            chunk_renderer,
-            dynamic_block_renderer,
-            text_renderer,
-            common_uniforms,
-            font,
-            fps,
+        #[cfg(feature = "iced")]
+        {
+            let mut device = device;
+            let iced_renderer = iced_wgpu::Renderer::new(iced_wgpu::Backend::new(
+                &mut device,
+                iced_wgpu::Settings::default(),
+            ));
+
+            let staging_belt = wgpu::util::StagingBelt::new(5 * 1024);
+
+            Self {
+                surface,
+                device,
+                queue,
+                swap_chain_desc,
+                swap_chain,
+                size,
+                depth_texture,
+                chunk_renderer,
+                dynamic_block_renderer,
+                text_renderer,
+                common_uniforms,
+                font,
+                fps,
+                iced_renderer,
+                staging_belt,
+            }
         }
+
+        #[cfg(not(feature = "iced"))]
+        {
+            Self {
+                surface,
+                device,
+                queue,
+                swap_chain_desc,
+                swap_chain,
+                size,
+                depth_texture,
+                chunk_renderer,
+                dynamic_block_renderer,
+                text_renderer,
+                common_uniforms,
+                font,
+                fps,
+            }
+        }
+
+        // let iced_renderer = iced_wgpu::Renderer::new(iced_wgpu::Backend::new(
+        //     &mut device,
+        //     iced_wgpu::Settings::default(),
+        // ));
+
+        // let staging_belt = wgpu::util::StagingBelt::new(5 * 1024);
+
+        // Self {
+        //     surface,
+        //     device,
+        //     queue,
+        //     swap_chain_desc,
+        //     swap_chain,
+        //     size,
+        //     depth_texture,
+        //     chunk_renderer,
+        //     dynamic_block_renderer,
+        //     text_renderer,
+        //     common_uniforms,
+        //     font,
+        //     fps,
+        //     iced_renderer,
+        //     staging_belt,
+        // }
     }
 
-    pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
+    pub fn render(
+        &mut self,
+        bp: Blueprint,
+        #[cfg(feature = "iced")] local_pool: &mut LocalPool,
+    ) -> Result<(), wgpu::SwapChainError> {
         let chunks = self.chunk_renderer.prepare(
             &bp.chunks,
             &bp.world_block_mat_handle.unwrap(),
@@ -168,7 +239,36 @@ impl Renderer {
                 .render(&text_render_infos, &mut render_pass);
         }
 
+        // iced rendering
+        #[cfg(feature = "iced")]
+        {
+            let viewport_size = iced_winit::Size::new(self.size.width, self.size.height);
+            let viewport = iced_wgpu::Viewport::with_physical_size(viewport_size, 1.0);
+            if let Some(iced_primitive) = &bp.iced_primitive {
+                self.iced_renderer.backend_mut().draw(
+                    &self.device,
+                    &mut self.staging_belt,
+                    &mut encoder,
+                    &frame.view,
+                    &viewport,
+                    &iced_primitive,
+                    &Vec::<&str>::new(),
+                );
+            }
+
+            self.staging_belt.finish();
+        }
+
         self.queue.submit(iter::once(encoder.finish()));
+
+        #[cfg(feature = "iced")]
+        {
+            local_pool
+                .spawner()
+                .spawn(self.staging_belt.recall())
+                .expect("Recall staging buffers");
+            local_pool.run_until_stalled();
+        }
 
         // clear
         {
@@ -205,6 +305,15 @@ impl Renderer {
         self.common_uniforms
             .set_view_proj(camera.view_proj_mat, &self.queue);
     }
+
+    pub fn get_device(&self) -> &wgpu::Device {
+        &self.device
+    }
+
+    #[cfg(feature = "iced")]
+    pub fn get_iced_renderer(&mut self) -> &mut iced_wgpu::Renderer {
+        &mut self.iced_renderer
+    }
 }
 
 pub fn create_rendering_thread<F: FileSystem + 'static>(
@@ -215,9 +324,16 @@ pub fn create_rendering_thread<F: FileSystem + 'static>(
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
 
     thread::spawn(move || {
+        #[cfg(feature = "iced")]
+        let mut local_pool = futures::executor::LocalPool::new();
+
         while let Ok(command) = receiver.recv() {
             match command {
-                Command::Render(bp) => match renderer.render(bp) {
+                Command::Render(bp) => match renderer.render(
+                    bp,
+                    #[cfg(feature = "iced")]
+                    &mut local_pool,
+                ) {
                     Ok(_) => {}
                     Err(wgpu::SwapChainError::Lost) => renderer.resize_self(),
                     Err(wgpu::SwapChainError::OutOfMemory) => break,
