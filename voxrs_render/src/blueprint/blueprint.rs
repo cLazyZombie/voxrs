@@ -2,9 +2,6 @@ use voxrs_asset::{AssetHandle, WorldMaterialAsset};
 use voxrs_math::*;
 use voxrs_types::SafeCloner;
 
-#[cfg(feature = "iced")]
-use voxrs_ui::{iced_wgpu::Primitive, iced_winit::mouse::Interaction};
-
 use super::{Chunk, DynamicBlock};
 
 #[derive(Default)]
@@ -25,8 +22,6 @@ pub struct Blueprint {
     pub world_block_mat_handle: Option<AssetHandle<WorldMaterialAsset>>,
     pub chunks: Vec<SafeCloner<Chunk>>,
     pub dynamic_blocks: Vec<DynamicBlock>,
-    #[cfg(feature = "iced")]
-    pub iced_primitive: Option<(Primitive, Interaction)>,
 }
 
 impl Blueprint {
@@ -37,8 +32,6 @@ impl Blueprint {
             world_block_mat_handle: None,
             chunks: Vec::new(),
             dynamic_blocks: Vec::new(),
-            #[cfg(feature = "iced")]
-            iced_primitive: None,
         }
     }
 
