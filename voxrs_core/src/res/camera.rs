@@ -3,7 +3,7 @@ use voxrs_render::blueprint;
 
 /// CameraRes is free moving camera
 pub struct CameraRes {
-    eye: Vector3,
+    eye: Vec3,
     horizon: Angle,
     vert: Angle,
     width: u32,
@@ -16,7 +16,7 @@ pub struct CameraRes {
 impl CameraRes {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        eye: Vector3,
+        eye: Vec3,
         horizon: Angle,
         vert: Angle,
         width: u32,
@@ -37,19 +37,19 @@ impl CameraRes {
         }
     }
 
-    pub fn build_view_projection_matrix(&self) -> Matrix4 {
+    pub fn build_view_projection_matrix(&self) -> Mat4 {
         let (_, y, z) = self.get_xyz();
         let target = self.eye + z;
-        let view = Matrix4::look_at(&self.eye, &target, &y);
-        let proj = Matrix4::perspective(self.aspect(), self.fovy, self.znear, self.zfar);
+        let view = Mat4::look_at_lh(self.eye, target, y);
+        let proj = Mat4::perspective_lh(self.fovy, self.aspect(), self.znear, self.zfar);
 
         proj * view
     }
 
-    pub fn view_matrix(&self) -> Matrix4 {
+    pub fn view_matrix(&self) -> Mat4 {
         let (_, y, z) = self.get_xyz();
         let target = self.eye + z;
-        Matrix4::look_at(&self.eye, &target, &y)
+        Mat4::look_at_lh(self.eye, target, y)
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -61,13 +61,13 @@ impl CameraRes {
         self.width as f32 / self.height as f32
     }
 
-    pub fn move_camera(&mut self, offset: &Vector3) {
+    pub fn move_camera(&mut self, offset: &Vec3) {
         self.eye += *offset;
     }
 
-    pub fn move_camera_relative(&mut self, rel_offset: &Vector3) {
+    pub fn move_camera_relative(&mut self, rel_offset: &Vec3) {
         let (x, y, z) = self.get_xyz();
-        let offset = x * rel_offset.x() + y * rel_offset.y() + z * rel_offset.z();
+        let offset = x * rel_offset.x + y * rel_offset.y + z * rel_offset.z;
         self.move_camera(&offset);
     }
 
@@ -93,13 +93,14 @@ impl CameraRes {
     }
 
     /// get_xyz returns x(right) direction, y(up) direction, z(forward) direction in world coord
-    pub fn get_xyz(&self) -> (Vector3, Vector3, Vector3) {
-        let mut q = Quat::from_rotate_axis(&Vector3::new(1.0, 0.0, 0.0), -self.vert);
-        q.rotate_axis(&Vector3::new(0.0, 1.0, 0.0), self.horizon);
+    pub fn get_xyz(&self) -> (Vec3, Vec3, Vec3) {
+        let q1 = Quat::from_rotation_x(-self.vert.to_radians());
+        let q2 = Quat::from_rotation_y(self.horizon.to_radians());
+        let q = q2 * q1;
 
-        let x = q.transform(&Vector3::new(1.0, 0.0, 0.0));
-        let y = q.transform(&Vector3::new(0.0, 1.0, 0.0));
-        let z = q.transform(&Vector3::new(0.0, 0.0, 1.0));
+        let x = q.mul_vec3(Vec3::X);
+        let y = q.mul_vec3(Vec3::Y);
+        let z = q.mul_vec3(Vec3::Z);
 
         (x, y, z)
     }
@@ -122,12 +123,12 @@ impl CameraRes {
         let tan_x = tan_y * self.aspect();
         let view_x = tan_x * (x as f32);
         let view_y = tan_y * (y as f32);
-        let view_dir = Vector3::new(view_x, view_y, 1.0).get_normalized();
+        let view_dir = Vec3::new(view_x, view_y, 1.0).normalize();
 
         // transform to world coord
         let view_mat = self.view_matrix();
         let inv_view_mat = view_mat.inverse();
-        let world_dir = inv_view_mat.transform_normal(&view_dir);
+        let world_dir = inv_view_mat.transform_vector3(view_dir);
 
         Ray::from_values(&self.eye, &world_dir)
     }

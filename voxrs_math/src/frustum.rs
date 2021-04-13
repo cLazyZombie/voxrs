@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use crate::{Aabb, Matrix4, Plane};
+use crate::{get_matrix, Aabb, Mat4, Plane};
 
 #[derive(Debug)]
 pub struct Frustum {
@@ -14,47 +14,47 @@ pub struct Frustum {
 
 impl Frustum {
     /// construct Frustum from view projection matrix
-    pub fn new(vp: &Matrix4) -> Self {
+    pub fn new(vp: &Mat4) -> Self {
         let near = Plane::from_unnorm(
-            vp[(4, 1)] + vp[(3, 1)],
-            vp[(4, 2)] + vp[(3, 2)],
-            vp[(4, 3)] + vp[(3, 3)],
-            vp[(4, 4)] + vp[(3, 4)],
+            get_matrix(&vp, 4, 1) + get_matrix(&vp, 3, 1),
+            get_matrix(&vp, 4, 2) + get_matrix(&vp, 3, 2),
+            get_matrix(&vp, 4, 3) + get_matrix(&vp, 3, 3),
+            get_matrix(&vp, 4, 4) + get_matrix(&vp, 3, 4),
         );
 
         let far = Plane::from_unnorm(
-            vp[(4, 1)] - vp[(3, 1)],
-            vp[(4, 2)] - vp[(3, 2)],
-            vp[(4, 3)] - vp[(3, 3)],
-            vp[(4, 4)] - vp[(3, 4)],
+            get_matrix(&vp, 4, 1) - get_matrix(&vp, 3, 1),
+            get_matrix(&vp, 4, 2) - get_matrix(&vp, 3, 2),
+            get_matrix(&vp, 4, 3) - get_matrix(&vp, 3, 3),
+            get_matrix(&vp, 4, 4) - get_matrix(&vp, 3, 4),
         );
 
         let left = Plane::from_unnorm(
-            vp[(4, 1)] + vp[(1, 1)],
-            vp[(4, 2)] + vp[(1, 2)],
-            vp[(4, 3)] + vp[(1, 3)],
-            vp[(4, 4)] + vp[(1, 4)],
+            get_matrix(&vp, 4, 1) + get_matrix(&vp, 1, 1),
+            get_matrix(&vp, 4, 2) + get_matrix(&vp, 1, 2),
+            get_matrix(&vp, 4, 3) + get_matrix(&vp, 1, 3),
+            get_matrix(&vp, 4, 4) + get_matrix(&vp, 1, 4),
         );
 
         let right = Plane::from_unnorm(
-            vp[(4, 1)] - vp[(1, 1)],
-            vp[(4, 2)] - vp[(1, 2)],
-            vp[(4, 3)] - vp[(1, 3)],
-            vp[(4, 4)] - vp[(1, 4)],
+            get_matrix(&vp, 4, 1) - get_matrix(&vp, 1, 1),
+            get_matrix(&vp, 4, 2) - get_matrix(&vp, 1, 2),
+            get_matrix(&vp, 4, 3) - get_matrix(&vp, 1, 3),
+            get_matrix(&vp, 4, 4) - get_matrix(&vp, 1, 4),
         );
 
         let top = Plane::from_unnorm(
-            vp[(4, 1)] - vp[(2, 1)],
-            vp[(4, 2)] - vp[(2, 2)],
-            vp[(4, 3)] - vp[(2, 3)],
-            vp[(4, 4)] - vp[(2, 4)],
+            get_matrix(&vp, 4, 1) - get_matrix(&vp, 2, 1),
+            get_matrix(&vp, 4, 2) - get_matrix(&vp, 2, 2),
+            get_matrix(&vp, 4, 3) - get_matrix(&vp, 2, 3),
+            get_matrix(&vp, 4, 4) - get_matrix(&vp, 2, 4),
         );
 
         let bottom = Plane::from_unnorm(
-            vp[(4, 1)] + vp[(2, 1)],
-            vp[(4, 2)] + vp[(2, 2)],
-            vp[(4, 3)] + vp[(2, 3)],
-            vp[(4, 4)] + vp[(2, 4)],
+            get_matrix(&vp, 4, 1) + get_matrix(&vp, 2, 1),
+            get_matrix(&vp, 4, 2) + get_matrix(&vp, 2, 2),
+            get_matrix(&vp, 4, 3) + get_matrix(&vp, 2, 3),
+            get_matrix(&vp, 4, 4) + get_matrix(&vp, 2, 4),
         );
 
         Self {
@@ -104,29 +104,26 @@ impl Frustum {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::Vector3;
+    use crate::Vec3;
 
     #[test]
     fn test_cull_aabb() {
-        let eye = Vector3::new(0.0, 0.0, 10.0);
-        let target = Vector3::new(0.0, 0.0, 20.0);
-        let up = Vector3::new(0.0, 1.0, 0.0);
+        let eye = Vec3::new(0.0, 0.0, 10.0);
+        let target = Vec3::new(0.0, 0.0, 20.0);
+        let up = Vec3::Y;
         let aspect = 1.0;
         let fovy = 1.4;
         let znear = 1.0;
         let zfar = 100.0;
-        let view = Matrix4::look_at(&eye, &target, &up);
-        let proj = Matrix4::perspective(aspect, fovy, znear, zfar);
+        let view = Mat4::look_at_lh(eye, target, up);
+        let proj = Mat4::perspective_lh(fovy, aspect, znear, zfar);
         let vp = proj * view;
         let frustum = Frustum::new(&vp);
 
-        let aabb = Aabb::new(Vector3::new(-1.0, -1.0, 20.0), Vector3::new(1.0, 1.0, 30.0));
+        let aabb = Aabb::new(Vec3::new(-1.0, -1.0, 20.0), Vec3::new(1.0, 1.0, 30.0));
         assert_eq!(frustum.cull_aabb(&aabb), true);
 
-        let aabb = Aabb::new(
-            Vector3::new(-1.0, -1.0, 120.0),
-            Vector3::new(1.0, 1.0, 130.0),
-        );
+        let aabb = Aabb::new(Vec3::new(-1.0, -1.0, 120.0), Vec3::new(1.0, 1.0, 130.0));
         assert_eq!(frustum.cull_aabb(&aabb), false);
     }
 }

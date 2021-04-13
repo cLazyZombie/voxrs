@@ -82,7 +82,7 @@ impl ChunkCache {
 
 #[cfg(test)]
 mod cache_tests {
-    use voxrs_math::{Aabb, Vector3};
+    use voxrs_math::{Aabb, Vec3};
 
     use super::*;
 
@@ -92,7 +92,7 @@ mod cache_tests {
         assert_eq!(cache.set_used(1), false);
 
         let bp_chunk_1 = SafeCloner::new(blueprint::Chunk::new(
-            Vector3::zero(),
+            Vec3::ZERO,
             Aabb::unit(),
             Vec::new(),
             Vec::new(),
@@ -102,7 +102,7 @@ mod cache_tests {
         cache.add(1, bp_chunk_1, chunk_1);
 
         let bp_chunk_2 = SafeCloner::new(blueprint::Chunk::new(
-            Vector3::zero(),
+            Vec3::ZERO,
             Aabb::unit(),
             Vec::new(),
             Vec::new(),

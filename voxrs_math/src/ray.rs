@@ -1,17 +1,17 @@
-use crate::{Aabb, BlockPos, Dir, Vector3};
+use crate::{Aabb, BlockPos, Dir, Vec3};
 
 #[derive(Debug)]
 pub struct Ray {
-    pub origin: Vector3,
-    pub dir: Vector3,
+    pub origin: Vec3,
+    pub dir: Vec3,
 }
 
 impl Ray {
     pub fn new() -> Self {
-        Self::from_values(&Vector3::zero(), &Vector3::front())
+        Self::from_values(&Vec3::ZERO, &Vec3::Z)
     }
 
-    pub fn from_values(origin: &Vector3, dir: &Vector3) -> Self {
+    pub fn from_values(origin: &Vec3, dir: &Vec3) -> Self {
         Self {
             origin: *origin,
             dir: *dir,
@@ -27,16 +27,16 @@ impl Ray {
 
         let mut collision_dir = Dir::XNeg;
 
-        let mut tmin = (aabb.min.x() - self.origin.x()) / self.dir.x();
-        let mut tmax = (aabb.max.x() - self.origin.x()) / self.dir.x();
+        let mut tmin = (aabb.min.x - self.origin.x) / self.dir.x;
+        let mut tmax = (aabb.max.x - self.origin.x) / self.dir.x;
         if tmin > tmax {
             collision_dir = Dir::XPos;
             std::mem::swap(&mut tmin, &mut tmax);
         }
 
         let mut ydir = Dir::YNeg;
-        let mut tymin = (aabb.min.y() - self.origin.y()) / self.dir.y();
-        let mut tymax = (aabb.max.y() - self.origin.y()) / self.dir.y();
+        let mut tymin = (aabb.min.y - self.origin.y) / self.dir.y;
+        let mut tymax = (aabb.max.y - self.origin.y) / self.dir.y;
         if tymin > tymax {
             ydir = Dir::YPos;
             std::mem::swap(&mut tymin, &mut tymax);
@@ -56,8 +56,8 @@ impl Ray {
         }
 
         let mut zdir = Dir::ZNeg;
-        let mut tzmin = (aabb.min.z() - self.origin.z()) / self.dir.z();
-        let mut tzmax = (aabb.max.z() - self.origin.z()) / self.dir.z();
+        let mut tzmin = (aabb.min.z - self.origin.z) / self.dir.z;
+        let mut tzmax = (aabb.max.z - self.origin.z) / self.dir.z;
         if tzmin > tzmax {
             zdir = Dir::ZPos;
             std::mem::swap(&mut tzmin, &mut tzmax);
@@ -116,7 +116,7 @@ impl Default for Ray {
 pub enum RayAabbResult {
     Inside,
     NotIntersect,
-    Intersect { dist: f32, pos: Vector3, dir: Dir },
+    Intersect { dist: f32, pos: Vec3, dir: Dir },
 }
 
 /// fast ray voxel intersection iterator
@@ -142,32 +142,32 @@ impl<'a> RayBlockIter<'a> {
         let cur_pos = BlockPos::from_vec3(&ray.origin, block_size);
 
         // step
-        let step_x = ray.dir.x().signum() as i32;
-        let step_y = ray.dir.y().signum() as i32;
-        let step_z = ray.dir.z().signum() as i32;
+        let step_x = ray.dir.x.signum() as i32;
+        let step_y = ray.dir.y.signum() as i32;
+        let step_z = ray.dir.z.signum() as i32;
 
         let max_x = if step_x > 0 {
-            ((cur_pos.x as f32 * block_size + block_size) - ray.origin.x()) / ray.dir.x()
+            ((cur_pos.x as f32 * block_size + block_size) - ray.origin.x) / ray.dir.x
         } else {
-            ((cur_pos.x as f32 * block_size) - ray.origin.x()) / ray.dir.x()
+            ((cur_pos.x as f32 * block_size) - ray.origin.x) / ray.dir.x
         };
 
         let max_y = if step_y > 0 {
-            ((cur_pos.y as f32 * block_size + block_size) - ray.origin.y()) / ray.dir.y()
+            ((cur_pos.y as f32 * block_size + block_size) - ray.origin.y) / ray.dir.y
         } else {
-            ((cur_pos.y as f32 * block_size) - ray.origin.y()) / ray.dir.y()
+            ((cur_pos.y as f32 * block_size) - ray.origin.y) / ray.dir.y
         };
 
         let max_z = if step_z > 0 {
-            ((cur_pos.z as f32 * block_size + block_size) - ray.origin.z()) / ray.dir.z()
+            ((cur_pos.z as f32 * block_size + block_size) - ray.origin.z) / ray.dir.z
         } else {
-            ((cur_pos.z as f32 * block_size) - ray.origin.z()) / ray.dir.z()
+            ((cur_pos.z as f32 * block_size) - ray.origin.z) / ray.dir.z
         };
 
         // delta
-        let delta_x = block_size / ray.dir.x().abs();
-        let delta_y = block_size / ray.dir.y().abs();
-        let delta_z = block_size / ray.dir.z().abs();
+        let delta_x = block_size / ray.dir.x.abs();
+        let delta_y = block_size / ray.dir.y.abs();
+        let delta_z = block_size / ray.dir.z.abs();
 
         Self {
             _ray: ray,
@@ -245,32 +245,32 @@ mod tests {
     #[test]
     fn check_aabb() {
         // z negative
-        let ray = Ray::from_values(&Vector3::new(5.0, 5.0, -10.0), &Vector3::front());
-        let aabb = Aabb::new(Vector3::zero(), Vector3::new(10.0, 10.0, 10.0));
+        let ray = Ray::from_values(&Vec3::new(5.0, 5.0, -10.0), &Vec3::Z);
+        let aabb = Aabb::new(Vec3::ZERO, Vec3::new(10.0, 10.0, 10.0));
 
         let result = ray.check_aabb(&aabb);
         assert!(matches!(result, RayAabbResult::Intersect { .. }));
         if let RayAabbResult::Intersect { dist, pos, dir } = result {
-            assert_abs_diff_eq!(pos, Vector3::new(5.0, 5.0, 0.0));
+            assert!(pos.abs_diff_eq(Vec3::new(5.0, 5.0, 0.0), 0.01));
             assert_abs_diff_eq!(dist, 10.0);
             assert_eq!(dir, Dir::ZNeg);
         }
 
         // z positive
-        let ray = Ray::from_values(&Vector3::new(5.0, 5.0, 20.0), &Vector3::back());
-        let aabb = Aabb::new(Vector3::zero(), Vector3::new(10.0, 10.0, 10.0));
+        let ray = Ray::from_values(&Vec3::new(5.0, 5.0, 20.0), &-Vec3::Z);
+        let aabb = Aabb::new(Vec3::ZERO, Vec3::new(10.0, 10.0, 10.0));
 
         let result = ray.check_aabb(&aabb);
         assert!(matches!(result, RayAabbResult::Intersect { .. }));
         if let RayAabbResult::Intersect { dist, pos, dir } = result {
-            assert_abs_diff_eq!(pos, Vector3::new(5.0, 5.0, 10.0));
+            assert!(pos.abs_diff_eq(Vec3::new(5.0, 5.0, 10.0), 0.01));
             assert_abs_diff_eq!(dist, 10.0);
             assert_eq!(dir, Dir::ZPos);
         }
 
         // not intersect (reversed dir)
-        let ray = Ray::from_values(&Vector3::new(5.0, 5.0, 20.0), &Vector3::front());
-        let aabb = Aabb::new(Vector3::zero(), Vector3::new(10.0, 10.0, 10.0));
+        let ray = Ray::from_values(&Vec3::new(5.0, 5.0, 20.0), &Vec3::Z);
+        let aabb = Aabb::new(Vec3::ZERO, Vec3::new(10.0, 10.0, 10.0));
 
         let result = ray.check_aabb(&aabb);
         assert!(matches!(result, RayAabbResult::NotIntersect));

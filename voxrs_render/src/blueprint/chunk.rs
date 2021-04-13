@@ -7,14 +7,14 @@ use super::{BlockMatIdx, ChunkId};
 
 pub struct Chunk {
     pub id: ChunkId,
-    pub pos: Vector3,
+    pub pos: Vec3,
     pub aabb: Aabb,
     pub blocks: Vec<BlockMatIdx>, // 0 : empty
     pub vis: Vec<BitFlags<Dir>>,
 }
 
 impl Chunk {
-    pub fn new(pos: Vector3, aabb: Aabb, blocks: Vec<u8>, vis: Vec<BitFlags<Dir>>) -> Self {
+    pub fn new(pos: Vec3, aabb: Aabb, blocks: Vec<u8>, vis: Vec<BitFlags<Dir>>) -> Self {
         Self {
             id: generate_chunk_id(),
             pos,
@@ -49,8 +49,8 @@ mod tests {
     #[test]
     fn create_chunk() {
         let chunk = Chunk::new(
-            Vector3::new(1.0, 2.0, 3.0),
-            Aabb::new(Vector3::new(1.0, 2.0, 3.0), Vector3::new(11.0, 12.0, 13.0)),
+            Vec3::new(1.0, 2.0, 3.0),
+            Aabb::new(Vec3::new(1.0, 2.0, 3.0), Vec3::new(11.0, 12.0, 13.0)),
             Vec::new(),
             Vec::new(),
         );
@@ -60,8 +60,8 @@ mod tests {
     #[test]
     fn clone_chunk_should_have_different_id() {
         let chunk = Chunk::new(
-            Vector3::new(1.0, 2.0, 3.0),
-            Aabb::new(Vector3::new(1.0, 2.0, 3.0), Vector3::new(11.0, 12.0, 13.0)),
+            Vec3::new(1.0, 2.0, 3.0),
+            Aabb::new(Vec3::new(1.0, 2.0, 3.0), Vec3::new(11.0, 12.0, 13.0)),
             Vec::new(),
             Vec::new(),
         );
@@ -73,8 +73,8 @@ mod tests {
     #[test]
     fn when_clonned_blocks_also_clonned() {
         let mut chunk = Chunk::new(
-            Vector3::new(1.0, 2.0, 3.0),
-            Aabb::new(Vector3::new(1.0, 2.0, 3.0), Vector3::new(11.0, 12.0, 13.0)),
+            Vec3::new(1.0, 2.0, 3.0),
+            Aabb::new(Vec3::new(1.0, 2.0, 3.0), Vec3::new(11.0, 12.0, 13.0)),
             Vec::new(),
             Vec::new(),
         );

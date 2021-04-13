@@ -1,10 +1,10 @@
 use std::borrow::Borrow;
 
-use crate::{Aabb, Vector3};
+use crate::{Aabb, Vec3, Vec4};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Plane {
-    p: glm::Vec4,
+    p: Vec4,
 }
 
 impl Plane {
@@ -12,16 +12,16 @@ impl Plane {
     /// p.x * x + p.y * y + p.z * z + d = 0 should be true
     pub fn new(x: f32, y: f32, z: f32, d: f32) -> Self {
         Self {
-            p: glm::Vec4::new(x, y, z, d),
+            p: Vec4::new(x, y, z, d),
         }
     }
 
     #[allow(clippy::many_single_char_names)]
     pub fn from_unnorm(x: f32, y: f32, z: f32, d: f32) -> Self {
-        let v = Vector3::new(x, y, z);
-        let mag = v.magnitude();
+        let v = Vec3::new(x, y, z);
+        let mag = v.length();
 
-        Self::new(v.x() / mag, v.y() / mag, v.z() / mag, d / mag)
+        Self::new(v.x / mag, v.y / mag, v.z / mag, d / mag)
     }
 
     pub fn x(&self) -> f32 {
@@ -40,13 +40,12 @@ impl Plane {
         self.p[3]
     }
 
-    pub fn dist(&self, v: impl Borrow<Vector3>) -> f32 {
-        let v = v.borrow();
-        Vector3::dot(self.normal(), v) + self.d()
+    pub fn dist(&self, v: Vec3) -> f32 {
+        Vec3::dot(self.normal(), v) + self.d()
     }
 
-    pub fn normal(&self) -> Vector3 {
-        Vector3::new(self.p[0], self.p[1], self.p[2])
+    pub fn normal(&self) -> Vec3 {
+        Vec3::new(self.p[0], self.p[1], self.p[2])
     }
 
     pub fn dist_aabb(&self, aabb: impl Borrow<Aabb>) -> f32 {
@@ -56,10 +55,8 @@ impl Plane {
         let extend = aabb.max - center;
         let normal = self.normal();
 
-        let r = extend.x() * normal.x().abs()
-            + extend.y() * normal.y().abs()
-            + extend.z() * normal.z().abs();
-        let s = Vector3::dot(&self.normal(), &center) + self.d();
+        let r = extend.x * normal.x.abs() + extend.y * normal.y.abs() + extend.z * normal.z.abs();
+        let s = Vec3::dot(self.normal(), center) + self.d();
 
         if s.abs() <= r {
             0.0
@@ -102,9 +99,8 @@ mod tests {
     #[test]
     fn test_dist() {
         let p1 = Plane::new(1.0, 0.0, 0.0, -5.0);
-        let point = Vector3::new(10.0, 20.0, 30.0);
+        let point = Vec3::new(10.0, 20.0, 30.0);
 
-        assert_abs_diff_eq!(p1.dist(&point), 5.0);
         assert_abs_diff_eq!(p1.dist(point), 5.0);
     }
 
@@ -112,18 +108,15 @@ mod tests {
     fn test_dist_aabb() {
         let plane = Plane::new(1.0, 0.0, 0.0, -5.0);
 
-        let aabb = Aabb::new(
-            Vector3::new(-1.0, -1.0, -1.0),
-            Vector3::new(10.0, 10.0, 10.0),
-        );
+        let aabb = Aabb::new(Vec3::new(-1.0, -1.0, -1.0), Vec3::new(10.0, 10.0, 10.0));
         let dist = plane.dist_aabb(aabb);
         assert_abs_diff_eq!(dist, 0.0);
 
-        let aabb = Aabb::new(Vector3::new(6.0, 6.0, 6.0), Vector3::new(10.0, 10.0, 10.0));
+        let aabb = Aabb::new(Vec3::new(6.0, 6.0, 6.0), Vec3::new(10.0, 10.0, 10.0));
         let dist = plane.dist_aabb(aabb);
         assert_abs_diff_eq!(dist, 1.0);
 
-        let aabb = Aabb::new(Vector3::new(-1.0, -1.0, -1.0), Vector3::new(4.0, 4.0, 4.0));
+        let aabb = Aabb::new(Vec3::new(-1.0, -1.0, -1.0), Vec3::new(4.0, 4.0, 4.0));
         let dist = plane.dist_aabb(aabb);
         assert_abs_diff_eq!(dist, -1.0);
     }

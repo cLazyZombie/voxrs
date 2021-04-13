@@ -6,14 +6,14 @@ use super::{Chunk, DynamicBlock};
 
 #[derive(Default)]
 pub struct Camera {
-    pub eye: Vector3,
-    pub target: Vector3,
-    pub up: Vector3,
+    pub eye: Vec3,
+    pub target: Vec3,
+    pub up: Vec3,
     pub aspect: f32,
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
-    pub view_proj_mat: Matrix4,
+    pub view_proj_mat: Mat4,
 }
 
 pub struct Blueprint {

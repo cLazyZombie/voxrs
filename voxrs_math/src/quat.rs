@@ -1,110 +1,27 @@
-use glm::Qua;
-
-use crate::{Angle, Vector3};
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Quat {
-    q: Qua<f32>,
-}
-
-impl Quat {
-    pub fn identity() -> Self {
-        let q = Qua::identity();
-        Self { q }
-    }
-
-    pub fn from_rotate_axis(axis: &Vector3, angle: Angle) -> Self {
-        let q = glm::quat_angle_axis(angle.to_radians(), &axis.v);
-        Self { q }
-    }
-
-    /// make quaternion
-    /// ratate from dir1 to dir2
-    pub fn from_two_dirs(dir1: &Vector3, dir2: &Vector3) -> Self {
-        let rot = glm::quat_rotation(&dir1.v, &dir2.v);
-        Self { q: rot }
-    }
-
-    pub fn transform(&self, p: &Vector3) -> Vector3 {
-        let v = glm::quat_rotate_vec3(&self.q, &p.v);
-        Vector3 { v }
-    }
-
-    pub fn rotate_axis(&mut self, axis: &Vector3, angle: Angle) {
-        let q2 = Self::from_rotate_axis(axis, angle);
-        *self = q2 * (*self);
-    }
-}
-
-impl std::ops::Mul for Quat {
-    type Output = Quat;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self { q: self.q * rhs.q }
-    }
-}
-
-impl From<&[f32]> for Quat {
-    fn from(v: &[f32]) -> Self {
-        assert_eq!(v.len(), 4);
-        Self {
-            q: glm::quat(v[0], v[1], v[2], v[3]),
-        }
-    }
-}
-
-impl From<&[f32; 4]> for Quat {
-    fn from(v: &[f32; 4]) -> Self {
-        Self {
-            q: glm::quat(v[0], v[1], v[2], v[3]),
-        }
-    }
-}
-
-impl approx::AbsDiffEq for Quat {
-    type Epsilon = f32;
-
-    fn default_epsilon() -> Self::Epsilon {
-        0.001
-    }
-
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        for i in 0..4 {
-            if (self.q[i] - other.q[i]).abs() > epsilon {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use approx::*;
+    use crate::{Angle, Quat, Vec3};
 
     #[test]
     fn test_identity() {
-        let q = Quat::identity();
-        assert_eq!(q, Quat::from(&[0.0, 0.0, 0.0, 1.0]));
-        assert_abs_diff_eq!(q, Quat::identity());
+        let q = Quat::IDENTITY;
+        assert_eq!(q, [0.0, 0.0, 0.0, 1.0].into());
+        q.abs_diff_eq(Quat::IDENTITY, 0.01);
     }
 
     #[test]
     fn test_rotate_axis() {
-        let mut q = Quat::identity();
-        let v = Vector3::new(100.0, 0.0, 0.0);
+        let v = Vec3::new(100.0, 0.0, 0.0);
 
         // make rotate from yaxis, 90 degree
-        q.rotate_axis(&[0.0, 1.0, 0.0].into(), Angle::from_degrees(90.0));
-        let rotated = q.transform(&v);
-        assert_abs_diff_eq!(rotated, Vector3::new(0.0, 0.0, -100.0));
+        let q1 = Quat::from_axis_angle(Vec3::Y, Angle::from_degrees(90.0).to_radians());
+        let rotated = q1.mul_vec3(v);
+        assert!(rotated.abs_diff_eq(Vec3::new(0.0, 0.0, -100.0), 0.01));
 
         // make rotate from x axis, 90 degree
-        q.rotate_axis(&[1.0, 0.0, 0.0].into(), Angle::from_degrees(90.0));
-        let rotated = q.transform(&v);
-        assert_abs_diff_eq!(rotated, Vector3::new(0.0, 100.0, 0.0));
+        let q2 = Quat::from_axis_angle(Vec3::X, Angle::from_degrees(90.0).to_radians());
+        let q = q2 * q1;
+        let rotated = q.mul_vec3(v);
+        assert!(rotated.abs_diff_eq(Vec3::new(0.0, 100.0, 0.0), 0.01));
     }
 }

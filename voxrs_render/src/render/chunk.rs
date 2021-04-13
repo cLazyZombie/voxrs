@@ -369,12 +369,12 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
     for z in 0..BLOCK_COUNT_IN_CHUNKSIDE {
         for y in 0..BLOCK_COUNT_IN_CHUNKSIDE {
             for x in 0..BLOCK_COUNT_IN_CHUNKSIDE {
-                let offset = Vector3::new(x as f32, y as f32, z as f32);
+                let offset = Vec3::new(x as f32, y as f32, z as f32);
                 v.extend(BLOCK_VERTICES.iter().map(|v| {
                     let new_position =
-                        offset + Vector3::new(v.position[0], v.position[1], v.position[2]);
+                        offset + Vec3::new(v.position[0], v.position[1], v.position[2]);
                     ChunkVertex {
-                        position: new_position.to_array(),
+                        position: *new_position.as_ref(),
                         ..*v
                     }
                 }));
@@ -507,14 +507,14 @@ impl Chunk {
             });
 
             // local uniform buffer
-            let translate = Matrix4::translate(&bp.pos);
-            let scale = Matrix4::uniform_scale(block_size);
+            let translate = Mat4::from_translation(bp.pos);
+            let scale = Mat4::from_scale(Vec3::new(block_size, block_size, block_size));
             let world_transform = translate * scale;
 
             let local_uniform_buffer =
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("view_proj buffer"),
-                    contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+                    contents: bytemuck::cast_slice(world_transform.as_ref()),
                     usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
                 });
 

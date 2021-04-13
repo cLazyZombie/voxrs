@@ -1,4 +1,4 @@
-use crate::{Dir, Vector3, WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
+use crate::{Dir, Vec3, WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ChunkPos {
@@ -55,8 +55,8 @@ impl ChunkPos {
         neighbor
     }
 
-    pub fn get_world_pos(&self, block_size: f32) -> Vector3 {
-        Vector3::new(
+    pub fn get_world_pos(&self, block_size: f32) -> Vec3 {
+        Vec3::new(
             (self.x * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,
             (self.y * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,
             (self.z * BLOCK_COUNT_IN_CHUNKSIDE as i32) as f32 * block_size,

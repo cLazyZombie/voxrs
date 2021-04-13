@@ -54,7 +54,7 @@ impl WorldBlockAsset {
         }
     }
 
-    pub fn get_world_pos(&self, idx: usize) -> Vector3 {
+    pub fn get_world_pos(&self, idx: usize) -> Vec3 {
         let chunk_pos = ChunkPos::from_index(idx, &self.chunk_counts);
         chunk_pos.get_world_pos(self.block_size.to_f32())
     }
@@ -62,7 +62,7 @@ impl WorldBlockAsset {
     pub fn get_chunk_aabb(&self, chunk_idx: usize) -> Aabb {
         let min = self.get_world_pos(chunk_idx);
         let size = self.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
-        let max = min + Vector3::new(size, size, size);
+        let max = min + Vec3::new(size, size, size);
         Aabb::new(min, max)
     }
 }

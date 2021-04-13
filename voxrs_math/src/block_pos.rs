@@ -1,4 +1,4 @@
-use crate::{chunk_pos::ChunkPos, Aabb, Dir, Vector3, WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
+use crate::{chunk_pos::ChunkPos, Aabb, Dir, Vec3, WorldChunkCounts, BLOCK_COUNT_IN_CHUNKSIDE};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BlockPos {
@@ -34,10 +34,10 @@ impl BlockPos {
         }
     }
 
-    pub fn from_vec3(pos: &Vector3, block_size: f32) -> Self {
-        let x = (pos.x() / block_size).floor() as i32;
-        let y = (pos.y() / block_size).floor() as i32;
-        let z = (pos.z() / block_size).floor() as i32;
+    pub fn from_vec3(pos: &Vec3, block_size: f32) -> Self {
+        let x = (pos.x / block_size).floor() as i32;
+        let y = (pos.y / block_size).floor() as i32;
+        let z = (pos.z / block_size).floor() as i32;
 
         Self::new(x, y, z)
     }
@@ -87,12 +87,12 @@ impl BlockPos {
     }
 
     pub fn aabb(&self, block_size: f32) -> Aabb {
-        let min = Vector3::new(
+        let min = Vec3::new(
             self.x as f32 * block_size,
             self.y as f32 * block_size,
             self.z as f32 * block_size,
         );
-        let max = min + Vector3::new(block_size, block_size, block_size);
+        let max = min + Vec3::new(block_size, block_size, block_size);
 
         Aabb::new(min, max)
     }

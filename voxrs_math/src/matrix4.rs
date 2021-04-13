@@ -1,197 +1,85 @@
-use crate::Vector3;
+use crate::Mat4;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub struct Matrix4 {
-    m: glm::Mat4,
+/// get matrix using row, and column
+/// index from 1 (row >= 1 && row <= 4, col >= 1 && col <= 4)
+pub fn get_matrix(m: &Mat4, row: usize, col: usize) -> f32 {
+    assert!(row >= 1 && row <= 4);
+    assert!(col >= 1 && col <= 4);
+
+    m.as_ref()[(row - 1) + (col - 1) * 4]
 }
 
-impl Matrix4 {
-    pub fn identity() -> Self {
-        Self { m: glm::identity() }
-    }
+/// set matrix using row, and column
+/// index from 1 (row >= 1 && row <= 4, col >= 1 && col <= 4)
+pub fn set_matrix(m: &mut Mat4, row: usize, col: usize, val: f32) {
+    assert!(row >= 1 && row <= 4);
+    assert!(col >= 1 && col <= 4);
 
-    #[rustfmt::skip]
-    #[allow(clippy::too_many_arguments)]
-    pub fn new( m11: f32, m12: f32, m13: f32, m14: f32,
-                m21: f32, m22: f32, m23: f32, m24: f32,
-                m31: f32, m32: f32, m33: f32, m34: f32,
-                m41: f32, m42: f32, m43: f32, m44: f32,
-    ) -> Self {
-        Self {
-            m: glm::Mat4::new(
-                m11, m12, m13, m14,
-                m21, m22, m23, m24,
-                m31, m32, m33, m34,
-                m41, m42, m43, m44,
-            ),
-        }
-    }
-
-    // to column oriented slice
-    pub fn as_slice(&self) -> &[f32] {
-        self.m.as_slice()
-    }
-
-    // to column oriented array
-    pub fn to_array(&self) -> [f32; 16] {
-        use std::convert::TryInto;
-
-        self.m.as_slice().try_into().unwrap()
-    }
-
-    /// create look at (left hand) matrix
-    pub fn look_at(eye: &Vector3, target: &Vector3, up: &Vector3) -> Self {
-        Self {
-            m: glm::look_at_lh(eye.get_inner(), target.get_inner(), up.get_inner()),
-        }
-    }
-
-    pub fn perspective(aspect: f32, fovy: f32, near: f32, far: f32) -> Self {
-        Self {
-            m: glm::perspective_lh_zo(aspect, fovy, near, far),
-        }
-    }
-
-    #[rustfmt::skip]
-    pub fn translate(v: &Vector3) -> Self {
-        Self::new(
-            1.0, 0.0, 0.0, v.x(),
-            0.0, 1.0, 0.0, v.y(),
-            0.0, 0.0, 1.0, v.z(),
-            0.0, 0.0, 0.0, 1.0,
-        )
-    }
-
-    #[rustfmt::skip]
-    pub fn uniform_scale(s: f32) -> Self {
-        Self::new(
-            s, 0.0, 0.0, 0.0,
-            0.0, s, 0.0, 0.0,
-            0.0, 0.0, s, 0.0,
-            0.0, 0.0, 0.0, 1.0
-        )
-    }
-
-    /// get inverse matrix
-    /// panic if matrix is not invertable
-    pub fn inverse(&self) -> Self {
-        let inverted = self.m.try_inverse().unwrap();
-        Self { m: inverted }
-    }
-
-    pub fn transform_point(&self, v: &Vector3) -> Vector3 {
-        let t = self.m.transform_point(&v.v.into());
-        Vector3 { v: t.coords }
-    }
-
-    pub fn transform_normal(&self, v: &Vector3) -> Vector3 {
-        let t = self.m.transform_vector(&v.v);
-        Vector3 { v: t }
-    }
-}
-
-impl std::ops::Index<(usize, usize)> for Matrix4 {
-    type Output = f32;
-
-    fn index(&self, index: (usize, usize)) -> &Self::Output {
-        assert!(index.0 > 0 && index.0 <= 4);
-        assert!(index.1 > 0 && index.1 <= 4);
-
-        self.m.index((index.0 - 1) + (index.1 - 1) * 4)
-    }
-}
-
-impl std::ops::IndexMut<(usize, usize)> for Matrix4 {
-    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
-        assert!(index.0 > 0 && index.0 <= 4);
-        assert!(index.1 > 0 && index.1 <= 4);
-
-        self.m.index_mut((index.0 - 1) + (index.1 - 1) * 4)
-    }
-}
-
-impl std::ops::Mul for Matrix4 {
-    type Output = Matrix4;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self::Output { m: self.m * rhs.m }
-    }
-}
-
-impl Default for Matrix4 {
-    fn default() -> Self {
-        Self::new(
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        )
-    }
-}
-
-impl approx::AbsDiffEq for Matrix4 {
-    type Epsilon = f32;
-
-    fn default_epsilon() -> Self::Epsilon {
-        0.0001
-    }
-
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        let me = self.as_slice();
-        let you = other.as_slice();
-        if me.len() != you.len() {
-            return false;
-        }
-
-        for idx in 0..me.len() {
-            if (me[idx] - you[idx]).abs() > epsilon {
-                return false;
-            }
-        }
-
-        true
-    }
+    m.as_mut()[(row - 1) + (col - 1) * 4] = val;
 }
 
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
     use super::*;
+    use crate::Vec3;
     use approx::*;
 
     #[test]
     fn new() {
-        let m = Matrix4::new(
-            1.0, 2.0, 3.0, 4.0, 
+        let m = Mat4::from_cols_array(
+            &[1.0, 2.0, 3.0, 4.0, 
             5.0, 6.0, 7.0, 8.0, 
             9.0, 10.0, 11.0, 12.0, 
-            13.0, 14.0, 15.0, 16.0,
+            13.0, 14.0, 15.0, 16.0]
         );
 
-        for c in 0..4_usize {
-            for r in 0..4_usize {
-                assert_abs_diff_eq!(m[(r+1, c+1)], (r * 4 + (c + 1)) as f32);
+        for c in 1..=4_usize {
+            for r in 1..=4_usize {
+                assert_abs_diff_eq!(get_matrix(&m, r, c), ((c-1)*4 + r) as f32);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_set_matrix() {
+        let mut m = Mat4::ZERO;
+
+        for c in 1..=4_usize {
+            for r in 1..=4_usize {
+                set_matrix(&mut m, r, c, ((r * 100) + c) as f32);
+            }
+        }
+
+        for c in 1..=4_usize {
+            for r in 1..=4_usize {
+                assert_abs_diff_eq!(get_matrix(&m, r, c), ((r * 100) + c) as f32);
             }
         }
     }
 
     #[test]
     fn create_identity_matrix() {
-        let m = Matrix4::identity();
-        assert_abs_diff_eq!(m[(1, 1)], 1.0);
-        assert_abs_diff_eq!(m[(2, 2)], 1.0);
-        assert_abs_diff_eq!(m[(3, 3)], 1.0);
-        assert_abs_diff_eq!(m[(4, 4)], 1.0);
+        let m = Mat4::IDENTITY;
+        assert_abs_diff_eq!(get_matrix(&m, 1, 1), 1.0);
+        assert_abs_diff_eq!(get_matrix(&m, 2, 2), 1.0);
+        assert_abs_diff_eq!(get_matrix(&m, 3, 3), 1.0);
+        assert_abs_diff_eq!(get_matrix(&m, 4, 4), 1.0);
     }
 
     #[test]
     #[allow(clippy::float_cmp)]
-    fn as_slice() {
-        let m = Matrix4::new(
-            1.0, 2.0, 3.0, 4.0, 
-            5.0, 6.0, 7.0, 8.0, 
-            9.0, 10.0, 11.0, 12.0, 
-            13.0, 14.0, 15.0, 16.0,
+    fn test_as_ref() {
+        let m = Mat4::from_cols_array(
+            &[
+                1.0, 5.0, 9.0, 13.0, 
+                2.0, 6.0, 10.0, 14.0, 
+                3.0, 7.0, 11.0, 15.0, 
+                4.0, 8.0, 12.0, 16.0,
+            ]
         );
 
-        let s: &[f32] = m.as_slice();
+        let s: &[f32] = m.as_ref();
         assert_eq!(
             s,
             &[
@@ -206,14 +94,16 @@ mod tests {
     #[test]
     #[allow(clippy::float_cmp)]
     fn to_array() {
-        let m = Matrix4::new(
-            1.0, 2.0, 3.0, 4.0, 
-            5.0, 6.0, 7.0, 8.0, 
-            9.0, 10.0, 11.0, 12.0, 
-            13.0, 14.0, 15.0, 16.0,
+        let m = Mat4::from_cols_array(
+            &[
+                1.0, 5.0, 9.0, 13.0, 
+                2.0, 6.0, 10.0, 14.0, 
+                3.0, 7.0, 11.0, 15.0, 
+                4.0, 8.0, 12.0, 16.0,
+            ]
         );
 
-        let s = m.to_array();
+        let s = m.to_cols_array();
         assert_eq!(
             s,
             [
@@ -227,68 +117,54 @@ mod tests {
 
     #[test]
     fn multiply_matrix_to_matrix() {
-        let m1 = Matrix4::new(
-            1.0, 2.0, 3.0, 4.0, 
+        let m1 = Mat4::from_cols_array(
+            &[1.0, 2.0, 3.0, 4.0, 
             5.0, 6.0, 7.0, 8.0, 
             9.0, 10.0, 11.0, 12.0, 
-            13.0, 14.0, 15.0, 16.0,
+            13.0, 14.0, 15.0, 16.0]
         );
 
-        let m2 = Matrix4::new(
-            2.0, 0.0, 0.0, 0.0, 
+        let m2 = Mat4::from_cols_array(
+            &[2.0, 0.0, 0.0, 0.0, 
             0.0, 2.0, 0.0, 0.0, 
             0.0, 0.0, 2.0, 0.0, 
-            0.0, 0.0, 0.0, 2.0,
+            0.0, 0.0, 0.0, 2.0]
         );
 
         let m3 = m1 * m2;
-        assert_abs_diff_eq!(
-            m3,
-            Matrix4::new(
-                2.0, 4.0, 6.0, 8.0, 
+        assert!(
+            m3.abs_diff_eq(
+            Mat4::from_cols_array(
+                &[2.0, 4.0, 6.0, 8.0, 
                 10.0, 12.0, 14.0, 16.0, 
                 18.0, 20.0, 22.0, 24.0, 
-                26.0, 28.0, 30.0, 32.0,
-            )
+                26.0, 28.0, 30.0, 32.0]
+            ), 0.01)
         );
     }
 
     #[test]
     #[should_panic]
     fn test_out_of_index() {
-        let m = Matrix4::new(
-            1.0, 2.0, 3.0, 4.0,
-            5.0, 6.0, 7.0, 8.0, 
-            9.0, 10.0, 11.0, 12.0, 
-            13.0, 14.0, 15.0, 16.0, 
-        );
-
-        let _ = m[(0, 0)];
+        let m = Mat4::IDENTITY;
+        let _ = get_matrix(&m, 0, 0);
     }
 
     #[test]
     fn test_transform_point() {
-        let m = Matrix4::translate(&Vector3::new(1.0, 2.0, 3.0));
-        let v = Vector3::new(1.0, 1.0, 1.0);
+        let m = Mat4::from_translation(Vec3::new(1.0, 2.0, 3.0));
+        let v = Vec3::new(1.0, 1.0, 1.0);
 
-        let v2 = m.transform_point(&v);
-        assert_abs_diff_eq!(v2, Vector3::new(2.0, 3.0, 4.0));
+        let v2 = m.transform_point3(v);
+        assert!(v2.abs_diff_eq(Vec3::new(2.0, 3.0, 4.0), 0.01));
     }
 
     #[test]
     fn test_transform_normal() {
-        let m = Matrix4::translate(&Vector3::new(1.0, 2.0, 3.0));
-        let v = Vector3::new(1.0, 0.0, 0.0);
+        let m = Mat4::from_translation(Vec3::new(1.0, 2.0, 3.0));
+        let v = Vec3::new(1.0, 0.0, 0.0);
 
-        let v2 = m.transform_normal(&v);
-        assert_abs_diff_eq!(v2, v);
-    }
-
-    #[test]
-    fn test_index() {
-        let m = Matrix4::translate(&Vector3::new(1.0, 2.0, 3.0));
-        assert_abs_diff_eq!(m[(1, 4)], 1.0);
-        assert_abs_diff_eq!(m[(2, 4)], 2.0);
-        assert_abs_diff_eq!(m[(3, 4)], 3.0);
+        let v2 = m.transform_vector3(v);
+        assert!(v2.abs_diff_eq(v, 0.01));
     }
 }

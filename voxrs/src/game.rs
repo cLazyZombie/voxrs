@@ -32,7 +32,7 @@ impl Game {
         res.insert(world_block_res);
 
         let camera = CameraRes::new(
-            Vector3::new(3.5, 3.5, -10.0),
+            Vec3::new(3.5, 3.5, -10.0),
             Angle::from_degrees(0.0),
             Angle::from_degrees(0.0),
             width,

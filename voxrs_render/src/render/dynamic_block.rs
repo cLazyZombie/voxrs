@@ -434,11 +434,11 @@ impl Block {
         });
 
         // local uniform buffer
-        let world_transform = Matrix4::identity();
+        let world_transform = Mat4::IDENTITY;
 
         let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("view_proj buffer"),
-            contents: bytemuck::cast_slice(&[world_transform.to_array()]),
+            contents: bytemuck::cast_slice(&world_transform.to_cols_array()),
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
@@ -475,21 +475,21 @@ fn create_vertex(aabb: &Aabb) -> Vec<BlockVertex> {
             let mut v = *v;
 
             if v.position[0] == 1.0 {
-                v.position[0] = aabb.max.x();
+                v.position[0] = aabb.max.x;
             } else {
-                v.position[0] = aabb.min.x();
+                v.position[0] = aabb.min.x;
             }
 
             if v.position[1] == 1.0 {
-                v.position[1] = aabb.max.y();
+                v.position[1] = aabb.max.y;
             } else {
-                v.position[1] = aabb.min.y();
+                v.position[1] = aabb.min.y;
             }
 
             if v.position[2] == 1.0 {
-                v.position[2] = aabb.max.z();
+                v.position[2] = aabb.max.z;
             } else {
-                v.position[2] = aabb.min.z();
+                v.position[2] = aabb.min.z;
             }
 
             v

@@ -3,12 +3,12 @@ use std::num::NonZeroU64;
 use voxrs_math::*;
 
 pub struct CommonUniforms {
-    view_proj_mat: Matrix4,
-    screen_to_ndc_mat: Matrix4,
+    view_proj_mat: Mat4,
+    screen_to_ndc_mat: Mat4,
     buffer: wgpu::Buffer,
 }
 
-const MATRIX_SIZE: wgpu::BufferAddress = std::mem::size_of::<Matrix4>() as wgpu::BufferAddress;
+const MATRIX_SIZE: wgpu::BufferAddress = std::mem::size_of::<Mat4>() as wgpu::BufferAddress;
 const VIEW_PROJ_OFFSET: wgpu::BufferAddress = aligned_offset(0);
 const SCREEN_TO_NDC_OFFSET: wgpu::BufferAddress = aligned_offset(VIEW_PROJ_OFFSET + MATRIX_SIZE);
 const TOTAL_SIZE: wgpu::BufferAddress = SCREEN_TO_NDC_OFFSET + MATRIX_SIZE;
@@ -34,18 +34,18 @@ impl CommonUniforms {
         });
 
         Self {
-            view_proj_mat: Matrix4::identity(),
-            screen_to_ndc_mat: Matrix4::identity(),
+            view_proj_mat: Mat4::IDENTITY,
+            screen_to_ndc_mat: Mat4::IDENTITY,
             buffer,
         }
     }
-    pub fn set_view_proj(&mut self, view_proj_mat: Matrix4, queue: &wgpu::Queue) {
+    pub fn set_view_proj(&mut self, view_proj_mat: Mat4, queue: &wgpu::Queue) {
         self.view_proj_mat = view_proj_mat;
 
         queue.write_buffer(
             &self.buffer,
             VIEW_PROJ_OFFSET,
-            bytemuck::cast_slice(self.view_proj_mat.as_slice()),
+            bytemuck::cast_slice(self.view_proj_mat.as_ref()),
         );
     }
 
@@ -59,20 +59,19 @@ impl CommonUniforms {
         // y' = y * (1/height) * -2 + 1
         let div_width = 1.0 / screen_width as f32;
         let div_height = 1.0 / screen_height as f32;
-        let mut matrix = Matrix4::identity();
+        let mut matrix = Mat4::IDENTITY;
 
-        matrix[(1, 1)] = div_width * 2.0;
-        matrix[(1, 4)] = -1.0;
-
-        matrix[(2, 2)] = div_height * -2.0;
-        matrix[(2, 4)] = 1.0;
+        set_matrix(&mut matrix, 1, 1, div_width * 2.0);
+        set_matrix(&mut matrix, 1, 4, -1.0);
+        set_matrix(&mut matrix, 2, 2, div_height * -2.0);
+        set_matrix(&mut matrix, 2, 4, 1.0);
 
         self.screen_to_ndc_mat = matrix;
 
         queue.write_buffer(
             &self.buffer,
             SCREEN_TO_NDC_OFFSET,
-            bytemuck::cast_slice(&self.screen_to_ndc_mat.as_slice()),
+            bytemuck::cast_slice(&self.screen_to_ndc_mat.to_cols_array()),
         )
     }
 

@@ -32,7 +32,7 @@ impl WorldBlockRes {
         {
             let asset = handle.get_asset();
             let chunk_size = asset.block_size.to_f32() * BLOCK_COUNT_IN_CHUNKSIDE as f32;
-            let chunk_extend = Vector3::new(chunk_size, chunk_size, chunk_size);
+            let chunk_extend = Vec3::new(chunk_size, chunk_size, chunk_size);
 
             chunks.resize_with(asset.world_chunks.len(), Default::default);
 

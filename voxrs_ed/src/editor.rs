@@ -34,7 +34,7 @@ impl Editor {
         res.insert(world_block_res);
 
         let camera = CameraRes::new(
-            Vector3::new(0.0, 30.0, -30.0),
+            Vec3::new(0.0, 30.0, -30.0),
             Angle::from_degrees(0.0),
             Angle::from_degrees(-45.0),
             width,
