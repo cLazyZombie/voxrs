@@ -1,10 +1,11 @@
+use anyhow::Result;
 use legion::*;
 use voxrs_asset::{AssetManager, AssetPath};
 use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, WorldBlockRes};
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
+use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
 
@@ -80,7 +81,7 @@ impl Editor {
         }
     }
 
-    pub fn on_key_input(&mut self, input: &KeyboardInput) {
+    pub fn on_key_input<F: FileSystem>(&mut self, input: &KeyboardInput) {
         let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
 
         if let Some(key_code) = input.virtual_keycode {
@@ -88,6 +89,16 @@ impl Editor {
                 key_input.on_key_pressed(key_code);
             } else {
                 key_input.on_key_released(key_code);
+
+                // temporary
+                if key_code == VirtualKeyCode::S && key_input.is_ctrl_pressed() {
+                    drop(key_input);
+
+                    let result = self.save::<F>(&"assets/world_temp.wb".into());
+                    if let Err(error) = result {
+                        log::error!("save error. {:?}", error);
+                    }
+                }
             }
         }
     }
@@ -144,5 +155,13 @@ impl Editor {
     pub fn end_frame(&mut self) {
         self.end_frame_schedule
             .execute(&mut self.world, &mut self.res);
+    }
+
+    pub fn save<F: FileSystem>(&self, path: &AssetPath) -> Result<()> {
+        let world_block = self.res.get::<WorldBlockRes>().unwrap();
+        let raw_asset = world_block.make_raw_asset();
+        let raw_asset_json = serde_json::to_string(&raw_asset)?;
+
+        F::write_text(&path.to_path_buf(), &raw_asset_json)
     }
 }

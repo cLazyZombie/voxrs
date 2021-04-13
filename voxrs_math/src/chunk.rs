@@ -24,9 +24,9 @@ impl WorldBlockCounts {
 /// chunk count in world in each direction (x, y, z)
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct WorldChunkCounts {
-    pub(crate) x: i32,
-    pub(crate) y: i32,
-    pub(crate) z: i32,
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
 }
 
 #[allow(clippy::len_without_is_empty)]

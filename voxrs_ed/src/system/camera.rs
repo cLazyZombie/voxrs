@@ -15,36 +15,39 @@ pub fn control(
 
     let elapsed_time: f32 = **elapsed_time;
 
-    // move mouse
-    for key in key_input.keys() {
-        match *key {
-            VirtualKeyCode::W | VirtualKeyCode::Up => {
-                camera.move_camera_relative(
-                    &(Vector3::new(0.0, 0.0, 1.0) * elapsed_time * MOVE_SPEED),
-                );
+    // move
+    if !key_input.is_alt_pressed() && !key_input.is_ctrl_pressed() && !key_input.is_shift_pressed()
+    {
+        for key in key_input.keys() {
+            match *key {
+                VirtualKeyCode::W | VirtualKeyCode::Up => {
+                    camera.move_camera_relative(
+                        &(Vector3::new(0.0, 0.0, 1.0) * elapsed_time * MOVE_SPEED),
+                    );
+                }
+                VirtualKeyCode::S | VirtualKeyCode::Down => {
+                    camera.move_camera_relative(
+                        &(Vector3::new(0.0, 0.0, -1.0) * elapsed_time * MOVE_SPEED),
+                    );
+                }
+                VirtualKeyCode::A | VirtualKeyCode::Left => {
+                    camera.move_camera_relative(
+                        &(Vector3::new(-1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED),
+                    );
+                }
+                VirtualKeyCode::D | VirtualKeyCode::Right => {
+                    camera.move_camera_relative(
+                        &(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED),
+                    );
+                }
+                VirtualKeyCode::E => {
+                    camera.move_camera(&(Vector3::new(0.0, 1.0, 0.0) * elapsed_time * MOVE_SPEED));
+                }
+                VirtualKeyCode::Q => {
+                    camera.move_camera(&(Vector3::new(0.0, -1.0, 0.0) * elapsed_time * MOVE_SPEED));
+                }
+                _ => {}
             }
-            VirtualKeyCode::S | VirtualKeyCode::Down => {
-                camera.move_camera_relative(
-                    &(Vector3::new(0.0, 0.0, -1.0) * elapsed_time * MOVE_SPEED),
-                );
-            }
-            VirtualKeyCode::A | VirtualKeyCode::Left => {
-                camera.move_camera_relative(
-                    &(Vector3::new(-1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED),
-                );
-            }
-            VirtualKeyCode::D | VirtualKeyCode::Right => {
-                camera.move_camera_relative(
-                    &(Vector3::new(1.0, 0.0, 0.0) * elapsed_time * MOVE_SPEED),
-                );
-            }
-            VirtualKeyCode::E => {
-                camera.move_camera(&(Vector3::new(0.0, 1.0, 0.0) * elapsed_time * MOVE_SPEED));
-            }
-            VirtualKeyCode::Q => {
-                camera.move_camera(&(Vector3::new(0.0, -1.0, 0.0) * elapsed_time * MOVE_SPEED));
-            }
-            _ => {}
         }
     }
 

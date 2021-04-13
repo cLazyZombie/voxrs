@@ -28,6 +28,8 @@ pub use text::TextAsset;
 pub use texture::TextureAsset;
 pub use world_block::BlockSize;
 pub use world_block::WorldBlockAsset;
+pub use world_block::WorldBlockAssetRaw;
+pub use world_block::WorldChunkRaw;
 pub use world_material::WorldMaterialAsset;
 
 mod font;

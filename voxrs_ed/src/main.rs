@@ -39,7 +39,7 @@ fn main() {
                 renderer.resize(*physical_size);
             }
             WindowEvent::KeyboardInput { input, .. } => {
-                editor.on_key_input(input);
+                editor.on_key_input::<GeneralFileSystem>(input);
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 editor.on_mouse_input(*button, *state);

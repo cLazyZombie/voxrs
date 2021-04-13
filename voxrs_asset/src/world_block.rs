@@ -149,11 +149,11 @@ fn is_visible_dir(
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct WorldBlockAssetRaw {
-    block_counts: WorldBlockCounts,
-    block_size: BlockSize,
-    world_material: String,
-    world_chunks: Vec<WorldChunkRaw>,
+pub struct WorldBlockAssetRaw {
+    pub block_counts: WorldBlockCounts,
+    pub block_size: BlockSize,
+    pub world_material: String,
+    pub world_chunks: Vec<WorldChunkRaw>,
 }
 
 #[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Debug)]

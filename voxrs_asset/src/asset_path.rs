@@ -35,7 +35,7 @@ impl AssetPath {
 
 impl Display for AssetPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.path.as_os_str())
+        write!(f, "{}", self.path.as_os_str().to_str().unwrap())
     }
 }
 
@@ -121,5 +121,12 @@ mod tests {
         let s = "str";
         let asset_path: AssetPath = s.into();
         assert_eq!(asset_path.path.to_str().unwrap(), "str");
+    }
+
+    #[test]
+    fn asset_path_to_string() {
+        let asset_path: AssetPath = "abcd".into();
+        let s = asset_path.to_string();
+        assert_eq!(s, "abcd".to_string());
     }
 }

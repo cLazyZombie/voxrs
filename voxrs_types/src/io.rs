@@ -9,6 +9,8 @@ use std::vec::Vec;
 pub trait FileSystem {
     async fn read_binary(path: &Path) -> Result<std::vec::Vec<u8>>;
     async fn read_text(path: &Path) -> Result<String>;
+
+    fn write_text(path: &Path, text: &str) -> Result<()>;
 }
 
 pub struct GeneralFileSystem {}
@@ -36,6 +38,10 @@ impl FileSystem for GeneralFileSystem {
             }
         }
     }
+
+    fn write_text(path: &Path, text: &str) -> Result<()> {
+        Self::write_text_internal(path, text)
+    }
 }
 
 impl GeneralFileSystem {
@@ -55,6 +61,13 @@ impl GeneralFileSystem {
         f.read_to_string(&mut s)?;
 
         Ok(s)
+    }
+
+    fn write_text_internal(path: &Path, text: &str) -> Result<()> {
+        let mut f = File::create(path)?;
+        f.write_all(text.as_bytes())?;
+
+        Ok(())
     }
 }
 
@@ -104,6 +117,10 @@ pub mod tests {
                 }
                 _ => panic!("not found"),
             }
+        }
+
+        fn write_text(_path: &Path, _text: &str) -> Result<()> {
+            Ok(())
         }
     }
 }

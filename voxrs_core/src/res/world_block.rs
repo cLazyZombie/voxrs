@@ -1,7 +1,10 @@
 use enumflags2::BitFlags;
 use rayon::prelude::*;
 
-use voxrs_asset::{AssetHandle, AssetManager, AssetPath, BlockSize, WorldBlockAsset};
+use voxrs_asset::{
+    AssetHandle, AssetManager, AssetPath, BlockSize, WorldBlockAsset, WorldBlockAssetRaw,
+    WorldChunkRaw,
+};
 use voxrs_math::*;
 use voxrs_types::io::FileSystem;
 
@@ -232,6 +235,36 @@ impl WorldBlockRes {
     pub fn clear_blocks(&mut self) {
         for chunk in self.chunks.iter_mut() {
             *chunk = None;
+        }
+    }
+
+    pub fn make_raw_asset(&self) -> WorldBlockAssetRaw {
+        let block_counts = WorldBlockCounts::new(
+            self.chunk_counts.x * BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            self.chunk_counts.y * BLOCK_COUNT_IN_CHUNKSIDE as i32,
+            self.chunk_counts.z * BLOCK_COUNT_IN_CHUNKSIDE as i32,
+        );
+
+        let world_block = self.handle.get_asset();
+        let world_material = world_block.world_material.asset_path();
+
+        let world_chunks = self
+            .chunks
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, chunk)| {
+                chunk.as_ref().map(|chunk| WorldChunkRaw {
+                    idx: idx as i32,
+                    blocks: chunk.blocks.clone(),
+                })
+            })
+            .collect::<Vec<_>>();
+
+        WorldBlockAssetRaw {
+            block_counts,
+            block_size: self.block_size,
+            world_material: world_material.to_string(),
+            world_chunks,
         }
     }
 }
