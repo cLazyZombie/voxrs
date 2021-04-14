@@ -50,6 +50,9 @@ fn main() {
             WindowEvent::ModifiersChanged(modifier) => {
                 editor.on_modifier_changed(modifier);
             }
+            WindowEvent::ReceivedCharacter(c) => {
+                dbg!(c);
+            }
             _ => {}
         },
         Event::DeviceEvent { ref event, .. } => match event {

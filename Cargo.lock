@@ -2278,6 +2278,7 @@ name = "voxrs_ui"
 version = "0.1.0"
 dependencies = [
  "voxrs_asset",
+ "voxrs_math",
 ]
 
 [[package]]

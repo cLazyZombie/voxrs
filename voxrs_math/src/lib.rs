@@ -20,7 +20,7 @@ pub use ray::Ray;
 pub use ray::RayAabbResult;
 pub use sphere::Sphere;
 //pub use vector3::Vector3;
-pub use glam::{Mat3, Mat4, Quat, Vec3, Vec4};
+pub use glam::{IVec2, IVec3, Mat3, Mat4, Quat, Vec3, Vec4};
 
 mod chunk;
 

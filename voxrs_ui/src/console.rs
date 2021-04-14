@@ -1,8 +1,10 @@
+use voxrs_math::IVec2;
+
 #[allow(dead_code)]
 pub struct Console {
     outputs: Vec<String>,
-    width: u32,
-    height: u32,
+    pos: IVec2,
+    size: IVec2,
 }
 
 impl Console {
@@ -12,33 +14,33 @@ impl Console {
 }
 
 pub struct Builder {
-    width: u32,
-    height: u32,
+    pos: IVec2,
+    size: IVec2,
 }
 
 impl Builder {
     fn new() -> Self {
         Self {
-            width: 100,
-            height: 100,
+            pos: IVec2::new(0, 0),
+            size: IVec2::new(100, 100),
         }
     }
 
-    pub fn width(mut self, w: u32) -> Self {
-        self.width = w;
+    pub fn pos(mut self, pos: IVec2) -> Self {
+        self.pos = pos;
         self
     }
 
-    pub fn height(mut self, h: u32) -> Self {
-        self.height = h;
+    pub fn size(mut self, size: IVec2) -> Self {
+        self.size = size;
         self
     }
 
     pub fn build(self) -> Console {
         Console {
             outputs: Vec::new(),
-            width: self.width,
-            height: self.height,
+            pos: self.pos,
+            size: self.size,
         }
     }
 }

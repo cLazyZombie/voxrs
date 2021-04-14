@@ -7,3 +7,4 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
+voxrs_math = {version = "0.1", path = "../voxrs_math"}
