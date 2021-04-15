@@ -21,3 +21,6 @@ pub(crate) use chunk_cache::ChunkCache;
 
 mod common_uniforms;
 pub(crate) use common_uniforms::CommonUniforms;
+
+mod ui;
+pub(crate) use ui::UiRenderSystem;

@@ -2271,6 +2271,7 @@ dependencies = [
  "log",
  "serde",
  "voxrs_math",
+ "wgpu",
 ]
 
 [[package]]

@@ -15,3 +15,5 @@ pub type BlockMatIdx = u8;
 pub type BlockIdx = u16;
 
 pub type ChunkId = u64;
+
+pub mod ui;

@@ -1,6 +1,6 @@
 use super::{
     chunk::ChunkRenderSystem, commands::Command, CommonUniforms, DynamicBlockRenderSystem,
-    TextRenderer,
+    TextRenderer, UiRenderSystem,
 };
 use crate::blueprint::{Blueprint, Camera};
 use crossbeam_channel::Receiver;
@@ -25,6 +25,7 @@ pub struct Renderer {
     text_renderer: TextRenderer,
     common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
+    ui_renderer: UiRenderSystem, // todo. XXRenderSystem, XXRenderer are mixed. select one.
     fps: Fps,
 }
 
@@ -77,6 +78,7 @@ impl Renderer {
         let chunk_renderer = ChunkRenderSystem::new(&device, &common_uniforms);
         let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &common_uniforms);
         let text_renderer = TextRenderer::new(&device, &common_uniforms, asset_manager);
+        let ui_renderer = UiRenderSystem::new(&device, &common_uniforms, asset_manager);
         let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
         let fps = Fps::new();
 
@@ -91,6 +93,7 @@ impl Renderer {
             chunk_renderer,
             dynamic_block_renderer,
             text_renderer,
+            ui_renderer,
             common_uniforms,
             font,
             fps,
@@ -124,6 +127,10 @@ impl Renderer {
         let text_render_infos = self
             .text_renderer
             .prepare(vec![text], &self.device, &self.queue);
+
+        let ui_render_infos = self
+            .ui_renderer
+            .prepare(&bp.panels, &self.device, &self.queue);
 
         let frame = self.swap_chain.get_current_frame()?.output;
 
@@ -166,6 +173,8 @@ impl Renderer {
 
             self.text_renderer
                 .render(&text_render_infos, &mut render_pass);
+
+            self.ui_renderer.render(&ui_render_infos, &mut render_pass);
         }
 
         self.queue.submit(iter::once(encoder.finish()));
@@ -175,6 +184,7 @@ impl Renderer {
             self.chunk_renderer.clear();
             self.dynamic_block_renderer.clear();
             self.text_renderer.clear();
+            self.ui_renderer.clear();
         }
 
         Ok(())

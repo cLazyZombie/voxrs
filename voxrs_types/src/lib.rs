@@ -8,3 +8,7 @@ pub mod io;
 
 mod safecloner;
 pub use safecloner::SafeCloner;
+
+// re export types
+mod color;
+pub use color::Color;
