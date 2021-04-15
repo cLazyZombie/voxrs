@@ -2,14 +2,16 @@ use super::{
     chunk::ChunkRenderSystem, commands::Command, CommonUniforms, DynamicBlockRenderSystem,
     TextRenderer, UiRenderSystem,
 };
-use crate::blueprint::{Blueprint, Camera};
+use crate::blueprint::{
+    ui::{Text, TextSection},
+    Blueprint, Camera,
+};
 use crossbeam_channel::Receiver;
 use std::thread::{self, JoinHandle};
 use std::{iter, sync::Arc};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset};
 use voxrs_rhi::Texture;
 use voxrs_types::{io::FileSystem, Fps};
-use voxrs_ui::{TextDesc, TextHandle, TextSectionDesc};
 use winit::window::Window;
 
 pub struct Renderer {
@@ -116,17 +118,17 @@ impl Renderer {
         // render fps (temp)
         self.fps.tick();
         let fps = format!("fps: {:.1}", self.fps.get_fps());
-        let text = TextHandle::new(TextDesc {
-            pos: (20, 20),
-            sections: vec![TextSectionDesc {
+        let text = Text {
+            pos: (20.0, 20.0).into(),
+            sections: vec![TextSection {
                 font: self.font.clone(),
                 font_size: 20,
                 text: fps,
             }],
-        });
+        };
         let text_render_infos = self
             .text_renderer
-            .prepare(vec![text], &self.device, &self.queue);
+            .prepare(&vec![text], &self.device, &self.queue);
 
         let ui_render_infos = self
             .ui_renderer

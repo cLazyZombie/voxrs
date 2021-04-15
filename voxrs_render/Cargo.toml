@@ -10,7 +10,6 @@ voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
 voxrs_math = {version = "0.1", path = "../voxrs_math"}
 voxrs_rhi = {version = "0.1", path = "../voxrs_rhi"}
 voxrs_types = {version = "0.1", path = "../voxrs_types"}
-voxrs_ui = {version = "0.1", path = "../voxrs_ui"}
 
 ab_glyph = "0.2.10"
 bytemuck = {version = "1.5", features = ["derive"]}

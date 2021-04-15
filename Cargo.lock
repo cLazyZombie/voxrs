@@ -2244,7 +2244,6 @@ dependencies = [
  "voxrs_math",
  "voxrs_rhi",
  "voxrs_types",
- "voxrs_ui",
  "wgpu",
  "winit",
 ]

@@ -2,10 +2,12 @@ use glyph_brush_layout::{ab_glyph::*, *};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset, ShaderAsset};
 use voxrs_rhi::{DynamicBuffer, DEPTH_FORMAT};
 use voxrs_types::io::FileSystem;
-use voxrs_ui::TextHandle;
 use wgpu::util::DeviceExt;
 
-use crate::ui::{FontAtlas, GlyphAtlasInfo};
+use crate::{
+    blueprint::ui::Text,
+    ui::{FontAtlas, GlyphAtlasInfo},
+};
 
 use super::CommonUniforms;
 
@@ -197,7 +199,7 @@ impl TextRenderer {
 
     pub fn prepare(
         &mut self,
-        texts: Vec<TextHandle>,
+        texts: &[Text],
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> TextRenderInfos {
@@ -205,11 +207,10 @@ impl TextRenderer {
             textured_render_infos: Vec::new(),
         };
 
-        for text in &texts {
+        for text in texts {
             // get section glyphs
-            let text_desc = &*text.get_desc();
             let mut sections = Vec::new();
-            for section in &text_desc.sections {
+            for section in &text.sections {
                 let section_text = SectionText {
                     text: &section.text,
                     scale: PxScale::from(section.font_size as f32),
@@ -224,7 +225,7 @@ impl TextRenderer {
                 .calculate_glyphs(
                     &self.font_atlas.get_fonts(),
                     &SectionGeometry {
-                        screen_position: (text_desc.pos.0 as f32, text_desc.pos.1 as f32),
+                        screen_position: (text.pos.x, text.pos.y),
                         ..Default::default()
                     },
                     &sections,
