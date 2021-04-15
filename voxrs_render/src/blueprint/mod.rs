@@ -16,4 +16,8 @@ pub type BlockIdx = u16;
 
 pub type ChunkId = u64;
 
-pub mod ui;
+mod ui;
+pub use ui::Panel;
+pub use ui::Text;
+pub use ui::TextSection;
+pub use ui::Ui;

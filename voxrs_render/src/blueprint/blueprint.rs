@@ -2,7 +2,10 @@ use voxrs_asset::{AssetHandle, WorldMaterialAsset};
 use voxrs_math::*;
 use voxrs_types::SafeCloner;
 
-use super::{ui::Panel, Chunk, DynamicBlock};
+use super::{
+    ui::{Panel, Ui},
+    Chunk, DynamicBlock,
+};
 
 #[derive(Default)]
 pub struct Camera {
@@ -23,6 +26,7 @@ pub struct Blueprint {
     pub chunks: Vec<SafeCloner<Chunk>>,
     pub dynamic_blocks: Vec<DynamicBlock>,
     pub panels: Vec<Panel>,
+    pub uis: Vec<Ui>,
 }
 
 impl Blueprint {
@@ -34,6 +38,7 @@ impl Blueprint {
             chunks: Vec::new(),
             dynamic_blocks: Vec::new(),
             panels: Vec::new(),
+            uis: Vec::new(),
         }
     }
 

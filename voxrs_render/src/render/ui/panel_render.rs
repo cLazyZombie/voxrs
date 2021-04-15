@@ -3,18 +3,16 @@ use voxrs_rhi::{DynamicBuffer, DEPTH_FORMAT};
 use voxrs_types::io::FileSystem;
 use wgpu::util::DeviceExt;
 
-use crate::blueprint::ui::Panel;
+use crate::{blueprint::Panel, render::CommonUniforms};
 
-use super::CommonUniforms;
-
-pub struct UiRenderSystem {
+pub struct PanelRenderer {
     uniform_bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: DynamicBuffer<UiVertex>,
+    vertex_buffer: DynamicBuffer<PanelVertex>,
     index_buffer: wgpu::Buffer,
 }
 
-impl UiRenderSystem {
+impl PanelRenderer {
     pub fn new<F: FileSystem>(
         device: &wgpu::Device,
         common_uniforms: &CommonUniforms,
@@ -55,7 +53,7 @@ impl UiRenderSystem {
             });
 
         let vertex_buffer_desc = wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<UiVertex>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<PanelVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::InputStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -150,64 +148,54 @@ impl UiRenderSystem {
 
     pub fn prepare(
         &mut self,
-        panels: &[Panel],
+        panel: &Panel,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> UiRenderInfos {
-        let mut render_infos = UiRenderInfos { panels: Vec::new() };
+    ) -> PanelRenderInfo {
+        let vertices = [
+            PanelVertex {
+                position: [panel.pos.x, panel.pos.y],
+                color: panel.color.to_array(),
+            },
+            PanelVertex {
+                position: [panel.pos.x + panel.size.x, panel.pos.y],
+                color: panel.color.to_array(),
+            },
+            PanelVertex {
+                position: [panel.pos.x + panel.size.x, panel.pos.y + panel.size.y],
+                color: panel.color.to_array(),
+            },
+            PanelVertex {
+                position: [panel.pos.x, panel.pos.y + panel.size.y],
+                color: panel.color.to_array(),
+            },
+        ];
+        let (buffer_idx, buffer_start) = self.vertex_buffer.add_slice(&vertices, device, queue);
 
-        for panel in panels {
-            let vertices = [
-                UiVertex {
-                    position: [panel.pos.x, panel.pos.y],
-                    color: panel.color.to_array(),
-                },
-                UiVertex {
-                    position: [panel.pos.x + panel.size.x, panel.pos.y],
-                    color: panel.color.to_array(),
-                },
-                UiVertex {
-                    position: [panel.pos.x + panel.size.x, panel.pos.y + panel.size.y],
-                    color: panel.color.to_array(),
-                },
-                UiVertex {
-                    position: [panel.pos.x, panel.pos.y + panel.size.y],
-                    color: panel.color.to_array(),
-                },
-            ];
-            let (buffer_idx, buffer_start) = self.vertex_buffer.add_slice(&vertices, device, queue);
-
-            let panel_render_info = PanelRenderInfo {
-                buffer_idx,
-                buffer_start,
-            };
-
-            render_infos.panels.push(panel_render_info);
+        PanelRenderInfo {
+            buffer_idx,
+            buffer_start,
         }
-
-        render_infos
     }
 
     pub fn render<'a>(
-        &'a mut self,
-        render_infos: &'a UiRenderInfos,
+        &'a self,
+        render_info: &'a PanelRenderInfo,
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
-        const VERTEX_SIZE: u64 = (4 * std::mem::size_of::<UiVertex>()) as u64;
+        const VERTEX_SIZE: u64 = (4 * std::mem::size_of::<PanelVertex>()) as u64;
 
-        for panel in &render_infos.panels {
-            let vertex_buffer = &self.vertex_buffer.get_buffer(panel.buffer_idx);
-            render_pass.set_vertex_buffer(
-                0,
-                vertex_buffer.slice(panel.buffer_start..(panel.buffer_start + VERTEX_SIZE)),
-            );
+        let vertex_buffer = &self.vertex_buffer.get_buffer(render_info.buffer_idx);
+        render_pass.set_vertex_buffer(
+            0,
+            vertex_buffer.slice(render_info.buffer_start..(render_info.buffer_start + VERTEX_SIZE)),
+        );
 
-            render_pass.draw_indexed(0..6, 0, 0..1);
-        }
+        render_pass.draw_indexed(0..6, 0, 0..1);
     }
 
     pub fn clear(&mut self) {
@@ -215,18 +203,14 @@ impl UiRenderSystem {
     }
 }
 
-pub struct UiRenderInfos {
-    panels: Vec<PanelRenderInfo>,
-}
-
-struct PanelRenderInfo {
+pub struct PanelRenderInfo {
     buffer_idx: usize,
     buffer_start: wgpu::BufferAddress,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct UiVertex {
+struct PanelVertex {
     pub position: [f32; 2],
     pub color: [f32; 4],
 }

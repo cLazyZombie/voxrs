@@ -9,7 +9,7 @@ use wgpu::util::DeviceExt;
 
 use super::{ShaderHash, CommonUniforms};
 
-pub struct DynamicBlockRenderSystem {
+pub struct DynamicBlockRenderer {
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
@@ -20,7 +20,7 @@ pub struct DynamicBlockRenderSystem {
     render_pipelines: HashMap<ShaderHash, wgpu::RenderPipeline>,
 }
 
-impl DynamicBlockRenderSystem {
+impl DynamicBlockRenderer {
     pub fn new(
         device: &wgpu::Device,
         common_uniforms: &CommonUniforms
@@ -403,7 +403,7 @@ pub struct Block {
     vertex_buffer_start: wgpu::BufferAddress,
 }
 
-// todo. make member of DynamicBlockRenderSystem
+// todo. make member of DynamicBlockRenderer
 impl Block {
     pub fn from_bp(
         bp: &blueprint::DynamicBlock,

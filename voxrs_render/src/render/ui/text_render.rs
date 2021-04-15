@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use glyph_brush_layout::{ab_glyph::*, *};
 use voxrs_asset::{AssetHandle, AssetManager, FontAsset, ShaderAsset};
 use voxrs_rhi::{DynamicBuffer, DEPTH_FORMAT};
@@ -5,11 +7,10 @@ use voxrs_types::io::FileSystem;
 use wgpu::util::DeviceExt;
 
 use crate::{
-    blueprint::ui::Text,
+    blueprint::Text,
+    render::CommonUniforms,
     ui::{FontAtlas, GlyphAtlasInfo},
 };
-
-use super::CommonUniforms;
 
 pub struct TextRenderer {
     uniform_bind_group: wgpu::BindGroup,
@@ -18,16 +19,25 @@ pub struct TextRenderer {
     vertex_buffer: DynamicBuffer<TextVertex>,
     index_buffer: wgpu::Buffer,
     font_atlas: FontAtlas,
+    font_atlas_bind_groups: HashMap<usize, wgpu::BindGroup>, // atlas_id, font atlas bind group. todo: to vec
 }
 
-pub struct TextRenderInfos {
-    textured_render_infos: Vec<(usize, GlyphAtlasRenderInfo)>, // (atlas_id, ...)
+pub struct TextRenderInfo {
+    glyph_render_infos: Vec<GlyphRenderInfo>,
 }
 
-// sorted by atlas_id
-pub struct GlyphAtlasRenderInfo {
-    font_texture_bind_group: wgpu::BindGroup,
-    glyph_infos: Vec<(GlyphAtlasInfo, usize, wgpu::BufferAddress)>, // (atlas info, buffer idx, buffer start)
+impl Default for TextRenderInfo {
+    fn default() -> Self {
+        Self {
+            glyph_render_infos: Vec::new(),
+        }
+    }
+}
+
+pub struct GlyphRenderInfo {
+    glyph_atlas_info: GlyphAtlasInfo,
+    buffer_idx: usize,
+    buffer_start: wgpu::BufferAddress,
 }
 
 impl TextRenderer {
@@ -187,6 +197,8 @@ impl TextRenderer {
             usage: wgpu::BufferUsage::INDEX,
         });
 
+        let font_atlas_bind_groups = HashMap::new();
+
         Self {
             uniform_bind_group,
             font_texture_bind_group_layout,
@@ -194,149 +206,130 @@ impl TextRenderer {
             vertex_buffer,
             font_atlas: font_textures,
             index_buffer,
+            font_atlas_bind_groups,
         }
     }
 
     pub fn prepare(
         &mut self,
-        texts: &[Text],
+        text: &Text,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> TextRenderInfos {
-        let mut render_infos = TextRenderInfos {
-            textured_render_infos: Vec::new(),
-        };
+    ) -> TextRenderInfo {
+        let mut text_render_info = TextRenderInfo::default();
 
-        for text in texts {
-            // get section glyphs
-            let mut sections = Vec::new();
-            for section in &text.sections {
-                let section_text = SectionText {
-                    text: &section.text,
-                    scale: PxScale::from(section.font_size as f32),
-                    font_id: self.get_font_id(&section.font),
-                };
-                sections.push(section_text);
+        // get section glyphs
+        let mut sections = Vec::new();
+        for section in &text.sections {
+            let section_text = SectionText {
+                text: &section.text,
+                scale: PxScale::from(section.font_size as f32),
+                font_id: self.get_font_id(&section.font),
+            };
+            sections.push(section_text);
+        }
+
+        let section_glyphs = Layout::default()
+            .v_align(VerticalAlign::Top)
+            .h_align(HorizontalAlign::Left)
+            .calculate_glyphs(
+                &self.font_atlas.get_fonts(),
+                &SectionGeometry {
+                    screen_position: (text.pos.x, text.pos.y),
+                    ..Default::default()
+                },
+                &sections,
+            );
+
+        // register atlas from section glyph
+        for section_glyph in &section_glyphs {
+            let atlas_info = self.font_atlas.register(
+                section_glyph.glyph.id,
+                section_glyph.font_id,
+                section_glyph.glyph.scale.y as u32,
+                device,
+            );
+
+            if atlas_info.is_none() {
+                continue;
             }
 
-            let section_glyphs = Layout::default()
-                .v_align(VerticalAlign::Top)
-                .h_align(HorizontalAlign::Left)
-                .calculate_glyphs(
-                    &self.font_atlas.get_fonts(),
-                    &SectionGeometry {
-                        screen_position: (text.pos.x, text.pos.y),
-                        ..Default::default()
-                    },
-                    &sections,
-                );
+            let atlas_info = atlas_info.unwrap();
 
-            // register atlas from section glyph
-            for section_glyph in &section_glyphs {
-                let atlas_info = self.font_atlas.register(
-                    section_glyph.glyph.id,
-                    section_glyph.font_id,
-                    section_glyph.glyph.scale.y as u32,
-                    device,
-                );
+            // vertex
+            let font = self.font_atlas.get_font(section_glyph.font_id);
+            let outline_glyph = font.outline_glyph(section_glyph.glyph.clone()).unwrap();
+            let bounds = outline_glyph.px_bounds();
+            let min_pos = (bounds.min.x, bounds.min.y);
+            let max_pos = (bounds.max.x, bounds.max.y);
+            let vertices = [
+                TextVertex {
+                    position: [min_pos.0, min_pos.1],
+                    color: [1.0, 1.0, 1.0],
+                    uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
+                },
+                TextVertex {
+                    position: [max_pos.0, min_pos.1],
+                    color: [1.0, 1.0, 1.0],
+                    uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
+                },
+                TextVertex {
+                    position: [max_pos.0, max_pos.1],
+                    color: [1.0, 1.0, 1.0],
+                    uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
+                },
+                TextVertex {
+                    position: [min_pos.0, max_pos.1],
+                    color: [1.0, 1.0, 1.0],
+                    uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
+                },
+            ];
 
-                if atlas_info.is_none() {
-                    continue;
-                }
+            let (buffer_idx, buffer_start) = self.vertex_buffer.add_slice(&vertices, device, queue);
 
-                let atlas_info = atlas_info.unwrap();
+            // add to result
+            let glyph_render_info = GlyphRenderInfo {
+                glyph_atlas_info: atlas_info,
+                buffer_idx,
+                buffer_start,
+            };
 
-                // vertex
-                let font = self.font_atlas.get_font(section_glyph.font_id);
-                let outline_glyph = font.outline_glyph(section_glyph.glyph.clone()).unwrap();
-                let bounds = outline_glyph.px_bounds();
-                let min_pos = (bounds.min.x, bounds.min.y);
-                let max_pos = (bounds.max.x, bounds.max.y);
-                let vertices = [
-                    TextVertex {
-                        position: [min_pos.0, min_pos.1],
-                        color: [1.0, 1.0, 1.0],
-                        uv: [atlas_info.uv_start.0, atlas_info.uv_start.1],
-                    },
-                    TextVertex {
-                        position: [max_pos.0, min_pos.1],
-                        color: [1.0, 1.0, 1.0],
-                        uv: [atlas_info.uv_end.0, atlas_info.uv_start.1],
-                    },
-                    TextVertex {
-                        position: [max_pos.0, max_pos.1],
-                        color: [1.0, 1.0, 1.0],
-                        uv: [atlas_info.uv_end.0, atlas_info.uv_end.1],
-                    },
-                    TextVertex {
-                        position: [min_pos.0, max_pos.1],
-                        color: [1.0, 1.0, 1.0],
-                        uv: [atlas_info.uv_start.0, atlas_info.uv_end.1],
-                    },
-                ];
+            text_render_info.glyph_render_infos.push(glyph_render_info);
 
-                let (buffer_idx, buffer_start) =
-                    self.vertex_buffer.add_slice(&vertices, device, queue);
-
-                // add to result
-                let mut render_info = render_infos
-                    .textured_render_infos
-                    .iter_mut()
-                    .find(|(idx, _)| *idx == atlas_info.atlas_idx);
-
-                // if new texture, create glyph atlas render info
-                if render_info.is_none() {
-                    let atlas_texture = self.font_atlas.get_texture(atlas_info.atlas_idx);
-                    let font_texture_bind_group =
-                        device.create_bind_group(&wgpu::BindGroupDescriptor {
-                            label: Some("font texture bind group"),
-                            layout: &self.font_texture_bind_group_layout,
-                            entries: &[
-                                wgpu::BindGroupEntry {
-                                    binding: 0,
-                                    resource: wgpu::BindingResource::TextureView(
-                                        &atlas_texture.view,
-                                    ),
-                                },
-                                wgpu::BindGroupEntry {
-                                    binding: 1,
-                                    resource: wgpu::BindingResource::Sampler(
-                                        &atlas_texture.sampler,
-                                    ),
-                                },
-                            ],
-                        });
-
-                    let cur_render_info = GlyphAtlasRenderInfo {
-                        font_texture_bind_group,
-                        glyph_infos: Vec::new(),
-                    };
-
-                    render_infos
-                        .textured_render_infos
-                        .push((atlas_info.atlas_idx, cur_render_info));
-                    let last_idx = render_infos.textured_render_infos.len() - 1;
-                    render_info = Some(&mut render_infos.textured_render_infos[last_idx]);
-                }
-
-                let render_info = render_info.unwrap();
-
-                // add vertex infos
-                render_info
-                    .1
-                    .glyph_infos
-                    .push((atlas_info, buffer_idx, buffer_start));
-            }
+            // if new texture, create glyph atlas render info
+            if self
+                .font_atlas_bind_groups
+                .get(&atlas_info.atlas_idx)
+                .is_none()
+            {
+                let atlas_texture = self.font_atlas.get_texture(atlas_info.atlas_idx);
+                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("font texture bind group"),
+                    layout: &self.font_texture_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&atlas_texture.view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&atlas_texture.sampler),
+                        },
+                    ],
+                });
+                self.font_atlas_bind_groups
+                    .insert(atlas_info.atlas_idx, bind_group);
+            };
         }
 
         self.font_atlas.commit(queue);
 
-        render_infos
+        text_render_info
     }
 
     pub fn render<'a>(
-        &'a mut self,
-        render_infos: &'a TextRenderInfos,
+        &'a self,
+        render_info: &'a TextRenderInfo,
         render_pass: &mut wgpu::RenderPass<'a>,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
@@ -345,18 +338,23 @@ impl TextRenderer {
 
         const VERTEX_SIZE: u64 = (4 * std::mem::size_of::<TextVertex>()) as u64;
 
-        for (_, glyph_render_info) in &render_infos.textured_render_infos {
-            render_pass.set_bind_group(1, &glyph_render_info.font_texture_bind_group, &[]);
+        for glyph_render_info in &render_info.glyph_render_infos {
+            let font_atlas_bind_group = self
+                .font_atlas_bind_groups
+                .get(&glyph_render_info.glyph_atlas_info.atlas_idx)
+                .unwrap();
 
-            for &(_, buffer_idx, buffer_start) in &glyph_render_info.glyph_infos {
-                let vertex_buffer = &self.vertex_buffer.get_buffer(buffer_idx);
-                render_pass.set_vertex_buffer(
-                    0,
-                    vertex_buffer.slice(buffer_start..(buffer_start + VERTEX_SIZE)),
-                );
+            render_pass.set_bind_group(1, font_atlas_bind_group, &[]);
 
-                render_pass.draw_indexed(0..6, 0, 0..1);
-            }
+            let vertex_buffer = &self.vertex_buffer.get_buffer(glyph_render_info.buffer_idx);
+            render_pass.set_vertex_buffer(
+                0,
+                vertex_buffer.slice(
+                    glyph_render_info.buffer_start..(glyph_render_info.buffer_start + VERTEX_SIZE),
+                ),
+            );
+
+            render_pass.draw_indexed(0..6, 0, 0..1);
         }
     }
 

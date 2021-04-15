@@ -1,11 +1,5 @@
-use super::{
-    chunk::ChunkRenderSystem, commands::Command, CommonUniforms, DynamicBlockRenderSystem,
-    TextRenderer, UiRenderSystem,
-};
-use crate::blueprint::{
-    ui::{Text, TextSection},
-    Blueprint, Camera,
-};
+use super::{commands::Command, ChunkRenderer, CommonUniforms, DynamicBlockRenderer, UiRenderer};
+use crate::blueprint::{Blueprint, Camera, Text, TextSection, Ui};
 use crossbeam_channel::Receiver;
 use std::thread::{self, JoinHandle};
 use std::{iter, sync::Arc};
@@ -22,12 +16,11 @@ pub struct Renderer {
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
     depth_texture: Texture,
-    chunk_renderer: ChunkRenderSystem,
-    dynamic_block_renderer: DynamicBlockRenderSystem,
-    text_renderer: TextRenderer,
+    chunk_renderer: ChunkRenderer,
+    dynamic_block_renderer: DynamicBlockRenderer,
+    ui_renderer: UiRenderer,
     common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
-    ui_renderer: UiRenderSystem, // todo. XXRenderSystem, XXRenderer are mixed. select one.
     fps: Fps,
 }
 
@@ -77,10 +70,9 @@ impl Renderer {
         let mut common_uniforms = CommonUniforms::new(&device);
         common_uniforms.set_screen_to_ndc_mat(size.width, size.height, &queue);
 
-        let chunk_renderer = ChunkRenderSystem::new(&device, &common_uniforms);
-        let dynamic_block_renderer = DynamicBlockRenderSystem::new(&device, &common_uniforms);
-        let text_renderer = TextRenderer::new(&device, &common_uniforms, asset_manager);
-        let ui_renderer = UiRenderSystem::new(&device, &common_uniforms, asset_manager);
+        let chunk_renderer = ChunkRenderer::new(&device, &common_uniforms);
+        let dynamic_block_renderer = DynamicBlockRenderer::new(&device, &common_uniforms);
+        let ui_renderer = UiRenderer::new(&device, &common_uniforms, asset_manager);
         let font = asset_manager.get::<FontAsset>(&"assets/fonts/NanumBarunGothic.ttf".into());
         let fps = Fps::new();
 
@@ -94,7 +86,6 @@ impl Renderer {
             depth_texture,
             chunk_renderer,
             dynamic_block_renderer,
-            text_renderer,
             ui_renderer,
             common_uniforms,
             font,
@@ -102,7 +93,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
+    pub fn render(&mut self, mut bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
         let chunks = self.chunk_renderer.prepare(
             &bp.chunks,
             &bp.world_block_mat_handle.unwrap(),
@@ -118,21 +109,17 @@ impl Renderer {
         // render fps (temp)
         self.fps.tick();
         let fps = format!("fps: {:.1}", self.fps.get_fps());
-        let text = Text {
+        let text = Ui::Text(Text {
             pos: (20.0, 20.0).into(),
             sections: vec![TextSection {
                 font: self.font.clone(),
                 font_size: 20,
                 text: fps,
             }],
-        };
-        let text_render_infos = self
-            .text_renderer
-            .prepare(&vec![text], &self.device, &self.queue);
+        });
+        bp.uis.push(text);
 
-        let ui_render_infos = self
-            .ui_renderer
-            .prepare(&bp.panels, &self.device, &self.queue);
+        let ui_render_infos = self.ui_renderer.prepare(&bp.uis, &self.device, &self.queue);
 
         let frame = self.swap_chain.get_current_frame()?.output;
 
@@ -173,9 +160,6 @@ impl Renderer {
             self.dynamic_block_renderer
                 .render(&blocks, &mut render_pass);
 
-            self.text_renderer
-                .render(&text_render_infos, &mut render_pass);
-
             self.ui_renderer.render(&ui_render_infos, &mut render_pass);
         }
 
@@ -185,7 +169,6 @@ impl Renderer {
         {
             self.chunk_renderer.clear();
             self.dynamic_block_renderer.clear();
-            self.text_renderer.clear();
             self.ui_renderer.clear();
         }
 

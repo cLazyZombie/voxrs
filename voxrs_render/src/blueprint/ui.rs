@@ -2,6 +2,11 @@ use voxrs_asset::{AssetHandle, FontAsset};
 use voxrs_math::Vec2;
 use voxrs_types::Color;
 
+pub enum Ui {
+    Panel(Panel),
+    Text(Text),
+}
+
 #[derive(Clone, Debug)]
 pub struct Panel {
     pub pos: Vec2,

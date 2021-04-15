@@ -11,7 +11,7 @@ use wgpu::util::DeviceExt;
 
 use super::{ChunkCache, CommonUniforms, ShaderHash};
 
-pub struct ChunkRenderSystem {
+pub struct ChunkRenderer {
     cache: ChunkCache,
     uniform_bind_group: wgpu::BindGroup,
     uniform_local_bind_group_layout: wgpu::BindGroupLayout,
@@ -22,7 +22,7 @@ pub struct ChunkRenderSystem {
     vertex_buffer: wgpu::Buffer,
 }
 
-impl ChunkRenderSystem {
+impl ChunkRenderer {
     pub fn new(device: &wgpu::Device, common_uniforms: &CommonUniforms) -> Self {
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
