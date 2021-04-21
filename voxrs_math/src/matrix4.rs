@@ -3,8 +3,8 @@ use crate::Mat4;
 /// get matrix using row, and column
 /// index from 1 (row >= 1 && row <= 4, col >= 1 && col <= 4)
 pub fn get_matrix(m: &Mat4, row: usize, col: usize) -> f32 {
-    assert!(row >= 1 && row <= 4);
-    assert!(col >= 1 && col <= 4);
+    assert!((1..=4).contains(&row));
+    assert!((1..=4).contains(&col));
 
     m.as_ref()[(row - 1) + (col - 1) * 4]
 }
@@ -12,8 +12,8 @@ pub fn get_matrix(m: &Mat4, row: usize, col: usize) -> f32 {
 /// set matrix using row, and column
 /// index from 1 (row >= 1 && row <= 4, col >= 1 && col <= 4)
 pub fn set_matrix(m: &mut Mat4, row: usize, col: usize, val: f32) {
-    assert!(row >= 1 && row <= 4);
-    assert!(col >= 1 && col <= 4);
+    assert!((1..=4).contains(&row));
+    assert!((1..=4).contains(&col));
 
     m.as_mut()[(row - 1) + (col - 1) * 4] = val;
 }

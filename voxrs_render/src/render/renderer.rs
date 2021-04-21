@@ -111,6 +111,7 @@ impl Renderer {
         let fps = format!("fps: {:.1}", self.fps.get_fps());
         let text = Ui::Text(Text {
             pos: (20.0, 20.0).into(),
+            size: (200.0, 100.0).into(),
             sections: vec![TextSection {
                 font: self.font.clone(),
                 font_size: 20,
