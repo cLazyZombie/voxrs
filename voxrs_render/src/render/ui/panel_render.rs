@@ -155,19 +155,19 @@ impl PanelRenderer {
         let vertices = [
             PanelVertex {
                 position: [panel.pos.x, panel.pos.y],
-                color: panel.color.as_ref().clone(),
+                color: *panel.color.as_ref(),
             },
             PanelVertex {
                 position: [panel.pos.x + panel.size.x, panel.pos.y],
-                color: panel.color.as_ref().clone(),
+                color: *panel.color.as_ref(),
             },
             PanelVertex {
                 position: [panel.pos.x + panel.size.x, panel.pos.y + panel.size.y],
-                color: panel.color.as_ref().clone(),
+                color: *panel.color.as_ref(),
             },
             PanelVertex {
                 position: [panel.pos.x, panel.pos.y + panel.size.y],
-                color: panel.color.as_ref().clone(),
+                color: *panel.color.as_ref(),
             },
         ];
         let (buffer_idx, buffer_start) = self.vertex_buffer.add_slice(&vertices, device, queue);
