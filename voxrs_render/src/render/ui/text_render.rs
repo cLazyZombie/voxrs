@@ -210,6 +210,7 @@ impl TextRenderer {
         }
     }
 
+    #[profiling::function]
     pub fn prepare(
         &mut self,
         text: &Text,
@@ -327,6 +328,7 @@ impl TextRenderer {
         text_render_info
     }
 
+    #[profiling::function]
     pub fn render<'a>(
         &'a self,
         render_info: &'a TextRenderInfo,

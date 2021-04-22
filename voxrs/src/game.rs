@@ -83,6 +83,7 @@ impl Game {
         camera_res.resize(width, height);
     }
 
+    #[profiling::function]
     pub fn tick(&mut self) {
         let interval = self.clock.tick().as_secs_f32();
 
@@ -95,6 +96,7 @@ impl Game {
         self.tick_schedule.execute(&mut self.world, &mut self.res);
     }
 
+    #[profiling::function]
     pub fn render(&mut self) -> Blueprint {
         self.res.insert(Blueprint::new());
 

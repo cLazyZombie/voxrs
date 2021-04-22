@@ -27,6 +27,7 @@ impl UiRenderer {
         }
     }
 
+    #[profiling::function]
     pub fn prepare(
         &mut self,
         uis: &[Ui],
@@ -51,6 +52,7 @@ impl UiRenderer {
         render_infos
     }
 
+    #[profiling::function]
     pub fn render<'a>(
         &'a self,
         render_infos: &'a [UiRenderInfo],

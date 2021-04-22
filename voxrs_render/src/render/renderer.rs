@@ -163,17 +163,30 @@ impl Renderer {
                 .render(&blocks, &mut render_pass);
 
             self.ui_renderer.render(&ui_render_infos, &mut render_pass);
+
+            {
+                profiling::scope!("render_pass::drop");
+                drop(render_pass);
+            }
         }
 
-        self.queue.submit(iter::once(encoder.finish()));
+        {
+            profiling::scope!("queue::submit");
+            self.queue.submit(iter::once(encoder.finish()));
+        }
 
         // clear
         {
+            profiling::scope!("renderer::clear");
             self.chunk_renderer.clear();
             self.dynamic_block_renderer.clear();
             self.ui_renderer.clear();
         }
 
+        {
+            profiling::scope!("renderer::vsync");
+            drop(frame);
+        }
         Ok(())
     }
 

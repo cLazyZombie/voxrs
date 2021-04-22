@@ -2159,6 +2159,7 @@ dependencies = [
  "env_logger",
  "legion",
  "log",
+ "profiling",
  "rayon",
  "serde",
  "serde_json",

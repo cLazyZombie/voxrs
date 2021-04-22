@@ -70,6 +70,7 @@ impl FontAtlas {
         }
     }
 
+    #[profiling::function]
     pub fn register(
         &mut self,
         glyph_id: GlyphId,

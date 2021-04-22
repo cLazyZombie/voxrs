@@ -9,6 +9,8 @@ use winit::{
 };
 
 fn main() {
+    profiling::register_thread!("Main Thread");
+
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .init();
@@ -52,6 +54,7 @@ fn main() {
                 *control_flow = ControlFlow::Exit;
             }
             //window.request_redraw();
+            profiling::finish_frame!();
         }
         _ => {}
     });

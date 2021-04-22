@@ -146,6 +146,7 @@ impl PanelRenderer {
         }
     }
 
+    #[profiling::function]
     pub fn prepare(
         &mut self,
         panel: &Panel,
@@ -178,6 +179,7 @@ impl PanelRenderer {
         }
     }
 
+    #[profiling::function]
     pub fn render<'a>(
         &'a self,
         render_info: &'a PanelRenderInfo,

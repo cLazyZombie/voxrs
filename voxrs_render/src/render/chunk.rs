@@ -121,6 +121,7 @@ impl ChunkRenderer {
         }
     }
 
+    #[profiling::function]
     pub fn prepare(
         &mut self,
         chunks_bps: &[SafeCloner<blueprint::Chunk>],
@@ -243,6 +244,7 @@ impl ChunkRenderer {
         self.render_pipelines.clear();
     }
 
+    #[profiling::function]
     pub fn render<'a>(&'a self, chunks_ids: &[ChunkId], render_pass: &mut wgpu::RenderPass<'a>) {
         let mut prev_shaderhash: Option<ShaderHash> = None;
 

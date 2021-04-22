@@ -124,6 +124,7 @@ impl DynamicBlockRenderer {
         }
     }
 
+    #[profiling::function]
     pub(crate) fn prepare(
         &mut self,
         block_bps: &[DynamicBlock],
@@ -230,6 +231,7 @@ impl DynamicBlockRenderer {
         self.render_pipelines.insert(shader_hash, render_pipeline);
     }
 
+    #[profiling::function]
     pub(crate) fn render<'a>(
         &'a self,
         blocks: &'a HashMap<ShaderHash, Vec<Block>>,
