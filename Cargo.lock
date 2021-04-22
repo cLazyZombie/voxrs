@@ -1572,6 +1572,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af8b08b04175473088b46763e51ee54da5f9a164bc162f615b91bc179dbf15a3"
 
 [[package]]
+name = "optick"
+version = "1.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7e7ab6068cdba9928db83674b18fe7aa2efbaa9920698d260ecbaf7906c6548"
+
+[[package]]
 name = "owned_ttf_parser"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1694,6 +1700,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a152013215dca273577e18d2bf00fa862b89b24169fb78c4c95aeb07992c9cec"
 dependencies = [
  "unicode-xid",
+]
+
+[[package]]
+name = "profiling"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ae26a2370f2cf9a28cd570017aee216af883f02230ef8aea27b77f90e5654ef"
+dependencies = [
+ "optick",
+ "profiling-procmacros",
+]
+
+[[package]]
+name = "profiling-procmacros"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b939987254ddfda53afe8d6d8485a792d515682454990da147d29219e8349b72"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2204,6 +2230,7 @@ dependencies = [
  "futures",
  "legion",
  "log",
+ "profiling",
  "rayon",
  "serde",
  "serde_json",
@@ -2240,6 +2267,7 @@ dependencies = [
  "glyph_brush_layout",
  "guillotiere",
  "log",
+ "profiling",
  "voxrs_asset",
  "voxrs_math",
  "voxrs_rhi",

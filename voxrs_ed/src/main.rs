@@ -9,6 +9,8 @@ use winit::{
 };
 
 fn main() {
+    profiling::register_thread!("Main Thread");
+
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .init();
@@ -67,6 +69,8 @@ fn main() {
             let bp = editor.render();
             renderer.render(bp).unwrap();
             editor.end_frame();
+
+            profiling::finish_frame!();
         }
         _ => {}
     });

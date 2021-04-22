@@ -93,6 +93,7 @@ impl Renderer {
         }
     }
 
+    #[profiling::function]
     pub fn render(&mut self, mut bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
         let chunks = self.chunk_renderer.prepare(
             &bp.chunks,
@@ -211,6 +212,7 @@ pub fn create_rendering_thread<F: FileSystem + 'static>(
     let mut renderer = futures::executor::block_on(Renderer::new(&window, &mut asset_manager));
 
     thread::spawn(move || {
+        profiling::register_thread!("Render Thread");
         while let Ok(command) = receiver.recv() {
             match command {
                 Command::Render(bp) => match renderer.render(bp) {
