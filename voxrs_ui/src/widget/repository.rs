@@ -1,20 +1,15 @@
-#![allow(unused_variables, dead_code)]
+use std::collections::HashMap;
 
-use std::{collections::HashMap, ops::AddAssign};
+use voxrs_render::blueprint;
 
-use voxrs_asset::{AssetHandle, FontAsset};
-use voxrs_math::{IVec2, Vec2, Vec4};
-use voxrs_render::blueprint::{self, TextSection};
+use super::{
+    button::ButtonWidget, id::WidgetNodeId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
+    Widget,
+};
 
-/*
-- what widget do
-- spawn widget (and child)
-- receive input (click)
-- react
-*/
 pub struct WidgetRepository {
-    nodes: HashMap<WidgetNodeId, WidgetNode>,
-    root_nodes: Vec<WidgetNodeId>,
+    pub(crate) nodes: HashMap<WidgetNodeId, WidgetNode>,
+    pub(crate) root_nodes: Vec<WidgetNodeId>,
     next_node_id: WidgetNodeId,
 }
 
@@ -147,142 +142,6 @@ impl<'a> WidgetBuilder<'a> {
             self.repository.nodes.insert(widget.id, widget);
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct WidgetNodeId(u64);
-
-impl AddAssign<u64> for WidgetNodeId {
-    fn add_assign(&mut self, rhs: u64) {
-        self.0 = rhs + self.0;
-    }
-}
-
-impl WidgetNodeId {
-    pub fn new(id: u64) -> Self {
-        WidgetNodeId(id)
-    }
-}
-
-impl Default for WidgetNodeId {
-    fn default() -> Self {
-        Self(0)
-    }
-}
-
-pub struct WidgetNode {
-    id: WidgetNodeId,
-    parent: Option<WidgetNodeId>,
-    children: Vec<WidgetNodeId>,
-    widget: Widget,
-}
-
-impl WidgetNode {
-    pub fn render(&self, repository: &WidgetRepository, bp: &mut blueprint::Blueprint) {
-        self.widget.render(bp);
-
-        // render children
-        for child_id in &self.children {
-            let child_widget = repository.nodes.get(child_id).unwrap();
-            child_widget.render(repository, bp);
-        }
-    }
-}
-
-pub enum Widget {
-    Panel(PanelWidget),
-    Text(TextWidget),
-    Button(ButtonWidget),
-}
-
-impl Widget {
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
-        match self {
-            Widget::Panel(panel) => panel.render(bp),
-            Widget::Text(text) => text.render(bp),
-            Widget::Button(button) => button.render(bp),
-        }
-    }
-}
-
-pub struct PanelWidget {
-    pos: Vec2,
-    size: Vec2,
-    color: Vec4,
-}
-
-impl PanelWidget {
-    pub fn new() -> Self {
-        PanelWidget {
-            pos: Vec2::new(0.0, 0.0),
-            size: Vec2::new(100.0, 100.0),
-            color: Vec4::new(1.0, 1.0, 1.0, 1.0),
-        }
-    }
-
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
-        let bp_panel = blueprint::Panel::new(self.pos, self.size, self.color);
-        bp.uis.push(blueprint::Ui::Panel(bp_panel));
-    }
-}
-
-pub struct TextWidget {
-    pos: Vec2,
-    size: Vec2,
-    font: AssetHandle<FontAsset>,
-    font_size: u32,
-    contents: String,
-}
-
-impl TextWidget {
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
-        let section = TextSection {
-            font: self.font.clone(),
-            font_size: self.font_size,
-            text: self.contents.clone(),
-        };
-
-        let bp_text = blueprint::Text {
-            pos: self.pos,
-            size: self.size,
-            sections: vec![section],
-        };
-
-        bp.uis.push(blueprint::Ui::Text(bp_text));
-    }
-}
-
-pub struct ButtonWidget {
-    pos: Vec2,
-    size: Vec2,
-}
-
-impl ButtonWidget {
-    pub fn new() -> Self {
-        ButtonWidget {
-            pos: Vec2::new(0.0, 0.0),
-            size: Vec2::new(100.0, 100.0),
-        }
-    }
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
-        let bp_panel = blueprint::Panel {
-            pos: self.pos,
-            size: self.size,
-            color: Vec4::new(1.0, 1.0, 1.0, 1.0),
-        };
-
-        bp.uis.push(blueprint::Ui::Panel(bp_panel));
-    }
-}
-
-/// input for widgets
-pub enum WidgetInput {
-    MouseClick { pos: IVec2 },
-}
-
-/// reaction from widget when processing widget input
-pub enum WidgetEvent {
-    ButtonClicked(WidgetNodeId),
 }
 
 #[cfg(test)]
