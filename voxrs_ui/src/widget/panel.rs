@@ -1,4 +1,4 @@
-use voxrs_math::{Vec2, Vec4};
+use voxrs_math::{Rect2, Vec2, Vec4};
 use voxrs_render::blueprint;
 
 pub struct PanelWidget {
@@ -16,8 +16,12 @@ impl PanelWidget {
         }
     }
 
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
-        let bp_panel = blueprint::Panel::new(self.pos, self.size, self.color);
+    pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
+        let bp_panel = blueprint::Panel::new(self.pos + parent_region.min, self.size, self.color);
         bp.uis.push(blueprint::Ui::Panel(bp_panel));
+    }
+
+    pub fn region(&self) -> Rect2 {
+        Rect2::new(self.pos, self.size)
     }
 }

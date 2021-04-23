@@ -1,4 +1,4 @@
-use voxrs_math::{Vec2, Vec4};
+use voxrs_math::{Rect2, Vec2, Vec4};
 use voxrs_render::blueprint;
 
 pub struct ButtonWidget {
@@ -13,13 +13,17 @@ impl ButtonWidget {
             size: Vec2::new(100.0, 100.0),
         }
     }
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
+    pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
         let bp_panel = blueprint::Panel {
-            pos: self.pos,
+            pos: self.pos + parent_region.min,
             size: self.size,
             color: Vec4::new(1.0, 1.0, 1.0, 1.0),
         };
 
         bp.uis.push(blueprint::Ui::Panel(bp_panel));
+    }
+
+    pub fn region(&self) -> Rect2 {
+        Rect2::new(self.pos, self.size)
     }
 }

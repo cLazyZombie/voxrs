@@ -1,6 +1,6 @@
 use blueprint::TextSection;
 use voxrs_asset::{AssetHandle, FontAsset};
-use voxrs_math::Vec2;
+use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
 pub struct TextWidget {
@@ -12,7 +12,7 @@ pub struct TextWidget {
 }
 
 impl TextWidget {
-    pub fn render(&self, bp: &mut blueprint::Blueprint) {
+    pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
         let section = TextSection {
             font: self.font.clone(),
             font_size: self.font_size,
@@ -20,11 +20,15 @@ impl TextWidget {
         };
 
         let bp_text = blueprint::Text {
-            pos: self.pos,
+            pos: self.pos + parent_region.min,
             size: self.size,
             sections: vec![section],
         };
 
         bp.uis.push(blueprint::Ui::Text(bp_text));
+    }
+
+    pub fn region(&self) -> Rect2 {
+        Rect2::new(self.pos, self.size)
     }
 }

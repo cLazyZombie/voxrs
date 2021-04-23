@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
 use super::{
@@ -33,9 +34,11 @@ impl WidgetRepository {
     }
 
     pub fn render(&self, bp: &mut blueprint::Blueprint) {
+        let parent_region = Rect2::from_min_max(Vec2::ZERO, Vec2::new(f32::MAX, f32::MAX));
+
         for root_id in &self.root_nodes {
             let root_widget = self.nodes.get(root_id).unwrap();
-            root_widget.render(self, bp);
+            root_widget.render(parent_region, self, bp);
         }
     }
 }

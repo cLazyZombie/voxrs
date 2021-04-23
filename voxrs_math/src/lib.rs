@@ -6,21 +6,19 @@ mod frustum;
 mod plane;
 //mod quat;
 mod ray;
+mod rect;
 mod sphere;
-//mod vector3;
 
 pub use aabb::Aabb;
 pub use angle::Angle;
 pub use dir::Dir;
 pub use frustum::Frustum;
-//pub use matrix4::Matrix4;
+pub use glam::{IVec2, IVec3, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
 pub use plane::Plane;
-//pub use quat::Quat;
 pub use ray::Ray;
 pub use ray::RayAabbResult;
+pub use rect::Rect2;
 pub use sphere::Sphere;
-//pub use vector3::Vector3;
-pub use glam::{IVec2, IVec3, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
 
 mod chunk;
 

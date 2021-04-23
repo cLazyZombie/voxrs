@@ -5,6 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
+use voxrs_ui::{PanelWidget, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -45,6 +46,26 @@ impl Editor {
         );
         res.insert(camera);
 
+        let mut widget_repository = WidgetRepository::new();
+        // temp
+        widget_repository
+            .build()
+            .panel(PanelWidget {
+                pos: (10.0, 10.0).into(),
+                size: (200.0, 100.0).into(),
+                color: (1.0, 0.0, 0.0, 1.0).into(),
+            })
+            .child(|builder| {
+                builder.panel(PanelWidget {
+                    pos: (5.0, 5.0).into(),
+                    size: (50.0, 50.0).into(),
+                    color: (0.0, 1.0, 0.0, 1.0).into(),
+                })
+            })
+            .finish();
+
+        res.insert(widget_repository);
+
         let key_input = KeyInputRes::new();
         res.insert(key_input);
 
@@ -63,6 +84,7 @@ impl Editor {
             .add_system(system::camera::render_system())
             .add_system(system::world_block_render::render_system())
             .add_system(system::world_block_modify::indicator_render_system())
+            .add_system(system::widget_render::render_system())
             .build();
 
         let end_frame_schedule = Schedule::builder()
