@@ -1,5 +1,5 @@
-use super::id::WidgetNodeId;
+use super::id::WidgetId;
 
 pub enum WidgetEvent {
-    ButtonClicked(WidgetNodeId),
+    ButtonClicked(WidgetId),
 }

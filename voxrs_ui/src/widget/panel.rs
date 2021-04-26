@@ -3,10 +3,10 @@ use voxrs_render::blueprint;
 
 use crate::{WidgetEvent, WidgetInput};
 
-use super::id::WidgetNodeId;
+use super::id::WidgetId;
 
 pub struct PanelWidget {
-    pub id: WidgetNodeId,
+    pub id: WidgetId,
     pub pos: Vec2,
     pub size: Vec2,
     pub color: Vec4,
@@ -19,7 +19,7 @@ pub struct PanelWidgetInfo {
 }
 
 impl PanelWidget {
-    pub fn new(id: WidgetNodeId, info: PanelWidgetInfo) -> Self {
+    pub fn new(id: WidgetId, info: PanelWidgetInfo) -> Self {
         PanelWidget {
             id,
             pos: info.pos,

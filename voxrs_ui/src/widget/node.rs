@@ -3,12 +3,12 @@ use voxrs_render::blueprint;
 
 use crate::WidgetEvent;
 
-use super::{id::WidgetNodeId, Widget, WidgetInput, WidgetRepository};
+use super::{id::WidgetId, Widget, WidgetInput, WidgetRepository};
 
 pub struct WidgetNode {
-    pub(crate) id: WidgetNodeId,
-    pub(crate) parent: Option<WidgetNodeId>,
-    pub(crate) children: Vec<WidgetNodeId>,
+    pub(crate) id: WidgetId,
+    pub(crate) parent: Option<WidgetId>,
+    pub(crate) children: Vec<WidgetId>,
     pub(crate) widget: Widget,
 }
 

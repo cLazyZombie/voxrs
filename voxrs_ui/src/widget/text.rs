@@ -5,10 +5,10 @@ use voxrs_render::blueprint;
 
 use crate::{WidgetEvent, WidgetInput};
 
-use super::id::WidgetNodeId;
+use super::id::WidgetId;
 
 pub struct TextWidget {
-    pub id: WidgetNodeId,
+    pub id: WidgetId,
     pub pos: Vec2,
     pub size: Vec2,
     pub font: AssetHandle<FontAsset>,
@@ -25,7 +25,7 @@ pub struct TextWidgetInfo {
 }
 
 impl TextWidget {
-    pub fn new(id: WidgetNodeId, info: TextWidgetInfo) -> Self {
+    pub fn new(id: WidgetId, info: TextWidgetInfo) -> Self {
         TextWidget {
             id,
             pos: info.pos,

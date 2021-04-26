@@ -1,21 +1,21 @@
 use std::ops::AddAssign;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct WidgetNodeId(u64); // todo. rename to WidgetId
+pub struct WidgetId(u64);
 
-impl AddAssign<u64> for WidgetNodeId {
+impl AddAssign<u64> for WidgetId {
     fn add_assign(&mut self, rhs: u64) {
         self.0 = rhs + self.0;
     }
 }
 
-impl WidgetNodeId {
+impl WidgetId {
     pub fn new(id: u64) -> Self {
-        WidgetNodeId(id)
+        WidgetId(id)
     }
 }
 
-impl Default for WidgetNodeId {
+impl Default for WidgetId {
     fn default() -> Self {
         Self(0)
     }

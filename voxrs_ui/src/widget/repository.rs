@@ -4,14 +4,14 @@ use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
 use super::{
-    button::ButtonWidget, id::WidgetNodeId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
+    button::ButtonWidget, id::WidgetId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
     ButtonWidgetInfo, PanelWidgetInfo, TextWidgetInfo, Widget, WidgetEvent, WidgetInput,
 };
 
 pub struct WidgetRepository {
-    pub(crate) nodes: HashMap<WidgetNodeId, WidgetNode>,
-    pub(crate) root_nodes: Vec<WidgetNodeId>,
-    next_node_id: WidgetNodeId,
+    pub(crate) nodes: HashMap<WidgetId, WidgetNode>,
+    pub(crate) root_nodes: Vec<WidgetId>,
+    next_id: WidgetId,
 }
 
 impl WidgetRepository {
@@ -19,7 +19,7 @@ impl WidgetRepository {
         WidgetRepository {
             nodes: HashMap::new(),
             root_nodes: Vec::new(),
-            next_node_id: WidgetNodeId::new(1),
+            next_id: WidgetId::new(1),
         }
     }
 
@@ -27,9 +27,9 @@ impl WidgetRepository {
         WidgetBuilder::new(self)
     }
 
-    pub fn get_next_node_id(&mut self) -> WidgetNodeId {
-        let next = self.next_node_id;
-        self.next_node_id += 1;
+    pub fn get_next_id(&mut self) -> WidgetId {
+        let next = self.next_id;
+        self.next_id += 1;
         next
     }
 
@@ -58,7 +58,7 @@ impl WidgetRepository {
 pub struct WidgetBuilder<'a> {
     repository: &'a mut WidgetRepository,
     widgets: Vec<WidgetNode>,
-    parent: Option<WidgetNodeId>,
+    parent: Option<WidgetId>,
 }
 
 impl<'a> WidgetBuilder<'a> {
@@ -70,7 +70,7 @@ impl<'a> WidgetBuilder<'a> {
         }
     }
 
-    fn add_widget(&mut self, widget_id: WidgetNodeId, widget: Widget) {
+    fn add_widget(&mut self, widget_id: WidgetId, widget: Widget) {
         let widget_node = WidgetNode {
             id: widget_id,
             parent: self.parent,
@@ -81,7 +81,7 @@ impl<'a> WidgetBuilder<'a> {
     }
 
     pub fn panel(mut self, info: PanelWidgetInfo) -> Self {
-        let widget_id = self.repository.get_next_node_id();
+        let widget_id = self.repository.get_next_id();
         let panel_widget = PanelWidget::new(widget_id, info);
         let widget = Widget::Panel(panel_widget);
         self.add_widget(widget_id, widget);
@@ -89,7 +89,7 @@ impl<'a> WidgetBuilder<'a> {
     }
 
     pub fn button(mut self, info: ButtonWidgetInfo) -> Self {
-        let widget_id = self.repository.get_next_node_id();
+        let widget_id = self.repository.get_next_id();
         let button_widget = ButtonWidget::new(widget_id, info);
         let widget = Widget::Button(button_widget);
         self.add_widget(widget_id, widget);
@@ -97,14 +97,14 @@ impl<'a> WidgetBuilder<'a> {
     }
 
     pub fn text(mut self, info: TextWidgetInfo) -> Self {
-        let widget_id = self.repository.get_next_node_id();
+        let widget_id = self.repository.get_next_id();
         let text_widget = TextWidget::new(widget_id, info);
         let widget = Widget::Text(text_widget);
         self.add_widget(widget_id, widget);
         self
     }
 
-    pub fn query_id(self, id: &mut WidgetNodeId) -> Self {
+    pub fn query_id(self, id: &mut WidgetId) -> Self {
         *id = self.widgets.last().unwrap().id;
         self
     }
@@ -154,8 +154,8 @@ mod tests {
     #[test]
     fn test_create_button() {
         let mut repository = WidgetRepository::new();
-        let mut button_id_1 = WidgetNodeId::default();
-        let mut button_id_2 = WidgetNodeId::default();
+        let mut button_id_1 = WidgetId::default();
+        let mut button_id_2 = WidgetId::default();
 
         repository
             .build()
@@ -182,22 +182,22 @@ mod tests {
             })
             .finish();
 
-        assert_eq!(button_id_1, WidgetNodeId::new(2));
-        assert_eq!(button_id_2, WidgetNodeId::new(3));
+        assert_eq!(button_id_1, WidgetId::new(2));
+        assert_eq!(button_id_2, WidgetId::new(3));
 
         assert_eq!(repository.nodes.len(), 3);
         assert_eq!(repository.root_nodes.len(), 1);
         assert_eq!(
-            repository.nodes.get(&WidgetNodeId::new(1)).unwrap().id,
-            WidgetNodeId::new(1)
+            repository.nodes.get(&WidgetId::new(1)).unwrap().id,
+            WidgetId::new(1)
         );
         assert_eq!(
-            repository.nodes.get(&WidgetNodeId::new(2)).unwrap().id,
-            WidgetNodeId::new(2)
+            repository.nodes.get(&WidgetId::new(2)).unwrap().id,
+            WidgetId::new(2)
         );
         assert_eq!(
-            repository.nodes.get(&WidgetNodeId::new(3)).unwrap().id,
-            WidgetNodeId::new(3)
+            repository.nodes.get(&WidgetId::new(3)).unwrap().id,
+            WidgetId::new(3)
         );
 
         // test render

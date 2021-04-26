@@ -3,7 +3,7 @@ use voxrs_render::blueprint;
 
 use crate::{WidgetEvent, WidgetInput};
 
-use super::id::WidgetNodeId;
+use super::id::WidgetId;
 
 /// for build button widget
 pub struct ButtonWidgetInfo {
@@ -12,13 +12,13 @@ pub struct ButtonWidgetInfo {
 }
 
 pub struct ButtonWidget {
-    pub id: WidgetNodeId,
+    pub id: WidgetId,
     pub pos: Vec2,
     pub size: Vec2,
 }
 
 impl ButtonWidget {
-    pub fn new(id: WidgetNodeId, info: ButtonWidgetInfo) -> Self {
+    pub fn new(id: WidgetId, info: ButtonWidgetInfo) -> Self {
         ButtonWidget {
             id,
             pos: info.pos,
