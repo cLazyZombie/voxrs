@@ -1,4 +1,4 @@
-use glam::Vec2;
+use glam::{IVec2, Vec2};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Rect2 {
@@ -34,6 +34,19 @@ impl Rect2 {
 
         Rect2::from_min_max(min, max)
     }
+
+    pub fn has_ivec2(&self, pos: IVec2) -> bool {
+        let max = self.max();
+        if pos.x as f32 >= self.min.x
+            && pos.y as f32 >= self.min.y
+            && pos.x as f32 <= max.x
+            && pos.y as f32 <= max.y
+        {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 #[cfg(test)]
@@ -48,5 +61,12 @@ mod tests {
 
         assert!(transformed.min.abs_diff_eq(Vec2::new(20.0, 30.0), 0.1));
         assert!(transformed.size.abs_diff_eq(Vec2::new(90.0, 80.0), 0.1));
+    }
+
+    #[test]
+    fn test_has_ivec2() {
+        let rect = Rect2::from_min_max(Vec2::new(10.0, 20.0), Vec2::new(30.0, 40.0));
+        assert!(rect.has_ivec2(IVec2::new(10, 20)));
+        assert!(!rect.has_ivec2(IVec2::new(9, 20)));
     }
 }

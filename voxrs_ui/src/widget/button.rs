@@ -1,6 +1,8 @@
 use voxrs_math::{Rect2, Vec2, Vec4};
 use voxrs_render::blueprint;
 
+use crate::WidgetInput;
+
 pub struct ButtonWidget {
     pub pos: Vec2,
     pub size: Vec2,
@@ -25,5 +27,9 @@ impl ButtonWidget {
 
     pub fn region(&self) -> Rect2 {
         Rect2::new(self.pos, self.size)
+    }
+
+    pub fn process(&self, input: &WidgetInput) -> bool {
+        false
     }
 }

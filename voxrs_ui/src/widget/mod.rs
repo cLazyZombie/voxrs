@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 mod id;
 mod node;
@@ -9,6 +10,9 @@ mod panel;
 mod text;
 
 pub use repository::WidgetRepository;
+
+mod input;
+pub use input::WidgetInput;
 
 pub use button::ButtonWidget;
 pub use panel::PanelWidget;
@@ -40,6 +44,14 @@ impl Widget {
             Widget::Panel(panel) => panel.region(),
             Widget::Text(text) => text.region(),
             Widget::Button(button) => button.region(),
+        }
+    }
+
+    pub fn process(&self, input: &WidgetInput) -> bool {
+        match self {
+            Widget::Panel(panel) => panel.process(input),
+            Widget::Text(text) => text.process(input),
+            Widget::Button(button) => button.process(input),
         }
     }
 }

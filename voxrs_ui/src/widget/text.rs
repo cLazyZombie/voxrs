@@ -3,6 +3,8 @@ use voxrs_asset::{AssetHandle, FontAsset};
 use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
+use crate::WidgetInput;
+
 pub struct TextWidget {
     pub pos: Vec2,
     pub size: Vec2,
@@ -30,5 +32,9 @@ impl TextWidget {
 
     pub fn region(&self) -> Rect2 {
         Rect2::new(self.pos, self.size)
+    }
+
+    pub fn process(&self, input: &WidgetInput) -> bool {
+        false
     }
 }

@@ -5,7 +5,7 @@ use voxrs_render::blueprint;
 
 use super::{
     button::ButtonWidget, id::WidgetNodeId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
-    Widget,
+    Widget, WidgetInput,
 };
 
 pub struct WidgetRepository {
@@ -39,6 +39,15 @@ impl WidgetRepository {
         for root_id in &self.root_nodes {
             let root_widget = self.nodes.get(root_id).unwrap();
             root_widget.render(parent_region, self, bp);
+        }
+    }
+
+    pub fn process(&self, input: &WidgetInput) {
+        let parent_region = Rect2::from_min_max(Vec2::ZERO, Vec2::new(f32::MAX, f32::MAX));
+
+        for root_id in &self.root_nodes {
+            let root_widget = self.nodes.get(root_id).unwrap();
+            root_widget.process(input, parent_region, self);
         }
     }
 }
@@ -149,6 +158,7 @@ impl<'a> WidgetBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
+    use voxrs_math::IVec2;
     use voxrs_render::blueprint;
 
     use super::*;
@@ -202,9 +212,16 @@ mod tests {
             WidgetNodeId::new(3)
         );
 
+        // test render
         let mut bp = blueprint::Blueprint::new();
         repository.render(&mut bp);
 
         assert_eq!(bp.uis.len(), 3);
+
+        // input event
+        let input = WidgetInput::MouseClick {
+            pos: IVec2::new(30, 30),
+        };
+        repository.process(&input);
     }
 }
