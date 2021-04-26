@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{PanelWidget, WidgetRepository};
+use voxrs_ui::{PanelWidgetInfo, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -50,13 +50,13 @@ impl Editor {
         // temp
         widget_repository
             .build()
-            .panel(PanelWidget {
+            .panel(PanelWidgetInfo {
                 pos: (10.0, 10.0).into(),
                 size: (200.0, 100.0).into(),
                 color: (1.0, 0.0, 0.0, 1.0).into(),
             })
             .child(|builder| {
-                builder.panel(PanelWidget {
+                builder.panel(PanelWidgetInfo {
                     pos: (5.0, 5.0).into(),
                     size: (50.0, 50.0).into(),
                     color: (0.0, 1.0, 0.0, 1.0).into(),

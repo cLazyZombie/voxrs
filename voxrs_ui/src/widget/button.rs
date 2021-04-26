@@ -1,18 +1,28 @@
 use voxrs_math::{Rect2, Vec2, Vec4};
 use voxrs_render::blueprint;
 
-use crate::WidgetInput;
+use crate::{WidgetEvent, WidgetInput};
+
+use super::id::WidgetNodeId;
+
+/// for build button widget
+pub struct ButtonWidgetInfo {
+    pub pos: Vec2,
+    pub size: Vec2,
+}
 
 pub struct ButtonWidget {
+    pub id: WidgetNodeId,
     pub pos: Vec2,
     pub size: Vec2,
 }
 
 impl ButtonWidget {
-    pub fn new() -> Self {
+    pub fn new(id: WidgetNodeId, info: ButtonWidgetInfo) -> Self {
         ButtonWidget {
-            pos: Vec2::new(0.0, 0.0),
-            size: Vec2::new(100.0, 100.0),
+            id,
+            pos: info.pos,
+            size: info.size,
         }
     }
     pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
@@ -29,7 +39,13 @@ impl ButtonWidget {
         Rect2::new(self.pos, self.size)
     }
 
-    pub fn process(&self, input: &WidgetInput) -> bool {
-        false
+    pub fn process(&self, input: &WidgetInput, events: &mut Vec<WidgetEvent>) -> bool {
+        match input {
+            WidgetInput::MouseClick { .. } => {
+                let event = WidgetEvent::ButtonClicked(self.id); // todo. use real widget id instead of 0
+                events.push(event);
+                return true;
+            }
+        }
     }
 }

@@ -3,9 +3,20 @@ use voxrs_asset::{AssetHandle, FontAsset};
 use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
-use crate::WidgetInput;
+use crate::{WidgetEvent, WidgetInput};
+
+use super::id::WidgetNodeId;
 
 pub struct TextWidget {
+    pub id: WidgetNodeId,
+    pub pos: Vec2,
+    pub size: Vec2,
+    pub font: AssetHandle<FontAsset>,
+    pub font_size: u32,
+    pub contents: String,
+}
+
+pub struct TextWidgetInfo {
     pub pos: Vec2,
     pub size: Vec2,
     pub font: AssetHandle<FontAsset>,
@@ -14,6 +25,16 @@ pub struct TextWidget {
 }
 
 impl TextWidget {
+    pub fn new(id: WidgetNodeId, info: TextWidgetInfo) -> Self {
+        TextWidget {
+            id,
+            pos: info.pos,
+            size: info.size,
+            font: info.font,
+            font_size: info.font_size,
+            contents: info.contents,
+        }
+    }
     pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
         let section = TextSection {
             font: self.font.clone(),
@@ -34,7 +55,7 @@ impl TextWidget {
         Rect2::new(self.pos, self.size)
     }
 
-    pub fn process(&self, input: &WidgetInput) -> bool {
+    pub fn process(&self, input: &WidgetInput, events: &mut Vec<WidgetEvent>) -> bool {
         false
     }
 }

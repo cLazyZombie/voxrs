@@ -1,6 +1,8 @@
 use voxrs_math::Rect2;
 use voxrs_render::blueprint;
 
+use crate::WidgetEvent;
+
 use super::{id::WidgetNodeId, Widget, WidgetInput, WidgetRepository};
 
 pub struct WidgetNode {
@@ -33,12 +35,13 @@ impl WidgetNode {
         input: &WidgetInput,
         parent_region: Rect2,
         repository: &WidgetRepository,
+        events: &mut Vec<WidgetEvent>,
     ) -> bool {
         let self_region = self.widget.intersect_region(parent_region);
         match input {
             WidgetInput::MouseClick { pos } => {
                 if self_region.has_ivec2(*pos) {
-                    if self.widget.process(input) {
+                    if self.widget.process(input, events) {
                         return true;
                     }
                 }
@@ -48,7 +51,7 @@ impl WidgetNode {
         // pass to child
         for child_id in &self.children {
             let child_widget = repository.nodes.get(child_id).unwrap();
-            if child_widget.process(input, self_region, repository) {
+            if child_widget.process(input, self_region, repository, events) {
                 return true;
             }
         }

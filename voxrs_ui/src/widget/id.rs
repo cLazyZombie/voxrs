@@ -1,7 +1,7 @@
 use std::ops::AddAssign;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub struct WidgetNodeId(u64);
+pub struct WidgetNodeId(u64); // todo. rename to WidgetId
 
 impl AddAssign<u64> for WidgetNodeId {
     fn add_assign(&mut self, rhs: u64) {

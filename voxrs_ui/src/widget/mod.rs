@@ -6,17 +6,25 @@ mod node;
 mod repository;
 
 mod button;
+pub use button::ButtonWidget;
+pub use button::ButtonWidgetInfo;
+
 mod panel;
+pub use panel::PanelWidget;
+pub use panel::PanelWidgetInfo;
+
 mod text;
+pub use text::TextWidget;
+pub use text::TextWidgetInfo;
 
 pub use repository::WidgetRepository;
 
 mod input;
 pub use input::WidgetInput;
 
-pub use button::ButtonWidget;
-pub use panel::PanelWidget;
-pub use text::TextWidget;
+mod event;
+pub use event::WidgetEvent;
+
 use voxrs_math::Rect2;
 
 pub enum Widget {
@@ -47,11 +55,11 @@ impl Widget {
         }
     }
 
-    pub fn process(&self, input: &WidgetInput) -> bool {
+    pub fn process(&self, input: &WidgetInput, events: &mut Vec<WidgetEvent>) -> bool {
         match self {
-            Widget::Panel(panel) => panel.process(input),
-            Widget::Text(text) => text.process(input),
-            Widget::Button(button) => button.process(input),
+            Widget::Panel(panel) => panel.process(input, events),
+            Widget::Text(text) => text.process(input, events),
+            Widget::Button(button) => button.process(input, events),
         }
     }
 }

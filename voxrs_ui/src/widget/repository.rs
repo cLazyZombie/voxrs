@@ -5,7 +5,7 @@ use voxrs_render::blueprint;
 
 use super::{
     button::ButtonWidget, id::WidgetNodeId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
-    Widget, WidgetInput,
+    ButtonWidgetInfo, PanelWidgetInfo, TextWidgetInfo, Widget, WidgetEvent, WidgetInput,
 };
 
 pub struct WidgetRepository {
@@ -42,13 +42,16 @@ impl WidgetRepository {
         }
     }
 
-    pub fn process(&self, input: &WidgetInput) {
-        let parent_region = Rect2::from_min_max(Vec2::ZERO, Vec2::new(f32::MAX, f32::MAX));
+    pub fn process(&self, input: &WidgetInput) -> Vec<WidgetEvent> {
+        let root_region = Rect2::from_min_max(Vec2::ZERO, Vec2::new(f32::MAX, f32::MAX));
+        let mut events = Vec::new();
 
         for root_id in &self.root_nodes {
             let root_widget = self.nodes.get(root_id).unwrap();
-            root_widget.process(input, parent_region, self);
+            root_widget.process(input, root_region, self, &mut events);
         }
+
+        events
     }
 }
 
@@ -67,8 +70,7 @@ impl<'a> WidgetBuilder<'a> {
         }
     }
 
-    fn add_widget(&mut self, widget: Widget) {
-        let widget_id = self.repository.get_next_node_id();
+    fn add_widget(&mut self, widget_id: WidgetNodeId, widget: Widget) {
         let widget_node = WidgetNode {
             id: widget_id,
             parent: self.parent,
@@ -78,21 +80,27 @@ impl<'a> WidgetBuilder<'a> {
         self.widgets.push(widget_node);
     }
 
-    pub fn panel(mut self, panel_widget: PanelWidget) -> Self {
+    pub fn panel(mut self, info: PanelWidgetInfo) -> Self {
+        let widget_id = self.repository.get_next_node_id();
+        let panel_widget = PanelWidget::new(widget_id, info);
         let widget = Widget::Panel(panel_widget);
-        self.add_widget(widget);
+        self.add_widget(widget_id, widget);
         self
     }
 
-    pub fn button(mut self, button_widget: ButtonWidget) -> Self {
+    pub fn button(mut self, info: ButtonWidgetInfo) -> Self {
+        let widget_id = self.repository.get_next_node_id();
+        let button_widget = ButtonWidget::new(widget_id, info);
         let widget = Widget::Button(button_widget);
-        self.add_widget(widget);
+        self.add_widget(widget_id, widget);
         self
     }
 
-    pub fn text(mut self, text_widget: TextWidget) -> Self {
+    pub fn text(mut self, info: TextWidgetInfo) -> Self {
+        let widget_id = self.repository.get_next_node_id();
+        let text_widget = TextWidget::new(widget_id, info);
         let widget = Widget::Text(text_widget);
-        self.add_widget(widget);
+        self.add_widget(widget_id, widget);
         self
     }
 
@@ -100,26 +108,6 @@ impl<'a> WidgetBuilder<'a> {
         *id = self.widgets.last().unwrap().id;
         self
     }
-
-    // pub fn position(mut self, pos: Vec2) -> Self {
-    //     let widget_node = self.widgets.last_mut().unwrap();
-    //     match &mut widget_node.widget {
-    //         Widget::Panel(panel) => panel.pos = pos,
-    //         Widget::Text(text) => text.pos = pos,
-    //         Widget::Button(button) => button.pos = pos,
-    //     }
-    //     self
-    // }
-
-    // pub fn size(mut self, size: Vec2) -> Self {
-    //     let widget_node = self.widgets.last_mut().unwrap();
-    //     match &mut widget_node.widget {
-    //         Widget::Panel(panel) => panel.size = size,
-    //         Widget::Text(text) => text.size = size,
-    //         Widget::Button(button) => button.size = size,
-    //     }
-    //     self
-    // }
 
     pub fn child<F>(mut self, mut f: F) -> Self
     where
@@ -171,14 +159,14 @@ mod tests {
 
         repository
             .build()
-            .panel(PanelWidget {
+            .panel(PanelWidgetInfo {
                 pos: (0.0, 0.0).into(),
                 size: (100.0, 100.0).into(),
                 color: (1.0, 1.0, 1.0, 1.0).into(),
             })
             .child(|builder| {
                 builder
-                    .button(ButtonWidget {
+                    .button(ButtonWidgetInfo {
                         pos: (10.0, 10.0).into(),
                         size: (100.0, 50.0).into(),
                     })
@@ -186,7 +174,7 @@ mod tests {
             })
             .child(|builder| {
                 builder
-                    .button(ButtonWidget {
+                    .button(ButtonWidgetInfo {
                         pos: (30.0, 10.0).into(),
                         size: (100.0, 50.0).into(),
                     })
@@ -218,10 +206,13 @@ mod tests {
 
         assert_eq!(bp.uis.len(), 3);
 
-        // input event
+        // mouse click event to button1
         let input = WidgetInput::MouseClick {
             pos: IVec2::new(30, 30),
         };
-        repository.process(&input);
+
+        let events = repository.process(&input);
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], WidgetEvent::ButtonClicked(id) if id == button_id_1));
     }
 }
