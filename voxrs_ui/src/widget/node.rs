@@ -46,6 +46,9 @@ impl WidgetNode {
                     }
                 }
             }
+            _ => {
+                self.widget.process(input, events);
+            }
         }
 
         // pass to child

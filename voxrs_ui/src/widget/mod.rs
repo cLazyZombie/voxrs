@@ -2,6 +2,8 @@
 #![allow(unused_variables)]
 
 mod id;
+pub use id::WidgetId;
+
 mod node;
 mod repository;
 
@@ -17,6 +19,10 @@ mod text;
 pub use text::TextWidget;
 pub use text::TextWidgetInfo;
 
+mod console;
+pub use console::ConsoleWidget;
+pub use console::ConsoleWidgetInfo;
+
 pub use repository::WidgetRepository;
 
 mod input;
@@ -31,6 +37,7 @@ pub enum Widget {
     Panel(PanelWidget),
     Text(TextWidget),
     Button(ButtonWidget),
+    Console(ConsoleWidget),
 }
 
 impl Widget {
@@ -39,6 +46,7 @@ impl Widget {
             Widget::Panel(panel) => panel.render(parent_region, bp),
             Widget::Text(text) => text.render(parent_region, bp),
             Widget::Button(button) => button.render(parent_region, bp),
+            Widget::Console(console) => console.render(parent_region, bp),
         }
     }
 
@@ -52,6 +60,7 @@ impl Widget {
             Widget::Panel(panel) => panel.region(),
             Widget::Text(text) => text.region(),
             Widget::Button(button) => button.region(),
+            Widget::Console(console) => console.region(),
         }
     }
 
@@ -60,6 +69,7 @@ impl Widget {
             Widget::Panel(panel) => panel.process(input, events),
             Widget::Text(text) => text.process(input, events),
             Widget::Button(button) => button.process(input, events),
+            Widget::Console(console) => console.process(input, events),
         }
     }
 }

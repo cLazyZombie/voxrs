@@ -1,11 +1,11 @@
 use anyhow::Result;
 use legion::*;
-use voxrs_asset::{AssetManager, AssetPath};
+use voxrs_asset::{AssetManager, AssetPath, FontAsset};
 use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, WorldBlockRes};
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{PanelWidgetInfo, WidgetRepository};
+use voxrs_ui::{ConsoleWidgetInfo, PanelWidgetInfo, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -48,6 +48,8 @@ impl Editor {
 
         let mut widget_repository = WidgetRepository::new();
         // temp
+        let console_font =
+            asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
         widget_repository
             .build()
             .panel(PanelWidgetInfo {
@@ -61,6 +63,11 @@ impl Editor {
                     size: (50.0, 50.0).into(),
                     color: (0.0, 1.0, 0.0, 1.0).into(),
                 })
+            })
+            .console(ConsoleWidgetInfo {
+                pos: (0.0, 500.0).into(),
+                size: (300.0, 100.0).into(),
+                font: console_font,
             })
             .finish();
 

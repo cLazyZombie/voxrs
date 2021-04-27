@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint;
 
+use crate::{ConsoleWidget, ConsoleWidgetInfo};
+
 use super::{
     button::ButtonWidget, id::WidgetId, node::WidgetNode, panel::PanelWidget, text::TextWidget,
     ButtonWidgetInfo, PanelWidgetInfo, TextWidgetInfo, Widget, WidgetEvent, WidgetInput,
@@ -100,6 +102,14 @@ impl<'a> WidgetBuilder<'a> {
         let widget_id = self.repository.get_next_id();
         let text_widget = TextWidget::new(widget_id, info);
         let widget = Widget::Text(text_widget);
+        self.add_widget(widget_id, widget);
+        self
+    }
+
+    pub fn console(mut self, info: ConsoleWidgetInfo) -> Self {
+        let widget_id = self.repository.get_next_id();
+        let console_widget = ConsoleWidget::new(widget_id, info);
+        let widget = Widget::Console(console_widget);
         self.add_widget(widget_id, widget);
         self
     }

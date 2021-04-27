@@ -25,6 +25,7 @@ impl ButtonWidget {
             size: info.size,
         }
     }
+
     pub fn render(&self, parent_region: Rect2, bp: &mut blueprint::Blueprint) {
         let bp_panel = blueprint::Panel {
             pos: self.pos + parent_region.min,
@@ -46,6 +47,9 @@ impl ButtonWidget {
                 events.push(event);
                 return true;
             }
+            _ => {}
         }
+
+        false
     }
 }
