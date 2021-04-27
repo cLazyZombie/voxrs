@@ -9,3 +9,5 @@ version = "0.1.0"
 voxrs_asset = {version = "0.1", path = "../voxrs_asset"}
 voxrs_math = {version = "0.1", path = "../voxrs_math"}
 voxrs_render = {version = "0.1", path = "../voxrs_render"}
+
+legion = "0.4"

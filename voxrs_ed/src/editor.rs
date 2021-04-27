@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{ConsoleWidgetInfo, PanelWidgetInfo, WidgetRepository};
+use voxrs_ui::{PanelInfo, TextInfo, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -27,7 +27,7 @@ impl Editor {
         height: u32,
         asset_manager: &mut AssetManager<F>,
     ) -> Self {
-        let world = World::default();
+        let mut world = World::default();
         let mut res = Resources::default();
 
         let world_block_res =
@@ -46,30 +46,66 @@ impl Editor {
         );
         res.insert(camera);
 
-        let mut widget_repository = WidgetRepository::new();
+        let mut widget_repository = WidgetRepository::new(&mut res);
         // temp
-        let console_font =
-            asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
-        widget_repository
-            .build()
-            .panel(PanelWidgetInfo {
+        let panel1 = widget_repository.add_panel(
+            PanelInfo {
                 pos: (10.0, 10.0).into(),
                 size: (200.0, 100.0).into(),
                 color: (1.0, 0.0, 0.0, 1.0).into(),
-            })
-            .child(|builder| {
-                builder.panel(PanelWidgetInfo {
-                    pos: (5.0, 5.0).into(),
-                    size: (50.0, 50.0).into(),
-                    color: (0.0, 1.0, 0.0, 1.0).into(),
-                })
-            })
-            .console(ConsoleWidgetInfo {
-                pos: (0.0, 500.0).into(),
-                size: (300.0, 100.0).into(),
+            },
+            None,
+            &mut world,
+            &mut res,
+        );
+
+        let panel2 = widget_repository.add_panel(
+            PanelInfo {
+                pos: (15.0, 15.0).into(),
+                size: (80.0, 50.0).into(),
+                color: (0.0, 1.0, 1.0, 1.0).into(),
+            },
+            Some(panel1),
+            &mut world,
+            &mut res,
+        );
+
+        let console_font =
+            asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
+        let _text = widget_repository.add_text(
+            TextInfo {
+                pos: (10.0, 10.0).into(),
+                size: (100.0, 50.0).into(),
                 font: console_font,
-            })
-            .finish();
+                font_size: 24,
+                contents: "text".to_string(),
+            },
+            Some(panel2),
+            &mut world,
+            &mut res,
+        );
+        //let console_font =
+        //    asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
+        // widget_repository
+        //     .build()
+        //     .panel(PanelWidgetInfo {
+        //         pos: (10.0, 10.0).into(),
+        //         size: (200.0, 100.0).into(),
+        //         color: (1.0, 0.0, 0.0, 1.0).into(),
+        //     })
+        //     .child(|builder| {
+        //         builder.panel(PanelWidgetInfo {
+        //             pos: (5.0, 5.0).into(),
+        //             size: (50.0, 50.0).into(),
+        //             color: (0.0, 1.0, 0.0, 1.0).into(),
+        //         })
+        //     })
+        //     .console(ConsoleWidgetInfo {
+        //         pos: (0.0, 500.0).into(),
+        //         size: (300.0, 100.0).into(),
+        //         font: console_font,
+        //     })
+        //     .finish();
 
         res.insert(widget_repository);
 
@@ -91,7 +127,7 @@ impl Editor {
             .add_system(system::camera::render_system())
             .add_system(system::world_block_render::render_system())
             .add_system(system::world_block_modify::indicator_render_system())
-            .add_system(system::widget_render::render_system())
+            .add_system(voxrs_ui::system::render_system())
             .build();
 
         let end_frame_schedule = Schedule::builder()
