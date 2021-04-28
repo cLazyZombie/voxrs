@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use glam::{IVec2, Vec2};
 
 #[derive(Copy, Clone, Debug)]
@@ -25,7 +27,8 @@ impl Rect2 {
 
     /// move self start from parent.min
     /// and clip using parent area
-    pub fn transform(&self, parent: Rect2) -> Rect2 {
+    pub fn transform<R: Borrow<Rect2>>(&self, parent: R) -> Rect2 {
+        let parent: &Rect2 = parent.borrow();
         let min = self.min + parent.min;
         let max = min + self.size;
 
