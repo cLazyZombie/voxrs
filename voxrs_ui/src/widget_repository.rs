@@ -1,7 +1,7 @@
 use legion::*;
 
-use crate::comp;
 use crate::widget;
+use crate::{comp, input::WidgetInput};
 use crate::{res, TextWidget};
 
 pub struct WidgetRepository {}
@@ -10,11 +10,15 @@ impl WidgetRepository {
     pub fn new(resources: &mut Resources) -> Self {
         let roots = res::WidgetRoots::new();
         resources.insert(roots);
+
+        let input_queue = res::InputQueue::default();
+        resources.insert(input_queue);
+
         Self {}
     }
 
     pub fn add_panel(
-        &mut self,
+        &self,
         info: widget::PanelInfo,
         parent: Option<Entity>,
         world: &mut World,
@@ -62,7 +66,7 @@ impl WidgetRepository {
     // }
 
     pub fn add_text(
-        &mut self,
+        &self,
         info: widget::TextInfo,
         parent: Option<Entity>,
         world: &mut World,
@@ -88,14 +92,19 @@ impl WidgetRepository {
         entity
     }
 
-    fn link_to_parent(&mut self, parent: Entity, child: Entity, world: &mut World) {
+    fn link_to_parent(&self, parent: Entity, child: Entity, world: &mut World) {
         let mut parent = world.entry_mut(parent).unwrap();
         let hierarchy = parent.get_component_mut::<comp::Hierarchy>().unwrap();
         hierarchy.children.push(child);
     }
 
-    fn link_to_roots(&mut self, entity: Entity, resources: &mut Resources) {
+    fn link_to_roots(&self, entity: Entity, resources: &mut Resources) {
         let mut roots = resources.get_mut::<res::WidgetRoots>().unwrap();
         roots.add_to_root(entity);
+    }
+
+    pub fn add_input(&self, input: WidgetInput, resources: &mut Resources) {
+        let mut input_queue = resources.get_mut::<res::InputQueue>().unwrap();
+        input_queue.add(input);
     }
 }

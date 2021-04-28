@@ -46,7 +46,7 @@ impl Editor {
         );
         res.insert(camera);
 
-        let mut widget_repository = WidgetRepository::new(&mut res);
+        let widget_repository = WidgetRepository::new(&mut res);
         // temp
         let panel1 = widget_repository.add_panel(
             PanelInfo {
@@ -119,6 +119,7 @@ impl Editor {
         res.insert(editor_asset);
 
         let tick_schedule = Schedule::builder()
+            .add_system(voxrs_ui::system::process_inputs_system())
             .add_system(system::camera::control_system())
             .add_system(system::world_block_modify::modify_system())
             .build();
@@ -190,6 +191,11 @@ impl Editor {
     pub fn on_modifier_changed(&mut self, modifier: &ModifiersState) {
         let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
         key_input.on_modifier_changed(modifier);
+    }
+
+    pub fn on_receive_character(&mut self, c: char) {
+        let mut input_queue = self.res.get_mut_or_default::<voxrs_ui::InputQueue>();
+        input_queue.add(voxrs_ui::input::WidgetInput::Character(c));
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {

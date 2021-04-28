@@ -44,6 +44,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'voxrs_ed'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=voxrs_ed",
+                    "--package=voxrs_ed"
+                ],
+                "filter": {
+                    "name": "voxrs_ed",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in executable 'voxrs'",
             "cargo": {
                 "args": [

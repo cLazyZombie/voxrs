@@ -53,7 +53,7 @@ fn main() {
                 editor.on_modifier_changed(modifier);
             }
             WindowEvent::ReceivedCharacter(c) => {
-                dbg!(c);
+                editor.on_receive_character(*c);
             }
             _ => {}
         },
