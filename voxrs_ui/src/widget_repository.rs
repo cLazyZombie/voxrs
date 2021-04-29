@@ -11,6 +11,9 @@ impl WidgetRepository {
         let input_queue = res::InputQueue::default();
         resources.insert(input_queue);
 
+        let focused_widget = res::FocusedWidget::default();
+        resources.insert(focused_widget);
+
         Self {}
     }
 
@@ -74,7 +77,7 @@ impl WidgetRepository {
         });
         let region = comp::Region::new(info.pos, info.size);
         let hierarchy = comp::Hierarchy::new(parent);
-        let entity = world.push((text, region, hierarchy));
+        let entity = world.push((text, region, hierarchy, comp::Focusable));
 
         // link to parent
         // panic if parent is not exists

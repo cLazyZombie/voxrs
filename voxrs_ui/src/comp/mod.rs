@@ -9,3 +9,9 @@ pub use hierarchy::Hierarchy;
 
 mod root;
 pub use root::Root;
+
+mod focusable;
+pub use focusable::Focusable;
+
+mod depth;
+pub use depth::Depth;

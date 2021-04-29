@@ -178,6 +178,13 @@ impl Editor {
             mouse_input.on_mouse_pressed(button);
         } else {
             mouse_input.on_mouse_released(button);
+
+            // send to ui event
+            let pos = IVec2::new(mouse_input.position.0 as i32, mouse_input.position.1 as i32);
+            drop(mouse_input);
+
+            let mut input_queue = self.res.get_mut_or_default::<voxrs_ui::InputQueue>();
+            input_queue.add(voxrs_ui::input::WidgetInput::MouseClick { pos });
         }
     }
 
