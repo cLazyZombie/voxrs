@@ -130,6 +130,7 @@ impl Editor {
 
         let end_frame_schedule = Schedule::builder()
             .add_system(system::end_frame::end_frame_system())
+            .add_system(voxrs_ui::system::clear_inputs_system())
             .build();
 
         let clock = Clock::new();

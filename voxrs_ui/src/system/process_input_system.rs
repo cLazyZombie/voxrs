@@ -11,9 +11,9 @@ pub fn process_inputs(
     entity: &Entity,
     _root: &comp::Root,
     world: &mut SubWorld,
-    #[resource] input_queue: &mut res::InputQueue,
+    #[resource] input_queue: &res::InputQueue,
 ) {
-    while let Some(input) = input_queue.pop() {
+    for input in input_queue.iter() {
         process_input(*entity, &input, world);
     }
 }
@@ -49,7 +49,7 @@ fn text_process_input(text_widget: &mut TextWidget, input: &WidgetInput) {
     }
 }
 
-// #[system]
-// pub fn clear_inputs(#[resource] input_queue: &mut res::InputQueue) {
-//     input_queue.clear();
-// }
+#[system]
+pub fn clear_inputs(#[resource] input_queue: &mut res::InputQueue) {
+    input_queue.clear();
+}

@@ -9,14 +9,6 @@ impl InputQueue {
         self.vec.push(input);
     }
 
-    pub fn pop(&mut self) -> Option<WidgetInput> {
-        if self.vec.is_empty() {
-            None
-        } else {
-            Some(self.vec.remove(0))
-        }
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = &WidgetInput> {
         self.vec.iter()
     }
