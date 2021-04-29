@@ -6,3 +6,6 @@ pub use color::Color;
 
 mod hierarchy;
 pub use hierarchy::Hierarchy;
+
+mod root;
+pub use root::Root;

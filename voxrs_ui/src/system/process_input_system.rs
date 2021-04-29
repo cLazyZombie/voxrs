@@ -4,18 +4,17 @@ use legion::*;
 use crate::{comp, input::WidgetInput, TextWidget};
 use crate::{res, widget};
 
-#[system]
+#[system(for_each)]
 #[read_component(comp::Hierarchy)]
 #[write_component(widget::Widget)]
 pub fn process_inputs(
+    entity: &Entity,
+    _root: &comp::Root,
     world: &mut SubWorld,
-    #[resource] widget_roots: &res::WidgetRoots,
     #[resource] input_queue: &mut res::InputQueue,
 ) {
     while let Some(input) = input_queue.pop() {
-        for root in &widget_roots.roots {
-            process_input(*root, &input, world);
-        }
+        process_input(*entity, &input, world);
     }
 }
 

@@ -56,7 +56,6 @@ impl Editor {
             },
             None,
             &mut world,
-            &mut res,
         );
 
         let panel2 = widget_repository.add_panel(
@@ -67,7 +66,6 @@ impl Editor {
             },
             Some(panel1),
             &mut world,
-            &mut res,
         );
 
         let console_font =
@@ -82,7 +80,6 @@ impl Editor {
             },
             Some(panel2),
             &mut world,
-            &mut res,
         );
         //let console_font =
         //    asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));

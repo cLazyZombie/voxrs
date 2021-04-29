@@ -3,27 +3,23 @@ use legion::*;
 use voxrs_math::Rect2;
 use voxrs_render::blueprint::{self, TextSection};
 
-use crate::res;
 use crate::widget;
 use crate::{comp, TextWidget};
 
-#[system]
+#[system(for_each)]
 #[read_component(comp::Hierarchy)]
 #[read_component(comp::Color)]
 #[read_component(comp::Region)]
 #[read_component(widget::Panel)]
 #[read_component(widget::Widget)]
 pub fn render(
+    entity: &Entity,
+    _root: &comp::Root,
     world: &SubWorld,
-    #[resource] widget_roots: &res::WidgetRoots,
     #[resource] bp: &mut blueprint::Blueprint,
 ) {
     let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-
-    // render roots
-    for root in &widget_roots.roots {
-        render_widget(*root, &root_rect, world, bp);
-    }
+    render_widget(*entity, &root_rect, world, bp);
 }
 
 fn render_widget(

@@ -8,9 +8,6 @@ pub struct WidgetRepository {}
 
 impl WidgetRepository {
     pub fn new(resources: &mut Resources) -> Self {
-        let roots = res::WidgetRoots::new();
-        resources.insert(roots);
-
         let input_queue = res::InputQueue::default();
         resources.insert(input_queue);
 
@@ -22,7 +19,6 @@ impl WidgetRepository {
         info: widget::PanelInfo,
         parent: Option<Entity>,
         world: &mut World,
-        resources: &mut Resources,
     ) -> Entity {
         let panel = widget::Widget::Panel;
         let region = comp::Region::new(info.pos, info.size);
@@ -35,7 +31,7 @@ impl WidgetRepository {
         if let Some(parent) = parent {
             self.link_to_parent(parent, entity, world);
         } else {
-            self.link_to_roots(entity, resources);
+            self.add_root(entity, world);
         }
 
         entity
@@ -70,7 +66,6 @@ impl WidgetRepository {
         info: widget::TextInfo,
         parent: Option<Entity>,
         world: &mut World,
-        resources: &mut Resources,
     ) -> Entity {
         let text = widget::Widget::Text(TextWidget {
             font: info.font,
@@ -86,7 +81,7 @@ impl WidgetRepository {
         if let Some(parent) = parent {
             self.link_to_parent(parent, entity, world);
         } else {
-            self.link_to_roots(entity, resources);
+            self.add_root(entity, world);
         }
 
         entity
@@ -98,9 +93,9 @@ impl WidgetRepository {
         hierarchy.children.push(child);
     }
 
-    fn link_to_roots(&self, entity: Entity, resources: &mut Resources) {
-        let mut roots = resources.get_mut::<res::WidgetRoots>().unwrap();
-        roots.add_to_root(entity);
+    fn add_root(&self, entity: Entity, world: &mut World) {
+        let mut entry = world.entry(entity).unwrap();
+        entry.add_component(comp::Root);
     }
 
     pub fn add_input(&self, input: WidgetInput, resources: &mut Resources) {
