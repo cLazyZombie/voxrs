@@ -5,6 +5,8 @@ use voxrs_math::{IVec2, Rect2};
 use crate::{comp, input::WidgetInput, TextWidget};
 use crate::{res, widget};
 
+use super::SortRootEntity;
+
 #[system]
 #[read_component(Entity)]
 #[write_component(comp::Root)]
@@ -19,11 +21,7 @@ pub fn process_inputs(
     #[resource] next_depth: &mut res::NextDepth,
 ) {
     // get roots ordered by top depth
-    let mut roots = <(Entity, &comp::Root)>::query()
-        .iter(world)
-        .collect::<Vec<_>>();
-    roots.sort_by(|(_, root_a), (_, root_b)| root_b.partial_cmp(root_a).unwrap());
-    let roots = roots.iter().map(|(entity, _)| **entity).collect::<Vec<_>>();
+    let roots = <(Entity, &comp::Root)>::sort_from_near(world);
 
     for input in input_queue.iter() {
         match input {
@@ -34,29 +32,51 @@ pub fn process_inputs(
                 }
             }
             WidgetInput::MouseClick { pos } => {
-                let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-                let mut focused = false;
-                for root_entity in &roots {
-                    if process_mouse_click(*root_entity, pos, &root_rect, world, focused_widget) {
-                        focused = true;
-
-                        let top_depth = next_depth.get_next();
-                        let root_entry = world.entry_mut(*root_entity).unwrap();
-                        let root = root_entry.into_component_mut::<comp::Root>().unwrap();
-                        root.set_depth(top_depth);
-
-                        // if focus is changed at upper depth root widget, do not go futher
-                        break;
-                    }
-                }
-
-                // if no widget get focus, clear focused widget
-                if !focused {
-                    focused_widget.clear();
-                }
+                process_mouse_click(&roots, pos, world, next_depth, focused_widget);
             }
             _ => {}
         }
+    }
+}
+
+fn process_mouse_click(
+    roots: &[Entity],
+    pos: &IVec2,
+    world: &mut SubWorld,
+    next_depth: &mut res::NextDepth,
+    focused_widget: &mut res::FocusedWidget,
+) {
+    let topmost_entity = {
+        let mut topmost_entity: Option<Entity> = None;
+        for root_entity in roots {
+            let entry = world.entry_ref(*root_entity).unwrap();
+
+            let region = entry.get_component::<comp::Region>();
+            if region.is_err() {
+                continue;
+            }
+
+            // check pos is in this widget region (clipped)
+            let region = region.unwrap();
+            let rect = region.get_rect();
+            if rect.has_ivec2(pos) {
+                let top_depth = next_depth.get_next();
+                let root_entry = world.entry_mut(*root_entity).unwrap();
+                let root = root_entry.into_component_mut::<comp::Root>().unwrap();
+                root.set_depth(top_depth);
+
+                topmost_entity = Some(*root_entity);
+                break;
+            }
+        }
+        topmost_entity
+    };
+
+    // handle mouse click to top most widget
+    focused_widget.clear();
+    if let Some(topmost_entity) = topmost_entity {
+        let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
+        process_mouse_click_widget(topmost_entity, pos, &root_rect, world, focused_widget);
     }
 }
 
@@ -86,7 +106,7 @@ fn text_process_input_char(text_widget: &mut TextWidget, c: char) {
     text_widget.contents.push(c);
 }
 
-fn process_mouse_click(
+fn process_mouse_click_widget(
     entity: Entity,
     pos: &IVec2,
     parent_rect: &Rect2,
@@ -113,7 +133,7 @@ fn process_mouse_click(
     let children = hierarchy.children.clone();
     let mut child_has_focus = false;
     for child in children {
-        if process_mouse_click(child, pos, &clipped_rect, world, focused_widget) {
+        if process_mouse_click_widget(child, pos, &clipped_rect, world, focused_widget) {
             child_has_focus = true;
             break;
         }

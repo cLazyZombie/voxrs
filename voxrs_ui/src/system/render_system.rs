@@ -3,6 +3,7 @@ use legion::*;
 use voxrs_math::Rect2;
 use voxrs_render::blueprint::{self, TextSection};
 
+use super::SortRootEntity;
 use crate::widget;
 use crate::{comp, TextWidget};
 
@@ -16,11 +17,7 @@ use crate::{comp, TextWidget};
 #[read_component(widget::Widget)]
 pub fn render(world: &SubWorld, #[resource] bp: &mut blueprint::Blueprint) {
     // get root reversed ordered by top depth
-    let mut roots = <(Entity, &comp::Root)>::query()
-        .iter(world)
-        .collect::<Vec<_>>();
-    roots.sort_by(|(_, root_a), (_, root_b)| root_a.partial_cmp(root_b).unwrap());
-    let roots = roots.iter().map(|(entity, _)| **entity).collect::<Vec<_>>();
+    let roots = <(Entity, &comp::Root)>::sort_from_far(world);
 
     let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
 
