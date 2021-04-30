@@ -14,5 +14,8 @@ pub use widget::*;
 
 pub mod input;
 
-pub mod widget_repository;
+mod widget_repository;
 pub use widget_repository::WidgetRepository;
+
+mod widget_builder;
+pub use widget_builder::WidgetBuilder;
