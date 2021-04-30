@@ -12,6 +12,3 @@ pub use root::Root;
 
 mod focusable;
 pub use focusable::Focusable;
-
-mod depth;
-pub use depth::Depth;

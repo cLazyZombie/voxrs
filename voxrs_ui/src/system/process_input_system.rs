@@ -7,7 +7,7 @@ use crate::{res, widget};
 
 #[system]
 #[read_component(Entity)]
-#[read_component(comp::Root)]
+#[write_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
 #[read_component(comp::Region)]
 #[read_component(comp::Focusable)]
@@ -16,11 +16,14 @@ pub fn process_inputs(
     world: &mut SubWorld,
     #[resource] input_queue: &res::InputQueue,
     #[resource] focused_widget: &mut res::FocusedWidget,
+    #[resource] next_depth: &mut res::NextDepth,
 ) {
-    let roots = <(Entity, &comp::Root)>::query()
+    // get roots ordered by top depth
+    let mut roots = <(Entity, &comp::Root)>::query()
         .iter(world)
-        .map(|(entity, _)| *entity)
         .collect::<Vec<_>>();
+    roots.sort_by(|(_, root_a), (_, root_b)| root_b.partial_cmp(root_a).unwrap());
+    let roots = roots.iter().map(|(entity, _)| **entity).collect::<Vec<_>>();
 
     for input in input_queue.iter() {
         match input {
@@ -33,9 +36,17 @@ pub fn process_inputs(
             WidgetInput::MouseClick { pos } => {
                 let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
                 let mut focused = false;
-                for root in &roots {
-                    if process_mouse_click(*root, pos, &root_rect, world, focused_widget) {
+                for root_entity in &roots {
+                    if process_mouse_click(*root_entity, pos, &root_rect, world, focused_widget) {
                         focused = true;
+
+                        let top_depth = next_depth.get_next();
+                        let root_entry = world.entry_mut(*root_entity).unwrap();
+                        let root = root_entry.into_component_mut::<comp::Root>().unwrap();
+                        root.set_depth(top_depth);
+
+                        // if focus is changed at upper depth root widget, do not go futher
+                        break;
                     }
                 }
 

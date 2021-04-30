@@ -28,11 +28,11 @@ impl Editor {
         asset_manager: &mut AssetManager<F>,
     ) -> Self {
         let mut world = World::default();
-        let mut res = Resources::default();
+        let mut resources = Resources::default();
 
         let world_block_res =
             WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
-        res.insert(world_block_res);
+        resources.insert(world_block_res);
 
         let camera = CameraRes::new(
             Vec3::new(0.0, 30.0, -30.0),
@@ -44,9 +44,9 @@ impl Editor {
             0.1,
             100.0,
         );
-        res.insert(camera);
+        resources.insert(camera);
 
-        let widget_repository = WidgetRepository::new(&mut res);
+        let widget_repository = WidgetRepository::new(&mut resources);
         // temp
         let panel1 = widget_repository.add_panel(
             PanelInfo {
@@ -56,6 +56,7 @@ impl Editor {
             },
             None,
             &mut world,
+            &mut resources,
         );
 
         let panel2 = widget_repository.add_panel(
@@ -66,6 +67,7 @@ impl Editor {
             },
             Some(panel1),
             &mut world,
+            &mut resources,
         );
 
         let console_font =
@@ -80,6 +82,7 @@ impl Editor {
             },
             Some(panel2),
             &mut world,
+            &mut resources,
         );
         //let console_font =
         //    asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
@@ -104,16 +107,16 @@ impl Editor {
         //     })
         //     .finish();
 
-        res.insert(widget_repository);
+        resources.insert(widget_repository);
 
         let key_input = KeyInputRes::new();
-        res.insert(key_input);
+        resources.insert(key_input);
 
         let mouse_input = MouseInputRes::new();
-        res.insert(mouse_input);
+        resources.insert(mouse_input);
 
         let editor_asset = EditorAssetRes::new(asset_manager);
-        res.insert(editor_asset);
+        resources.insert(editor_asset);
 
         let tick_schedule = Schedule::builder()
             .add_system(voxrs_ui::system::process_inputs_system())
@@ -137,7 +140,7 @@ impl Editor {
 
         Self {
             world,
-            res,
+            res: resources,
             tick_schedule,
             render_schedule,
             end_frame_schedule,

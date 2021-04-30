@@ -14,6 +14,9 @@ impl WidgetRepository {
         let focused_widget = res::FocusedWidget::default();
         resources.insert(focused_widget);
 
+        let next_depth = res::NextDepth::default();
+        resources.insert(next_depth);
+
         Self {}
     }
 
@@ -22,6 +25,7 @@ impl WidgetRepository {
         info: widget::PanelInfo,
         parent: Option<Entity>,
         world: &mut World,
+        resources: &mut Resources,
     ) -> Entity {
         let panel = widget::Widget::Panel;
         let region = comp::Region::new(info.pos, info.size);
@@ -34,7 +38,7 @@ impl WidgetRepository {
         if let Some(parent) = parent {
             self.link_to_parent(parent, entity, world);
         } else {
-            self.add_root(entity, world);
+            self.add_root(entity, world, resources);
         }
 
         entity
@@ -69,6 +73,7 @@ impl WidgetRepository {
         info: widget::TextInfo,
         parent: Option<Entity>,
         world: &mut World,
+        resources: &mut Resources,
     ) -> Entity {
         let text = widget::Widget::Text(TextWidget {
             font: info.font,
@@ -84,7 +89,7 @@ impl WidgetRepository {
         if let Some(parent) = parent {
             self.link_to_parent(parent, entity, world);
         } else {
-            self.add_root(entity, world);
+            self.add_root(entity, world, resources);
         }
 
         entity
@@ -96,9 +101,11 @@ impl WidgetRepository {
         hierarchy.children.push(child);
     }
 
-    fn add_root(&self, entity: Entity, world: &mut World) {
+    fn add_root(&self, entity: Entity, world: &mut World, resources: &mut Resources) {
+        let mut next_depth_res = resources.get_mut_or_default::<res::NextDepth>();
+        let next_depth = next_depth_res.get_next();
         let mut entry = world.entry(entity).unwrap();
-        entry.add_component(comp::Root);
+        entry.add_component(comp::Root::new(next_depth));
     }
 
     pub fn add_input(&self, input: WidgetInput, resources: &mut Resources) {
