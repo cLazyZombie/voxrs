@@ -6,20 +6,27 @@ use voxrs_render::blueprint::{self, TextSection};
 use crate::widget;
 use crate::{comp, TextWidget};
 
-#[system(for_each)]
+#[system]
+#[read_component(Entity)]
+#[read_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
 #[read_component(comp::Color)]
 #[read_component(comp::Region)]
 #[read_component(widget::Panel)]
 #[read_component(widget::Widget)]
-pub fn render(
-    entity: &Entity,
-    _root: &comp::Root,
-    world: &SubWorld,
-    #[resource] bp: &mut blueprint::Blueprint,
-) {
+pub fn render(world: &SubWorld, #[resource] bp: &mut blueprint::Blueprint) {
+    // get root reversed ordered by top depth
+    let mut roots = <(Entity, &comp::Root)>::query()
+        .iter(world)
+        .collect::<Vec<_>>();
+    roots.sort_by(|(_, root_a), (_, root_b)| root_a.partial_cmp(root_b).unwrap());
+    let roots = roots.iter().map(|(entity, _)| **entity).collect::<Vec<_>>();
+
     let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-    render_widget(*entity, &root_rect, world, bp);
+
+    for entity in roots {
+        render_widget(entity, &root_rect, world, bp);
+    }
 }
 
 fn render_widget(
