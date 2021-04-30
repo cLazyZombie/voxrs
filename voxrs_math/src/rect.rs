@@ -49,7 +49,7 @@ impl Rect2 {
             return true;
         }
 
-        return false;
+        false
     }
 }
 

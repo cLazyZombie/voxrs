@@ -21,6 +21,12 @@ impl Panel {
     }
 }
 
+impl Default for Panel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct ButtonInfo {
     pub pos: Vec2,
     pub size: Vec2,

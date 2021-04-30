@@ -63,6 +63,8 @@ pub fn process_inputs(
 fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
     let mut entry = world.entry_mut(entity).unwrap();
     let widget = entry.get_component_mut::<widget::Widget>().unwrap();
+
+    #[allow(clippy::single_match)]
     match widget {
         widget::Widget::Text(text_widget) => {
             text_process_input_char(text_widget, c);
@@ -117,11 +119,9 @@ fn process_mouse_click(
         }
     }
 
-    if !child_has_focus {
-        if entry.get_component::<comp::Focusable>().is_ok() {
-            focused_widget.set(entity);
-            return true;
-        }
+    if !child_has_focus && entry.get_component::<comp::Focusable>().is_ok() {
+        focused_widget.set(entity);
+        return true;
     }
 
     child_has_focus
