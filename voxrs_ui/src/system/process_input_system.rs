@@ -5,18 +5,23 @@ use voxrs_math::{IVec2, Rect2};
 use crate::{comp, input::WidgetInput, TextWidget};
 use crate::{res, widget};
 
-#[system(for_each)]
+#[system]
+#[read_component(Entity)]
+#[read_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
 #[read_component(comp::Region)]
 #[read_component(comp::Focusable)]
 #[write_component(widget::Widget)]
 pub fn process_inputs(
-    entity: &Entity,
-    _root: &comp::Root,
     world: &mut SubWorld,
     #[resource] input_queue: &res::InputQueue,
     #[resource] focused_widget: &mut res::FocusedWidget,
 ) {
+    let roots = <(Entity, &comp::Root)>::query()
+        .iter(world)
+        .map(|(entity, _)| *entity)
+        .collect::<Vec<_>>();
+
     for input in input_queue.iter() {
         match input {
             WidgetInput::Character(c) => {
@@ -26,9 +31,18 @@ pub fn process_inputs(
                 }
             }
             WidgetInput::MouseClick { pos } => {
-                eprintln!("mouse click. {:?}", pos);
                 let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-                process_mouse_click(*entity, pos, &root_rect, world, focused_widget);
+                let mut focused = false;
+                for root in &roots {
+                    if process_mouse_click(*root, pos, &root_rect, world, focused_widget) {
+                        focused = true;
+                    }
+                }
+
+                // if no widget get focus, clear focused widget
+                if !focused {
+                    focused_widget.clear();
+                }
             }
             _ => {}
         }
@@ -70,7 +84,6 @@ fn process_mouse_click(
 
     let region = entry.get_component::<comp::Region>();
     if region.is_err() {
-        eprintln!("no region. {:?}", entity);
         return false;
     }
 
@@ -79,7 +92,6 @@ fn process_mouse_click(
     let rect = region.get_rect();
     let clipped_rect = rect.transform(parent_rect);
     if !clipped_rect.has_ivec2(pos) {
-        eprintln!("out of region. {:?}", entity);
         return false;
     }
 
@@ -101,7 +113,7 @@ fn process_mouse_click(
         }
     }
 
-    false
+    child_has_focus
 }
 
 #[system]
