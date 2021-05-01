@@ -80,13 +80,19 @@ impl<'a> WidgetBuilder<'a> {
         self
     }
 
-    pub fn child<F>(&mut self, f: F) -> &'a mut Self
+    pub fn child<F>(&mut self, f: F) -> &mut Self
     where
-        F: FnOnce(&mut WidgetBuilder<'a>) -> &'a mut WidgetBuilder<'a>,
+        F: FnOnce(&mut WidgetBuilder),
     {
         self.begin_child();
-        let ret = f(self);
-        ret.end_child()
+        f(self);
+        self.end_child();
+        self
+    }
+
+    pub fn query_id(&mut self, entity: &mut Option<Entity>) -> &mut Self {
+        *entity = self.last_entity;
+        self
     }
 
     fn link_to_parent(&mut self, parent: Entity, child: Entity) {
@@ -100,5 +106,40 @@ impl<'a> WidgetBuilder<'a> {
         let next_depth = next_depth_res.get_next();
         let mut entry = self.world.entry(entity).unwrap();
         entry.add_component(comp::Root::new(next_depth));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::PanelInfo;
+
+    use super::*;
+
+    #[test]
+    fn test_build() {
+        let mut world = World::default();
+        let mut resources = Resources::default();
+        let mut builder = WidgetBuilder::new(&mut world, &mut resources);
+
+        let mut parent = None;
+        let mut child = None;
+
+        builder
+            .add_panel(PanelInfo {
+                pos: (0.0, 0.0).into(),
+                size: (100.0, 100.0).into(),
+                color: (1.0, 1.0, 1.0, 1.0).into(),
+            })
+            .query_id(&mut parent)
+            .child(|b| {
+                b.add_panel(PanelInfo {
+                    pos: (0.0, 0.0).into(),
+                    size: (100.0, 100.0).into(),
+                    color: (1.0, 1.0, 1.0, 1.0).into(),
+                })
+                .query_id(&mut child);
+            });
+
+        assert_eq!(<&comp::Root>::query().iter(&world).count(), 1);
     }
 }
