@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{PanelInfo, TextInfo, WidgetRepository};
+use voxrs_ui::{PanelInfo, TextInfo, WidgetBuilder, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -47,76 +47,36 @@ impl Editor {
         resources.insert(camera);
 
         let widget_repository = WidgetRepository::new(&mut resources);
-        // temp
-        let panel1 = widget_repository.add_panel(
-            PanelInfo {
+        let mut builder = WidgetBuilder::new(&mut world, &mut resources);
+        builder
+            .panel(PanelInfo {
                 pos: (10.0, 10.0).into(),
                 size: (200.0, 100.0).into(),
                 color: (1.0, 0.0, 0.0, 1.0).into(),
-            },
-            None,
-            &mut world,
-            &mut resources,
-        );
-
-        let panel2 = widget_repository.add_panel(
-            PanelInfo {
-                pos: (15.0, 15.0).into(),
-                size: (80.0, 50.0).into(),
-                color: (0.0, 1.0, 1.0, 1.0).into(),
-            },
-            Some(panel1),
-            &mut world,
-            &mut resources,
-        );
-
-        let console_font =
-            asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
-        let _text = widget_repository.add_text(
-            TextInfo {
-                pos: (10.0, 10.0).into(),
-                size: (100.0, 50.0).into(),
-                font: console_font,
-                font_size: 24,
-                contents: "text".to_string(),
-            },
-            Some(panel2),
-            &mut world,
-            &mut resources,
-        );
-
-        let _another_panel = widget_repository.add_panel(
-            PanelInfo {
+            })
+            .child(|b| {
+                b.panel(PanelInfo {
+                    pos: (15.0, 15.0).into(),
+                    size: (80.0, 50.0).into(),
+                    color: (0.0, 1.0, 1.0, 1.0).into(),
+                })
+                .child(|b| {
+                    let console_font = asset_manager
+                        .get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
+                    b.text(TextInfo {
+                        pos: (10.0, 10.0).into(),
+                        size: (100.0, 50.0).into(),
+                        font: console_font,
+                        font_size: 24,
+                        contents: "text".to_string(),
+                    });
+                });
+            })
+            .panel(PanelInfo {
                 pos: (30.0, 30.0).into(),
                 size: (200.0, 100.0).into(),
                 color: (0.0, 0.0, 1.0, 0.5).into(),
-            },
-            None,
-            &mut world,
-            &mut resources,
-        );
-        //let console_font =
-        //    asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
-        // widget_repository
-        //     .build()
-        //     .panel(PanelWidgetInfo {
-        //         pos: (10.0, 10.0).into(),
-        //         size: (200.0, 100.0).into(),
-        //         color: (1.0, 0.0, 0.0, 1.0).into(),
-        //     })
-        //     .child(|builder| {
-        //         builder.panel(PanelWidgetInfo {
-        //             pos: (5.0, 5.0).into(),
-        //             size: (50.0, 50.0).into(),
-        //             color: (0.0, 1.0, 0.0, 1.0).into(),
-        //         })
-        //     })
-        //     .console(ConsoleWidgetInfo {
-        //         pos: (0.0, 500.0).into(),
-        //         size: (300.0, 100.0).into(),
-        //         font: console_font,
-        //     })
-        //     .finish();
+            });
 
         resources.insert(widget_repository);
 

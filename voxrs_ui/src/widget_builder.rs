@@ -23,7 +23,7 @@ impl<'a> WidgetBuilder<'a> {
         self.parent_stack.last().copied()
     }
 
-    pub fn add_panel(&mut self, info: widget::PanelInfo) -> &mut Self {
+    pub fn panel(&mut self, info: widget::PanelInfo) -> &mut Self {
         let panel = widget::Widget::Panel;
         let region = comp::Region::new(info.pos, info.size);
         let color = comp::Color::new(info.color);
@@ -44,7 +44,7 @@ impl<'a> WidgetBuilder<'a> {
         self
     }
 
-    pub fn add_text(&mut self, info: widget::TextInfo) -> &mut Self {
+    pub fn text(&mut self, info: widget::TextInfo) -> &mut Self {
         let text = widget::Widget::Text(TextWidget {
             font: info.font,
             font_size: info.font_size,
@@ -111,7 +111,7 @@ impl<'a> WidgetBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::PanelInfo;
+    use crate::{PanelInfo, WidgetRepository};
 
     use super::*;
 
@@ -119,20 +119,21 @@ mod tests {
     fn test_build() {
         let mut world = World::default();
         let mut resources = Resources::default();
+        WidgetRepository::new(&mut resources);
         let mut builder = WidgetBuilder::new(&mut world, &mut resources);
 
         let mut parent = None;
         let mut child = None;
 
         builder
-            .add_panel(PanelInfo {
+            .panel(PanelInfo {
                 pos: (0.0, 0.0).into(),
                 size: (100.0, 100.0).into(),
                 color: (1.0, 1.0, 1.0, 1.0).into(),
             })
             .query_id(&mut parent)
             .child(|b| {
-                b.add_panel(PanelInfo {
+                b.panel(PanelInfo {
                     pos: (0.0, 0.0).into(),
                     size: (100.0, 100.0).into(),
                     color: (1.0, 1.0, 1.0, 1.0).into(),
