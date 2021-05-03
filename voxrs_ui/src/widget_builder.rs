@@ -137,7 +137,7 @@ impl<'a> WidgetBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{PanelInfo, WidgetRepository};
+    use crate::PanelInfo;
 
     use super::*;
 
@@ -145,7 +145,8 @@ mod tests {
     fn test_build() {
         let mut world = World::default();
         let mut resources = Resources::default();
-        WidgetRepository::new(&mut resources);
+        res::init_resources(&mut resources);
+
         let mut builder = WidgetBuilder::new(&mut world, &mut resources);
 
         let mut parent = None;

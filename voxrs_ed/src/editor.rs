@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{EditableTextInfo, PanelInfo, WidgetBuilder, WidgetRepository};
+use voxrs_ui::{EditableTextInfo, PanelInfo, WidgetBuilder};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -46,7 +46,7 @@ impl Editor {
         );
         resources.insert(camera);
 
-        let widget_repository = WidgetRepository::new(&mut resources);
+        voxrs_ui::init_resources(&mut resources);
         let mut builder = WidgetBuilder::new(&mut world, &mut resources);
         builder
             .panel(PanelInfo {
@@ -77,8 +77,6 @@ impl Editor {
                 size: (200.0, 100.0).into(),
                 color: (0.0, 0.0, 1.0, 0.5).into(),
             });
-
-        resources.insert(widget_repository);
 
         let key_input = KeyInputRes::new();
         resources.insert(key_input);
