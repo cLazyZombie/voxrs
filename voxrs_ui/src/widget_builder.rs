@@ -1,6 +1,6 @@
 use legion::*;
 
-use crate::{comp, res, widget, TextWidget};
+use crate::{comp, res, widget, EditableTextWidget, TextWidget};
 
 pub struct WidgetBuilder<'a> {
     world: &'a mut World,
@@ -53,7 +53,33 @@ impl<'a> WidgetBuilder<'a> {
         let region = comp::Region::new(info.pos, info.size);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
-        let entity = self.world.push((text, region, hierarchy, comp::Focusable));
+        let entity = self.world.push((text, region, hierarchy));
+
+        // link to parent
+        // panic if parent is not exists
+        if let Some(parent) = parent {
+            self.link_to_parent(parent, entity);
+        } else {
+            self.add_root(entity);
+        }
+
+        self.last_entity = Some(entity);
+
+        self
+    }
+
+    pub fn editable_text(&mut self, info: widget::EditableTextInfo) -> &mut Self {
+        let editable = widget::Widget::EditableText(EditableTextWidget {
+            font: info.font,
+            font_size: info.font_size,
+            contents: info.contents,
+        });
+        let region = comp::Region::new(info.pos, info.size);
+        let parent = self.get_parent();
+        let hierarchy = comp::Hierarchy::new(parent);
+        let entity = self
+            .world
+            .push((editable, region, hierarchy, comp::Focusable));
 
         // link to parent
         // panic if parent is not exists

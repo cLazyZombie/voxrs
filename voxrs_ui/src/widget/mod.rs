@@ -5,6 +5,7 @@ pub(crate) enum Widget {
     Panel,
     Button,
     Text(TextWidget),
+    EditableText(EditableTextWidget),
     Console(ConsoleWidget),
 }
 
@@ -39,7 +40,21 @@ pub(crate) struct TextWidget {
     pub contents: String,
 }
 
+pub(crate) struct EditableTextWidget {
+    pub font: AssetHandle<FontAsset>,
+    pub font_size: u32,
+    pub contents: String,
+}
+
 pub struct TextInfo {
+    pub pos: Vec2,
+    pub size: Vec2,
+    pub font: AssetHandle<FontAsset>,
+    pub font_size: u32,
+    pub contents: String,
+}
+
+pub struct EditableTextInfo {
     pub pos: Vec2,
     pub size: Vec2,
     pub font: AssetHandle<FontAsset>,

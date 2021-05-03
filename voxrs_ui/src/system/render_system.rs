@@ -4,8 +4,8 @@ use voxrs_math::Rect2;
 use voxrs_render::blueprint::{self, TextSection};
 
 use super::SortRootEntity;
-use crate::widget;
 use crate::{comp, TextWidget};
+use crate::{widget, EditableTextWidget};
 
 #[system]
 #[read_component(Entity)]
@@ -37,6 +37,9 @@ fn render_widget(
     match widget {
         widget::Widget::Panel => render_panel(entity, parent_rect, world, bp),
         widget::Widget::Text(text) => render_text(entity, parent_rect, text, world, bp),
+        widget::Widget::EditableText(editable_text) => {
+            render_editable_text(entity, parent_rect, editable_text, world, bp)
+        }
         _ => {}
     }
 
@@ -89,6 +92,32 @@ fn render_text(
         font: text_widget.font.clone(),
         font_size: text_widget.font_size,
         text: text_widget.contents.clone(),
+    };
+
+    let bp_text = blueprint::Text {
+        pos: clipped_rect.min,
+        size: clipped_rect.size,
+        sections: vec![section],
+    };
+
+    bp.uis.push(blueprint::Ui::Text(bp_text));
+}
+
+fn render_editable_text(
+    entity: Entity,
+    parent_rect: &Rect2,
+    editable_text: &EditableTextWidget,
+    world: &SubWorld,
+    bp: &mut blueprint::Blueprint,
+) {
+    let entry = world.entry_ref(entity).unwrap();
+    let region = entry.get_component::<comp::Region>().unwrap();
+    let clipped_rect = region.get_rect().transform(parent_rect);
+
+    let section = TextSection {
+        font: editable_text.font.clone(),
+        font_size: editable_text.font_size,
+        text: editable_text.contents.clone(),
     };
 
     let bp_text = blueprint::Text {

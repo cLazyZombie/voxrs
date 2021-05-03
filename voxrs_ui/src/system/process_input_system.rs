@@ -2,7 +2,7 @@ use legion::world::SubWorld;
 use legion::*;
 use voxrs_math::{IVec2, Rect2};
 
-use crate::{comp, input::WidgetInput, TextWidget};
+use crate::{comp, input::WidgetInput, EditableTextWidget};
 use crate::{res, widget};
 
 use super::SortRootEntity;
@@ -86,8 +86,8 @@ fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
 
     #[allow(clippy::single_match)]
     match widget {
-        widget::Widget::Text(text_widget) => {
-            text_process_input_char(text_widget, c);
+        widget::Widget::EditableText(editable_text) => {
+            editable_text_process_input_char(editable_text, c);
         }
         _ => {}
     }
@@ -102,8 +102,8 @@ fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
 //     }
 // }
 
-fn text_process_input_char(text_widget: &mut TextWidget, c: char) {
-    text_widget.contents.push(c);
+fn editable_text_process_input_char(editable_text: &mut EditableTextWidget, c: char) {
+    editable_text.contents.push(c);
 }
 
 fn process_mouse_click_widget(

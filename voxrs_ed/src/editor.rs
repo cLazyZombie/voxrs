@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{PanelInfo, TextInfo, WidgetBuilder, WidgetRepository};
+use voxrs_ui::{EditableTextInfo, PanelInfo, WidgetBuilder, WidgetRepository};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::res::EditorAssetRes;
@@ -63,7 +63,7 @@ impl Editor {
                 .child(|b| {
                     let console_font = asset_manager
                         .get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
-                    b.text(TextInfo {
+                    b.editable_text(EditableTextInfo {
                         pos: (10.0, 10.0).into(),
                         size: (100.0, 50.0).into(),
                         font: console_font,
