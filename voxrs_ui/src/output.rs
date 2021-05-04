@@ -1,11 +1,2 @@
-use legion::*;
-
-pub struct WidgetOutput {
-    pub entity: Entity,
-    pub typ: WidgetOutputType,
-}
-
-pub enum WidgetOutputType {
-    /// EditableText receive enter (contents)
-    TextEdited(String),
-}
+/// create from widget to communicato with app
+pub trait WidgetOutput: Send + Sync + 'static {}

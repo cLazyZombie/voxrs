@@ -12,3 +12,6 @@ pub use root::Root;
 
 mod focusable;
 pub use focusable::Focusable;
+
+mod interaction_handler;
+pub use interaction_handler::InteractionHandler;

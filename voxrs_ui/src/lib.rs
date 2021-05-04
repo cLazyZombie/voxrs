@@ -17,5 +17,8 @@ pub mod input;
 
 pub mod output;
 
+mod interaction;
+pub use interaction::Interaction;
+
 mod widget_builder;
 pub use widget_builder::WidgetBuilder;

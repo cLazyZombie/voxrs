@@ -1,8 +1,12 @@
-use legion::world::SubWorld;
+use legion::world::{EntryMut, SubWorld};
 use legion::*;
 use voxrs_math::{IVec2, Rect2};
 
-use crate::{comp, input::WidgetInput, EditableTextWidget};
+use crate::{
+    comp::{self, InteractionHandler},
+    input::WidgetInput,
+    EditableTextWidget, Interaction,
+};
 use crate::{res, widget};
 
 use super::SortRootEntity;
@@ -11,12 +15,14 @@ use super::SortRootEntity;
 #[read_component(Entity)]
 #[write_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
+#[read_component(comp::InteractionHandler)]
 #[read_component(comp::Region)]
 #[read_component(comp::Focusable)]
 #[write_component(widget::Widget)]
 pub fn process_inputs(
     world: &mut SubWorld,
     #[resource] input_queue: &res::InputQueue,
+    #[resource] output_queue: &mut res::OutputQueue,
     #[resource] focused_widget: &mut res::FocusedWidget,
     #[resource] next_depth: &mut res::NextDepth,
 ) {
@@ -28,7 +34,7 @@ pub fn process_inputs(
             WidgetInput::Character(c) => {
                 // only send to focused widget
                 if let Some(focused) = focused_widget.get() {
-                    process_input_char(focused, *c, world);
+                    process_input_char(focused, *c, output_queue, world);
                 }
             }
             WidgetInput::MouseClick { pos } => {
@@ -80,14 +86,28 @@ fn process_mouse_click(
     }
 }
 
-fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
+fn process_input_char(
+    entity: Entity,
+    c: char,
+    output_queue: &mut res::OutputQueue,
+    world: &mut SubWorld,
+) {
     let mut entry = world.entry_mut(entity).unwrap();
     let widget = entry.get_component_mut::<widget::Widget>().unwrap();
 
     #[allow(clippy::single_match)]
     match widget {
         widget::Widget::EditableText(editable_text) => {
-            editable_text_process_input_char(editable_text, c);
+            if c == '\r' {
+                let contents = editable_text.contents.clone();
+                if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+                    let interaction = Interaction::TextEdited(contents);
+                    handler.process(interaction, output_queue);
+                }
+            } else {
+                editable_text.contents.push(c);
+            }
+            //editable_text_process_input_char(entry, editable_text, dbg!(c), output_queue);
         }
         _ => {}
     }
@@ -102,8 +122,20 @@ fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
 //     }
 // }
 
-fn editable_text_process_input_char(editable_text: &mut EditableTextWidget, c: char) {
-    editable_text.contents.push(c);
+fn editable_text_process_input_char(
+    entry: EntryMut,
+    editable_text: &mut EditableTextWidget,
+    c: char,
+    output_queue: &mut res::OutputQueue,
+) {
+    if c == '\r' {
+        if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+            let interaction = Interaction::TextEdited(editable_text.contents.clone());
+            handler.process(interaction, output_queue);
+        }
+    } else {
+        editable_text.contents.push(c);
+    }
 }
 
 fn process_mouse_click_widget(

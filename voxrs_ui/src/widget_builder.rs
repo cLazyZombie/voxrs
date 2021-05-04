@@ -1,6 +1,6 @@
 use legion::*;
 
-use crate::{comp, res, widget, EditableTextWidget, TextWidget};
+use crate::{comp, output::WidgetOutput, res, widget, EditableTextWidget, Interaction, TextWidget};
 
 pub struct WidgetBuilder<'a> {
     world: &'a mut World,
@@ -30,6 +30,27 @@ impl<'a> WidgetBuilder<'a> {
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
         let entity = self.world.push((panel, region, color, hierarchy));
+
+        // link to parent
+        // panic if parent is not exists
+        if let Some(parent) = parent {
+            self.link_to_parent(parent, entity);
+        } else {
+            self.add_root(entity);
+        }
+
+        self.last_entity = Some(entity);
+
+        self
+    }
+
+    pub fn button(&mut self, info: widget::ButtonInfo) -> &mut Self {
+        let button = widget::Widget::Button;
+        let region = comp::Region::new(info.pos, info.size);
+        let color = comp::Color::new(info.color);
+        let parent = self.get_parent();
+        let hierarchy = comp::Hierarchy::new(parent);
+        let entity = self.world.push((button, region, color, hierarchy));
 
         // link to parent
         // panic if parent is not exists
@@ -121,6 +142,30 @@ impl<'a> WidgetBuilder<'a> {
         self
     }
 
+    // pub fn handle_event<F>(&mut self, f: F)
+    // where
+    //     F: Fn(Interaction) -> Option<Box<dyn WidgetOutput>> + Send + Sync + 'static,
+    // {
+    //     //let f = Arc::new(Mutex::new(Box::new(f) as Box<dyn Fn(Interaction)>));
+    //     let handler = comp::InteractionHandler::new(f);
+    //     let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
+    //     target.add_component(handler);
+    // }
+
+    pub fn handle_event<F, Output>(&mut self, f: F)
+    where
+        Output: WidgetOutput,
+        F: Fn(Interaction) -> Option<Output> + Send + Sync + 'static,
+    {
+        // wrap return output to Box
+        let fn_wrapper =
+            move |interaction| f(interaction).map(|out| Box::new(out) as Box<dyn WidgetOutput>);
+
+        let handler = comp::InteractionHandler::new(fn_wrapper);
+        let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
+        target.add_component(handler);
+    }
+
     fn link_to_parent(&mut self, parent: Entity, child: Entity) {
         let mut parent = self.world.entry_mut(parent).unwrap();
         let hierarchy = parent.get_component_mut::<comp::Hierarchy>().unwrap();
@@ -137,9 +182,14 @@ impl<'a> WidgetBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::PanelInfo;
+    use std::sync::{Arc, Mutex};
+
+    use crate::{comp::InteractionHandler, ButtonInfo, PanelInfo};
 
     use super::*;
+
+    struct MyEvent;
+    impl WidgetOutput for MyEvent {}
 
     #[test]
     fn test_build() {
@@ -160,14 +210,21 @@ mod tests {
             })
             .query_id(&mut parent)
             .child(|b| {
-                b.panel(PanelInfo {
+                b.button(ButtonInfo {
                     pos: (0.0, 0.0).into(),
                     size: (100.0, 100.0).into(),
                     color: (1.0, 1.0, 1.0, 1.0).into(),
                 })
-                .query_id(&mut child);
+                .query_id(&mut child)
+                .handle_event(|event| match event {
+                    Interaction::TextEdited(_) => Some(MyEvent),
+                    _ => None,
+                })
             });
 
         assert_eq!(<&comp::Root>::query().iter(&world).count(), 1);
+
+        let mut query = <(Entity, &InteractionHandler)>::query();
+        for (entity, handler) in query.iter(&world) {}
     }
 }
