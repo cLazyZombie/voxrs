@@ -182,9 +182,7 @@ impl<'a> WidgetBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
-    use crate::{comp::InteractionHandler, ButtonInfo, PanelInfo};
+    use crate::{input::WidgetInput, system, ButtonInfo, PanelInfo};
 
     use super::*;
 
@@ -217,14 +215,30 @@ mod tests {
                 })
                 .query_id(&mut child)
                 .handle_event(|event| match event {
-                    Interaction::TextEdited(_) => Some(MyEvent),
+                    Interaction::ButtonClicked => Some(MyEvent),
                     _ => None,
                 })
             });
 
         assert_eq!(<&comp::Root>::query().iter(&world).count(), 1);
 
-        let mut query = <(Entity, &InteractionHandler)>::query();
-        for (entity, handler) in query.iter(&world) {}
+        // click button
+        {
+            let mut input_queue = resources.get_mut::<res::InputQueue>().unwrap();
+            input_queue.add(WidgetInput::MouseClick {
+                pos: (10, 10).into(),
+            });
+        }
+
+        // process system
+        let mut tick_schedule = Schedule::builder()
+            .add_system(system::process_inputs_system())
+            .build();
+        tick_schedule.execute(&mut world, &mut resources);
+
+        // check output
+        let output_queue = resources.get::<res::OutputQueue>().unwrap();
+        let output = output_queue.iter().collect::<Vec<_>>();
+        assert_eq!(output.len(), 1);
     }
 }

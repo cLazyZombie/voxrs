@@ -38,7 +38,7 @@ pub fn process_inputs(
                 }
             }
             WidgetInput::MouseClick { pos } => {
-                process_mouse_click(&roots, pos, world, next_depth, focused_widget);
+                process_mouse_click(&roots, pos, world, next_depth, focused_widget, output_queue);
             }
             _ => {}
         }
@@ -51,6 +51,7 @@ fn process_mouse_click(
     world: &mut SubWorld,
     next_depth: &mut res::NextDepth,
     focused_widget: &mut res::FocusedWidget,
+    output_queue: &mut res::OutputQueue,
 ) {
     let topmost_entity = {
         let mut topmost_entity: Option<Entity> = None;
@@ -82,7 +83,14 @@ fn process_mouse_click(
     focused_widget.clear();
     if let Some(topmost_entity) = topmost_entity {
         let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-        process_mouse_click_widget(topmost_entity, pos, &root_rect, world, focused_widget);
+        process_mouse_click_widget(
+            topmost_entity,
+            pos,
+            &root_rect,
+            world,
+            focused_widget,
+            output_queue,
+        );
     }
 }
 
@@ -144,6 +152,7 @@ fn process_mouse_click_widget(
     parent_rect: &Rect2,
     world: &SubWorld,
     focused_widget: &mut res::FocusedWidget,
+    output_queue: &mut res::OutputQueue,
 ) -> bool {
     let entry = world.entry_ref(entity).unwrap();
 
@@ -165,7 +174,14 @@ fn process_mouse_click_widget(
     let children = hierarchy.children.clone();
     let mut child_has_focus = false;
     for child in children {
-        if process_mouse_click_widget(child, pos, &clipped_rect, world, focused_widget) {
+        if process_mouse_click_widget(
+            child,
+            pos,
+            &clipped_rect,
+            world,
+            focused_widget,
+            output_queue,
+        ) {
             child_has_focus = true;
             break;
         }
@@ -174,6 +190,18 @@ fn process_mouse_click_widget(
     if !child_has_focus && entry.get_component::<comp::Focusable>().is_ok() {
         focused_widget.set(entity);
         return true;
+    }
+
+    // process event
+    let widget = entry.get_component::<widget::Widget>().unwrap();
+    match widget {
+        widget::Widget::Button => {
+            if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+                let interaction = Interaction::ButtonClicked;
+                handler.process(interaction, output_queue);
+            }
+        }
+        _ => {}
     }
 
     child_has_focus
