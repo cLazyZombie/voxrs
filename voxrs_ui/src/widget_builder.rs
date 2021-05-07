@@ -219,7 +219,7 @@ mod tests {
                 })
                 .query_id(&mut child)
                 .handle_event(|event| match event {
-                    Interaction::ButtonClicked => Some(MyMessage::Message1),
+                    Interaction::Clicked => Some(MyMessage::Message1),
                     _ => None,
                 })
             });

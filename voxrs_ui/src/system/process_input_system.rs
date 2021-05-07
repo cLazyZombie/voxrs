@@ -53,45 +53,70 @@ fn process_mouse_click<Message: 'static>(
     focused_widget: &mut res::FocusedWidget,
     output_queue: &mut res::OutputQueue<Message>,
 ) {
-    let topmost_entity = {
-        let mut topmost_entity: Option<Entity> = None;
-        for root_entity in roots {
-            let entry = world.entry_ref(*root_entity).unwrap();
+    let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
 
-            let region = entry.get_component::<comp::Region>();
-            if region.is_err() {
-                continue;
+    let mut focused = false;
+
+    for root in roots {
+        if let Some(widget) = get_widget_under_pos(*root, pos, &root_rect, world) {
+            let entry = world.entry_ref(widget).unwrap();
+
+            // focus widget
+            if entry.get_component::<comp::Focusable>().is_ok() {
+                focused_widget.set(widget);
+                focused = true;
+                eprintln!("focused: {:?}", widget);
             }
 
-            // check pos is in this widget region (clipped)
-            let region = region.unwrap();
-            let rect = region.get_rect();
-            if rect.has_ivec2(pos) {
-                let top_depth = next_depth.get_next();
-                let root_entry = world.entry_mut(*root_entity).unwrap();
-                let root = root_entry.into_component_mut::<comp::Root>().unwrap();
-                root.set_depth(top_depth);
-
-                topmost_entity = Some(*root_entity);
-                break;
+            // process input event
+            if let Ok(handler) = entry.get_component::<comp::InteractionHandler<Message>>() {
+                handler.process(Interaction::Clicked, output_queue);
             }
+
+            // change topmost root depth
+            let root_entry = world.entry_mut(*root).unwrap();
+            let top_depth = next_depth.get_next();
+            let root = root_entry.into_component_mut::<comp::Root>().unwrap();
+            root.set_depth(top_depth);
+
+            break;
         }
-        topmost_entity
-    };
-
-    // handle mouse click to top most widget
-    focused_widget.clear();
-    if let Some(topmost_entity) = topmost_entity {
-        let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
-        process_mouse_click_widget(
-            topmost_entity,
-            pos,
-            &root_rect,
-            world,
-            focused_widget,
-            output_queue,
-        );
     }
+
+    // no focused in this mouse click, then clear focus
+    if !focused {
+        focused_widget.clear();
+    }
+}
+
+fn get_widget_under_pos(
+    entity: Entity,
+    pos: &IVec2,
+    parent_rect: &Rect2,
+    world: &SubWorld,
+) -> Option<Entity> {
+    let entry = world.entry_ref(entity).unwrap();
+
+    let region = entry.get_component::<comp::Region>();
+    if region.is_err() {
+        return None;
+    }
+
+    let region = region.unwrap();
+    let rect = region.get_rect().transform(parent_rect);
+    if !rect.has_ivec2(pos) {
+        return None;
+    }
+
+    // check child
+    let hierarchy = entry.get_component::<comp::Hierarchy>().unwrap();
+    for child in &hierarchy.children {
+        if let Some(focus) = get_widget_under_pos(*child, pos, &rect, world) {
+            return Some(focus);
+        }
+    }
+
+    Some(entity)
 }
 
 fn process_input_char<Message: 'static>(
@@ -121,15 +146,6 @@ fn process_input_char<Message: 'static>(
     }
 }
 
-// fn process_input_char_child(entity: Entity, c: char, world: &mut SubWorld) {
-//     let entry = world.entry_mut(entity).unwrap();
-//     let hierarchy = entry.get_component::<comp::Hierarchy>().unwrap(); // hierarchy component should exists
-//     let children = hierarchy.children.clone();
-//     for child in children {
-//         process_input_char(child, c, world);
-//     }
-// }
-
 fn editable_text_process_input_char<Message: 'static>(
     entry: EntryMut,
     editable_text: &mut EditableTextWidget,
@@ -144,68 +160,6 @@ fn editable_text_process_input_char<Message: 'static>(
     } else {
         editable_text.contents.push(c);
     }
-}
-
-fn process_mouse_click_widget<Message: 'static>(
-    entity: Entity,
-    pos: &IVec2,
-    parent_rect: &Rect2,
-    world: &SubWorld,
-    focused_widget: &mut res::FocusedWidget,
-    output_queue: &mut res::OutputQueue<Message>,
-) -> bool {
-    let entry = world.entry_ref(entity).unwrap();
-
-    let region = entry.get_component::<comp::Region>();
-    if region.is_err() {
-        return false;
-    }
-
-    // check pos is in this widget region (clipped)
-    let region = region.unwrap();
-    let rect = region.get_rect();
-    let clipped_rect = rect.transform(parent_rect);
-    if !clipped_rect.has_ivec2(pos) {
-        return false;
-    }
-
-    // focus
-    let hierarchy = entry.get_component::<comp::Hierarchy>().unwrap();
-    let children = hierarchy.children.clone();
-    let mut child_has_focus = false;
-    for child in children {
-        if process_mouse_click_widget(
-            child,
-            pos,
-            &clipped_rect,
-            world,
-            focused_widget,
-            output_queue,
-        ) {
-            child_has_focus = true;
-            break;
-        }
-    }
-
-    if !child_has_focus && entry.get_component::<comp::Focusable>().is_ok() {
-        focused_widget.set(entity);
-        return true;
-    }
-
-    // process event
-    let widget = entry.get_component::<widget::Widget>().unwrap();
-    #[allow(clippy::single_match)]
-    match widget {
-        widget::Widget::Button => {
-            if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
-                let interaction = Interaction::ButtonClicked;
-                handler.process(interaction, output_queue);
-            }
-        }
-        _ => {}
-    }
-
-    child_has_focus
 }
 
 #[system]
