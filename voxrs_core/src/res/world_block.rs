@@ -36,17 +36,15 @@ impl WorldBlockRes {
 
             chunks.resize_with(asset.world_chunks.len(), Default::default);
 
-            for chunk_asset in &asset.world_chunks {
-                if let Some(chunk_asset) = chunk_asset {
-                    let pos = asset.get_world_pos(chunk_asset.idx as usize);
-                    let chunk = SafeCloner::new(Chunk::new(
-                        pos,
-                        Aabb::new(pos, pos + chunk_extend),
-                        chunk_asset.blocks.clone(),
-                        chunk_asset.vis.clone(),
-                    ));
-                    chunks[chunk_asset.idx as usize] = Some(chunk);
-                }
+            for chunk_asset in asset.world_chunks.iter().flatten() {
+                let pos = asset.get_world_pos(chunk_asset.idx as usize);
+                let chunk = SafeCloner::new(Chunk::new(
+                    pos,
+                    Aabb::new(pos, pos + chunk_extend),
+                    chunk_asset.blocks.clone(),
+                    chunk_asset.vis.clone(),
+                ));
+                chunks[chunk_asset.idx as usize] = Some(chunk);
             }
         }
 
@@ -87,11 +85,7 @@ impl WorldBlockRes {
     pub fn get_block(&self, block_pos: BlockPos) -> Option<u8> {
         if let Some((chunk_idx, block_idx)) = block_pos.get_index(&self.chunk_counts) {
             let chunk = self.chunks[chunk_idx].as_ref();
-            if let Some(chunk) = chunk {
-                Some(chunk.blocks[block_idx])
-            } else {
-                None
-            }
+            chunk.map(|chunk| chunk.blocks[block_idx])
         } else {
             None
         }
@@ -177,11 +171,7 @@ impl WorldBlockRes {
         let idx = block_pos.get_index(&self.chunk_counts);
         if let Some((chunk_idx, block_idx)) = idx {
             let chunk = self.chunks[chunk_idx].as_ref();
-            if let Some(chunk) = chunk {
-                Some(chunk.vis[block_idx])
-            } else {
-                None
-            }
+            chunk.map(|chunk| chunk.vis[block_idx])
         } else {
             None
         }

@@ -56,11 +56,7 @@ impl ChunkCache {
     // }
 
     pub fn get(&self, key: &ChunkId) -> Option<&Vec<Chunk>> {
-        let value = self.cached.get(key);
-        match value {
-            Some((vec, _)) => Some(vec),
-            None => None,
-        }
+        self.cached.get(key).map(|(vec, _)| vec)
     }
 
     pub fn clear_unused(&mut self) -> usize {

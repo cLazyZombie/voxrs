@@ -194,6 +194,7 @@ fn process_mouse_click_widget<Message: 'static>(
 
     // process event
     let widget = entry.get_component::<widget::Widget>().unwrap();
+    #[allow(clippy::single_match)]
     match widget {
         widget::Widget::Button => {
             if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
