@@ -65,7 +65,6 @@ fn process_mouse_click<Message: 'static>(
             if entry.get_component::<comp::Focusable>().is_ok() {
                 focused_widget.set(widget);
                 focused = true;
-                eprintln!("focused: {:?}", widget);
             }
 
             // process input event
