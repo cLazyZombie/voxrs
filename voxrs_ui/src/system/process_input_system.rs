@@ -15,14 +15,14 @@ use super::SortRootEntity;
 #[read_component(Entity)]
 #[write_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
-#[read_component(comp::InteractionHandler)]
+#[read_component(comp::InteractionHandler<Message>)]
 #[read_component(comp::Region)]
 #[read_component(comp::Focusable)]
 #[write_component(widget::Widget)]
-pub fn process_inputs(
+pub fn process_inputs<Message: 'static>(
     world: &mut SubWorld,
     #[resource] input_queue: &res::InputQueue,
-    #[resource] output_queue: &mut res::OutputQueue,
+    #[resource] output_queue: &mut res::OutputQueue<Message>,
     #[resource] focused_widget: &mut res::FocusedWidget,
     #[resource] next_depth: &mut res::NextDepth,
 ) {
@@ -45,13 +45,13 @@ pub fn process_inputs(
     }
 }
 
-fn process_mouse_click(
+fn process_mouse_click<Message: 'static>(
     roots: &[Entity],
     pos: &IVec2,
     world: &mut SubWorld,
     next_depth: &mut res::NextDepth,
     focused_widget: &mut res::FocusedWidget,
-    output_queue: &mut res::OutputQueue,
+    output_queue: &mut res::OutputQueue<Message>,
 ) {
     let topmost_entity = {
         let mut topmost_entity: Option<Entity> = None;
@@ -94,10 +94,10 @@ fn process_mouse_click(
     }
 }
 
-fn process_input_char(
+fn process_input_char<Message: 'static>(
     entity: Entity,
     c: char,
-    output_queue: &mut res::OutputQueue,
+    output_queue: &mut res::OutputQueue<Message>,
     world: &mut SubWorld,
 ) {
     let mut entry = world.entry_mut(entity).unwrap();
@@ -108,7 +108,7 @@ fn process_input_char(
         widget::Widget::EditableText(editable_text) => {
             if c == '\r' {
                 let contents = editable_text.contents.clone();
-                if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+                if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                     let interaction = Interaction::TextEdited(contents);
                     handler.process(interaction, output_queue);
                 }
@@ -130,14 +130,14 @@ fn process_input_char(
 //     }
 // }
 
-fn editable_text_process_input_char(
+fn editable_text_process_input_char<Message: 'static>(
     entry: EntryMut,
     editable_text: &mut EditableTextWidget,
     c: char,
-    output_queue: &mut res::OutputQueue,
+    output_queue: &mut res::OutputQueue<Message>,
 ) {
     if c == '\r' {
-        if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+        if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
             let interaction = Interaction::TextEdited(editable_text.contents.clone());
             handler.process(interaction, output_queue);
         }
@@ -146,13 +146,13 @@ fn editable_text_process_input_char(
     }
 }
 
-fn process_mouse_click_widget(
+fn process_mouse_click_widget<Message: 'static>(
     entity: Entity,
     pos: &IVec2,
     parent_rect: &Rect2,
     world: &SubWorld,
     focused_widget: &mut res::FocusedWidget,
-    output_queue: &mut res::OutputQueue,
+    output_queue: &mut res::OutputQueue<Message>,
 ) -> bool {
     let entry = world.entry_ref(entity).unwrap();
 
@@ -196,7 +196,7 @@ fn process_mouse_click_widget(
     let widget = entry.get_component::<widget::Widget>().unwrap();
     match widget {
         widget::Widget::Button => {
-            if let Ok(handler) = entry.get_component::<InteractionHandler>() {
+            if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                 let interaction = Interaction::ButtonClicked;
                 handler.process(interaction, output_queue);
             }

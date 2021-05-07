@@ -8,7 +8,7 @@ use voxrs_types::{io::FileSystem, Clock};
 use voxrs_ui::{EditableTextInfo, PanelInfo, WidgetBuilder};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
-use crate::res::EditorAssetRes;
+use crate::{res::EditorAssetRes, WidgetMessage};
 
 use super::system;
 
@@ -46,8 +46,8 @@ impl Editor {
         );
         resources.insert(camera);
 
-        voxrs_ui::init_resources(&mut resources);
-        let mut builder = WidgetBuilder::new(&mut world, &mut resources);
+        voxrs_ui::init_resources::<WidgetMessage>(&mut resources);
+        let mut builder = WidgetBuilder::<WidgetMessage>::new(&mut world, &mut resources);
         builder
             .panel(PanelInfo {
                 pos: (10.0, 10.0).into(),
@@ -88,7 +88,7 @@ impl Editor {
         resources.insert(editor_asset);
 
         let tick_schedule = Schedule::builder()
-            .add_system(voxrs_ui::system::process_inputs_system())
+            .add_system(voxrs_ui::system::process_inputs_system::<WidgetMessage>())
             .add_system(system::camera::control_system())
             .add_system(system::world_block_modify::modify_system())
             .build();

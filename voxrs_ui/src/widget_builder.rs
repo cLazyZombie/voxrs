@@ -1,21 +1,25 @@
+use std::marker::PhantomData;
+
 use legion::*;
 
-use crate::{comp, output::WidgetOutput, res, widget, EditableTextWidget, Interaction, TextWidget};
+use crate::{comp, res, widget, EditableTextWidget, Interaction, TextWidget};
 
-pub struct WidgetBuilder<'a> {
+pub struct WidgetBuilder<'a, Message> {
     world: &'a mut World,
     resources: &'a mut Resources,
     parent_stack: Vec<Entity>,
     last_entity: Option<Entity>,
+    phantom: PhantomData<Message>,
 }
 
-impl<'a> WidgetBuilder<'a> {
+impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
     pub fn new(world: &'a mut World, resources: &'a mut Resources) -> Self {
         Self {
             world,
             resources,
             parent_stack: Vec::new(),
             last_entity: None,
+            phantom: PhantomData,
         }
     }
 
@@ -129,7 +133,7 @@ impl<'a> WidgetBuilder<'a> {
 
     pub fn child<F>(&mut self, f: F) -> &mut Self
     where
-        F: FnOnce(&mut WidgetBuilder),
+        F: FnOnce(&mut WidgetBuilder<Message>),
     {
         self.begin_child();
         f(self);
@@ -152,16 +156,15 @@ impl<'a> WidgetBuilder<'a> {
     //     target.add_component(handler);
     // }
 
-    pub fn handle_event<F, Output>(&mut self, f: F)
+    pub fn handle_event<F>(&mut self, f: F)
     where
-        Output: WidgetOutput,
-        F: Fn(Interaction) -> Option<Output> + Send + Sync + 'static,
+        F: Fn(Interaction) -> Option<Message> + Send + Sync + 'static,
     {
         // wrap return output to Box
-        let fn_wrapper =
-            move |interaction| f(interaction).map(|out| Box::new(out) as Box<dyn WidgetOutput>);
+        // let fn_wrapper =
+        //     move |interaction| f(interaction).map(|out| Box::new(out) as Box<dyn WidgetOutput>);
 
-        let handler = comp::InteractionHandler::new(fn_wrapper);
+        let handler = comp::InteractionHandler::new(f);
         let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
         target.add_component(handler);
     }
@@ -186,16 +189,17 @@ mod tests {
 
     use super::*;
 
-    struct MyEvent;
-    impl WidgetOutput for MyEvent {}
+    enum MyMessage {
+        Message1,
+    }
 
     #[test]
     fn test_build() {
         let mut world = World::default();
         let mut resources = Resources::default();
-        res::init_resources(&mut resources);
+        res::init_resources::<MyMessage>(&mut resources);
 
-        let mut builder = WidgetBuilder::new(&mut world, &mut resources);
+        let mut builder = WidgetBuilder::<MyMessage>::new(&mut world, &mut resources);
 
         let mut parent = None;
         let mut child = None;
@@ -215,7 +219,7 @@ mod tests {
                 })
                 .query_id(&mut child)
                 .handle_event(|event| match event {
-                    Interaction::ButtonClicked => Some(MyEvent),
+                    Interaction::ButtonClicked => Some(MyMessage::Message1),
                     _ => None,
                 })
             });
@@ -232,12 +236,12 @@ mod tests {
 
         // process system
         let mut tick_schedule = Schedule::builder()
-            .add_system(system::process_inputs_system())
+            .add_system(system::process_inputs_system::<MyMessage>())
             .build();
         tick_schedule.execute(&mut world, &mut resources);
 
         // check output
-        let output_queue = resources.get::<res::OutputQueue>().unwrap();
+        let output_queue = resources.get::<res::OutputQueue<MyMessage>>().unwrap();
         let output = output_queue.iter().collect::<Vec<_>>();
         assert_eq!(output.len(), 1);
     }

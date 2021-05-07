@@ -1,16 +1,14 @@
-use crate::output::WidgetOutput;
-
-pub struct OutputQueue {
-    vec: Vec<Box<dyn WidgetOutput>>,
+pub struct OutputQueue<Message: 'static> {
+    vec: Vec<Message>,
 }
 
-impl OutputQueue {
-    pub fn add(&mut self, output: Box<dyn WidgetOutput>) {
-        self.vec.push(output);
+impl<Message: 'static> OutputQueue<Message> {
+    pub fn add(&mut self, message: Message) {
+        self.vec.push(message);
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &dyn WidgetOutput> {
-        self.vec.iter().map(|v| v.as_ref())
+    pub fn iter(&self) -> impl Iterator<Item = &Message> {
+        self.vec.iter()
     }
 
     pub fn clear(&mut self) {
@@ -18,7 +16,7 @@ impl OutputQueue {
     }
 }
 
-impl Default for OutputQueue {
+impl<Message: 'static> Default for OutputQueue<Message> {
     fn default() -> Self {
         Self { vec: Vec::new() }
     }

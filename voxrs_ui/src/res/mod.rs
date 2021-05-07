@@ -11,11 +11,11 @@ mod next_depth;
 pub use next_depth::NextDepth;
 
 use legion::*;
-pub fn init_resources(resources: &mut Resources) {
+pub fn init_resources<Message: 'static>(resources: &mut Resources) {
     let input_queue = InputQueue::default();
     resources.insert(input_queue);
 
-    let output_queue = OutputQueue::default();
+    let output_queue = OutputQueue::<Message>::default();
     resources.insert(output_queue);
 
     let focused_widget = FocusedWidget::default();

@@ -15,8 +15,6 @@ pub use widget::*;
 
 pub mod input;
 
-pub mod output;
-
 mod interaction;
 pub use interaction::Interaction;
 
