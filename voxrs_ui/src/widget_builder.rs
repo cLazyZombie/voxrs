@@ -2,7 +2,9 @@ use std::marker::PhantomData;
 
 use legion::*;
 
-use crate::{comp, res, widget, EditableTextWidget, Interaction, TextWidget};
+use crate::{
+    comp, res, widget, ButtonWidget, EditableTextWidget, Interaction, PanelWidget, TerminalWidget, TextWidget,
+};
 
 pub struct WidgetBuilder<'a, Message> {
     world: &'a mut World,
@@ -28,7 +30,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
     }
 
     pub fn panel(&mut self, info: widget::PanelInfo) -> &mut Self {
-        let panel = widget::Widget::Panel;
+        let panel = widget::Widget::Panel(PanelWidget {});
         let region = comp::Region::new(info.pos, info.size);
         let color = comp::Color::new(info.color);
         let parent = self.get_parent();
@@ -49,7 +51,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
     }
 
     pub fn button(&mut self, info: widget::ButtonInfo) -> &mut Self {
-        let button = widget::Widget::Button;
+        let button = widget::Widget::Button(ButtonWidget {});
         let region = comp::Region::new(info.pos, info.size);
         let color = comp::Color::new(info.color);
         let parent = self.get_parent();
@@ -102,9 +104,33 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
         let region = comp::Region::new(info.pos, info.size);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
-        let entity = self
-            .world
-            .push((editable, region, hierarchy, comp::Focusable));
+        let entity = self.world.push((editable, region, hierarchy, comp::Focusable));
+
+        // link to parent
+        // panic if parent is not exists
+        if let Some(parent) = parent {
+            self.link_to_parent(parent, entity);
+        } else {
+            self.add_root(entity);
+        }
+
+        self.last_entity = Some(entity);
+
+        self
+    }
+
+    pub fn terminal(&mut self, info: widget::TerminalInfo) -> &mut Self {
+        let terminal = widget::Widget::Terminal(TerminalWidget {
+            font: info.font,
+            font_size: info.font_size,
+            contents: info.contents,
+        });
+
+        let region = comp::Region::new(info.pos, info.size);
+        let parent = self.get_parent();
+        let hierarchy = comp::Hierarchy::new(parent);
+        let color = comp::Color::new(info.color);
+        let entity = self.world.push((terminal, region, hierarchy, color, comp::Focusable));
 
         // link to parent
         // panic if parent is not exists
@@ -146,24 +172,10 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
         self
     }
 
-    // pub fn handle_event<F>(&mut self, f: F)
-    // where
-    //     F: Fn(Interaction) -> Option<Box<dyn WidgetOutput>> + Send + Sync + 'static,
-    // {
-    //     //let f = Arc::new(Mutex::new(Box::new(f) as Box<dyn Fn(Interaction)>));
-    //     let handler = comp::InteractionHandler::new(f);
-    //     let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
-    //     target.add_component(handler);
-    // }
-
     pub fn handle_event<F>(&mut self, f: F)
     where
         F: Fn(Interaction) -> Option<Message> + Send + Sync + 'static,
     {
-        // wrap return output to Box
-        // let fn_wrapper =
-        //     move |interaction| f(interaction).map(|out| Box::new(out) as Box<dyn WidgetOutput>);
-
         let handler = comp::InteractionHandler::new(f);
         let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
         target.add_component(handler);
@@ -229,9 +241,7 @@ mod tests {
         // click button
         {
             let mut input_queue = resources.get_mut::<res::InputQueue>().unwrap();
-            input_queue.add(WidgetInput::MouseClick {
-                pos: (10, 10).into(),
-            });
+            input_queue.add(WidgetInput::MouseClick { pos: (10, 10).into() });
         }
 
         // process system

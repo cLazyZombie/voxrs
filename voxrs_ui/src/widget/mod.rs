@@ -2,27 +2,27 @@ use voxrs_asset::{AssetHandle, FontAsset};
 use voxrs_math::{Vec2, Vec4};
 
 pub(crate) enum Widget {
-    Panel,
-    Button,
+    Panel(PanelWidget),
+    Button(ButtonWidget),
     Text(TextWidget),
     EditableText(EditableTextWidget),
-    Console(ConsoleWidget),
+    Terminal(TerminalWidget),
 }
 
-pub struct Panel {}
+pub struct PanelWidget {}
 pub struct PanelInfo {
     pub pos: Vec2,
     pub size: Vec2,
     pub color: Vec4,
 }
 
-impl Panel {
+impl PanelWidget {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Default for Panel {
+impl Default for PanelWidget {
     fn default() -> Self {
         Self::new()
     }
@@ -32,6 +32,13 @@ pub struct ButtonInfo {
     pub pos: Vec2,
     pub size: Vec2,
     pub color: Vec4,
+}
+
+pub(crate) struct ButtonWidget {}
+impl Default for ButtonWidget {
+    fn default() -> Self {
+        Self {}
+    }
 }
 
 pub(crate) struct TextWidget {
@@ -62,7 +69,16 @@ pub struct EditableTextInfo {
     pub contents: String,
 }
 
-pub(crate) struct ConsoleWidget {
+pub struct TerminalInfo {
+    pub pos: Vec2,
+    pub size: Vec2,
+    pub color: Vec4,
+    pub font: AssetHandle<FontAsset>,
+    pub font_size: u32,
+    pub contents: String,
+}
+
+pub(crate) struct TerminalWidget {
     pub font: AssetHandle<FontAsset>,
     pub font_size: u32,
     pub contents: String,

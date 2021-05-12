@@ -5,7 +5,7 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{EditableTextInfo, PanelInfo, WidgetBuilder};
+use voxrs_ui::{EditableTextInfo, PanelInfo, TerminalInfo, WidgetBuilder};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::{res::EditorAssetRes, WidgetMessage};
@@ -22,16 +22,11 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new<F: FileSystem>(
-        width: u32,
-        height: u32,
-        asset_manager: &mut AssetManager<F>,
-    ) -> Self {
+    pub fn new<F: FileSystem>(width: u32, height: u32, asset_manager: &mut AssetManager<F>) -> Self {
         let mut world = World::default();
         let mut resources = Resources::default();
 
-        let world_block_res =
-            WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
+        let world_block_res = WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
         resources.insert(world_block_res);
 
         let camera = CameraRes::new(
@@ -47,6 +42,7 @@ impl Editor {
         resources.insert(camera);
 
         voxrs_ui::init_resources::<WidgetMessage>(&mut resources);
+        let console_font = asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
         let mut builder = WidgetBuilder::<WidgetMessage>::new(&mut world, &mut resources);
         builder
             .panel(PanelInfo {
@@ -61,12 +57,10 @@ impl Editor {
                     color: (0.0, 1.0, 1.0, 1.0).into(),
                 })
                 .child(|b| {
-                    let console_font = asset_manager
-                        .get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
                     b.editable_text(EditableTextInfo {
                         pos: (10.0, 10.0).into(),
                         size: (100.0, 50.0).into(),
-                        font: console_font,
+                        font: console_font.clone(),
                         font_size: 24,
                         contents: "text".to_string(),
                     });
@@ -76,6 +70,14 @@ impl Editor {
                 pos: (30.0, 30.0).into(),
                 size: (200.0, 100.0).into(),
                 color: (0.0, 0.0, 1.0, 0.5).into(),
+            })
+            .terminal(TerminalInfo {
+                pos: (0.0, 468.0).into(),
+                size: (1024.0, 300.0).into(),
+                color: (0.0, 0.0, 0.0, 0.7).into(),
+                font: console_font.clone(),
+                font_size: 20,
+                contents: "hello, world".to_string(),
             });
 
         let key_input = KeyInputRes::new();
@@ -204,8 +206,7 @@ impl Editor {
 
     #[profiling::function]
     pub fn end_frame(&mut self) {
-        self.end_frame_schedule
-            .execute(&mut self.world, &mut self.res);
+        self.end_frame_schedule.execute(&mut self.world, &mut self.res);
     }
 
     pub fn save<F: FileSystem>(&self, path: &AssetPath) -> Result<()> {
