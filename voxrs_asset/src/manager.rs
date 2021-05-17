@@ -10,8 +10,7 @@ use voxrs_types::io::FileSystem;
 use super::{
     assets::{Asset, AssetType},
     handle::{AssetHandle, AssetLoadError},
-    AssetPath, FontAsset, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset,
-    WorldMaterialAsset,
+    AssetPath, FontAsset, MaterialAsset, ShaderAsset, TextAsset, TextureAsset, WorldBlockAsset, WorldMaterialAsset,
 };
 pub struct AssetManager<F: FileSystem + 'static> {
     internal: Arc<Mutex<AssetManagerInternal<F>>>,
@@ -97,26 +96,80 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         }
     }
 
-    pub fn get<T: Asset + 'static>(
-        &mut self,
-        path: &AssetPath,
-        manager: AssetManager<F>,
-    ) -> AssetHandle<T> {
+    pub fn get<T: Asset + 'static>(&mut self, path: &AssetPath, mut manager: AssetManager<F>) -> AssetHandle<T> {
         let hash = path.get_hash();
         if let Some(handle) = self.get_handle(&hash) {
             return handle.clone();
         }
 
+        // match T::asset_type() {
+        //     AssetType::Text => self.create_text(path),
+        //     AssetType::Texture => self.create_texture(path),
+        //     AssetType::Shader => self.create_shader(path),
+        //     AssetType::Material => self.create_material(path, manager),
+        //     AssetType::WorldMaterial => self.create_world_block_material(path, manager),
+        //     AssetType::WorldBlock => self.create_world_block(path, manager),
+        //     AssetType::Font => self.create_font(path),
+        // }
+
+        let (handle, sender) = create_asset_handle(path);
+        self.add_handle(&handle);
+
+        let (device, queue) = self.clone_wgpu();
+
+        let path = path.clone();
+        self.async_rt.spawn(async move {
+            let _logger = AssetLoadLogger::new(&path);
+
+            let asset = T::load(&path, &mut manager, &device.unwrap(), &queue.unwrap());
+            let _ = sender.send(asset);
+
+            // let result;
+            // if let Ok(v) = F::read_binary(&path).await {
+            //     let mut shader = ShaderAsset::new(v);
+            //     if let (Some(device), Some(queue)) = (device, queue) {
+            //         shader.build(&device, &queue);
+            //     }
+            //     result = Ok(shader);
+            // } else {
+            //     result = Err(AssetLoadError::Failed);
+            // }
+
+            // let _ = sender.send(result);
+        });
+
+        handle
+    }
+
+    fn add_handle<T: Asset + 'static>(&mut self, handle: &AssetHandle<T>) {
+        let hash = handle.asset_hash();
         match T::asset_type() {
-            AssetType::Text => self.create_text(path),
-            AssetType::Texture => self.create_texture(path),
-            AssetType::Shader => self.create_shader(path),
-            AssetType::Material => self.create_material(path, manager),
-            AssetType::WorldMaterial => self.create_world_block_material(path, manager),
-            AssetType::WorldBlock => self.create_world_block(path, manager),
-            AssetType::Font => self.create_font(path),
+            AssetType::Texture => {
+                self.text_assets.insert(hash, handle.downcast_ref().clone());
+            }
+            AssetType::Text => {}
+            AssetType::Shader => {}
+            AssetType::Material => {}
+            AssetType::WorldMaterial => {}
+            AssetType::WorldBlock => {}
+            AssetType::Font => {}
         }
     }
+
+    // fn add_handle<T: Asset + 'static>(&mut self, handle: AssetHandle<T>) {
+    //     let hash = handle.asset_hash();
+    //     match T::asset_type() {
+    //         AssetType::Texture => {
+    //             self.text_assets.insert(hash, handle.downcast());
+    //         }
+    //         AssetType::Text => {}
+    //         AssetType::Shader => {}
+    //         AssetType::Material => {}
+    //         AssetType::WorldMaterial => {}
+    //         AssetType::WorldBlock => {}
+    //         AssetType::Font => {}
+    //     }
+    // }
 
     // todo: need refactoring get_xxx. [duplicated code]
     fn create_text<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
@@ -124,7 +177,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
         let (handle, sender) = create_asset_handle(path);
         //let cloned_handle = handle.as_ref().clone();
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.text_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -147,7 +200,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_texture<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, sender) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.texture_assets.insert(hash, handle);
         let path = path.clone();
         let (device, queue) = self.clone_wgpu();
@@ -175,7 +228,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_shader<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, sender) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.shader_assets.insert(hash, handle);
         let path = path.clone();
         let (device, queue) = self.clone_wgpu();
@@ -207,7 +260,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.material_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -234,7 +287,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, s) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.world_material_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -261,7 +314,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     ) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, sender) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.world_block_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -284,7 +337,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     fn create_font<T: Asset + 'static>(&mut self, path: &AssetPath) -> AssetHandle<T> {
         let hash = path.get_hash();
         let (handle, sender) = create_asset_handle(path);
-        let cloned_handle = handle.cast().clone();
+        let cloned_handle = handle.downcast_ref().clone();
         self.font_assets.insert(hash, handle);
         let path = path.clone();
 
@@ -305,21 +358,14 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
     }
 
     fn clone_wgpu(&self) -> (Option<Arc<wgpu::Device>>, Option<Arc<wgpu::Queue>>) {
-        let cloned_device = if let Some(device) = &self.device {
-            let device = Arc::clone(device);
-            Some(device)
-        } else {
-            None
-        };
-
-        let cloned_queue = if let Some(queue) = &self.queue {
-            let queue = Arc::clone(queue);
-            Some(queue)
-        } else {
-            None
-        };
-
-        (cloned_device, cloned_queue)
+        match (&self.device, &self.queue) {
+            (Some(device), Some(queue)) => {
+                let device = Arc::clone(device);
+                let queue = Arc::clone(queue);
+                (Some(device), Some(queue))
+            }
+            _ => (None, None),
+        }
     }
 
     #[cfg(test)]
@@ -338,31 +384,31 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
         match T::asset_type() {
             AssetType::Text => {
                 let handle = self.text_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::Texture => {
                 let handle = self.texture_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::Shader => {
                 let handle = self.shader_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::Material => {
                 let handle = self.material_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::WorldMaterial => {
                 let handle = self.world_material_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::WorldBlock => {
                 let handle = self.world_block_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
             AssetType::Font => {
                 let handle = self.font_assets.get(hash)?;
-                Some(handle.cast())
+                Some(handle.downcast_ref())
             }
         }
     }
@@ -370,10 +416,7 @@ impl<'wgpu, F: FileSystem + 'static> AssetManagerInternal<F> {
 
 fn create_asset_handle<T: Asset>(
     path: &AssetPath,
-) -> (
-    AssetHandle<T>,
-    crossbeam_channel::Sender<Result<T, AssetLoadError>>,
-) {
+) -> (AssetHandle<T>, crossbeam_channel::Sender<Result<T, AssetLoadError>>) {
     let (s, r) = crossbeam_channel::unbounded();
     let handle = AssetHandle::new(path, r);
     (handle, s)
@@ -400,11 +443,7 @@ impl<'a> Drop for AssetLoadLogger<'a> {
     fn drop(&mut self) {
         let end = Instant::now();
         let elapsed_time = end - self.start;
-        log::info!(
-            "[Asset] [{}ms] load {}",
-            elapsed_time.as_millis(),
-            self.asset_name
-        );
+        log::info!("[Asset] [{}ms] load {}", elapsed_time.as_millis(), self.asset_name);
     }
 }
 
@@ -429,10 +468,7 @@ mod tests {
         let mut manager = AssetManager::<MockFileSystem>::new();
         let handle: AssetHandle<TextureAsset> = manager.get(&"texture.png".into());
         let texture_asset = handle.get_asset();
-        assert_eq!(
-            texture_asset.buf,
-            include_bytes!("../../test_assets/texture.png")
-        );
+        assert_eq!(texture_asset.buf, include_bytes!("../../test_assets/texture.png"));
     }
 
     #[test]
@@ -442,17 +478,13 @@ mod tests {
         let material_asset = handle.get_asset();
 
         let diffuse_tex = material_asset.diffuse_tex.get_asset();
-        assert_eq!(
-            diffuse_tex.buf,
-            include_bytes!("../../test_assets/texture.png")
-        );
+        assert_eq!(diffuse_tex.buf, include_bytes!("../../test_assets/texture.png"));
     }
 
     #[test]
     fn get_world_block_material() {
         let mut manager = AssetManager::<MockFileSystem>::new();
-        let handle: AssetHandle<WorldMaterialAsset> =
-            manager.get(&AssetPath::from("world_material.wmt"));
+        let handle: AssetHandle<WorldMaterialAsset> = manager.get(&AssetPath::from("world_material.wmt"));
 
         let asset = handle.get_asset();
 

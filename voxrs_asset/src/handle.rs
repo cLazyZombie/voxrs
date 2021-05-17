@@ -57,8 +57,16 @@ impl<T: Asset + 'static> AssetHandle<T> {
 
     /// cast &AssetHandle<T> to &AssetHandle<U>
     /// panic if T != U
-    pub fn cast<U: Asset + 'static>(&self) -> &AssetHandle<U> {
+    pub fn downcast_ref<U: Asset + 'static>(&self) -> &AssetHandle<U> {
         (self as &dyn Any).downcast_ref().unwrap()
+    }
+
+    /// cast AssetHandle<T> to AssetHandle<U>
+    /// panic if T != U
+    pub fn downcast<U: Asset + 'static>(self) -> AssetHandle<U> {
+        let any_box: Box<dyn Any> = Box::new(self);
+        let u_box = any_box.downcast::<AssetHandle<U>>().unwrap();
+        *u_box
     }
 
     pub fn asset_path(&self) -> &AssetPath {
@@ -223,7 +231,7 @@ mod tests {
     }
 
     fn convert<T: Asset + 'static>(h: &AssetHandle<TextAsset>) -> &AssetHandle<T> {
-        h.cast()
+        h.downcast_ref()
     }
 
     #[test]

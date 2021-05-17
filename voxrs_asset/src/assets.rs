@@ -1,3 +1,7 @@
+use voxrs_types::io::FileSystem;
+
+use crate::{handle::AssetLoadError, AssetManager, AssetPath};
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AssetType {
     Texture,
@@ -37,10 +41,22 @@ impl<T> AssetBuildResult<T> {
 pub struct AssetId(u64);
 
 /// any concrete asset should impl Asset
-pub trait Asset {
+pub trait Asset: Send {
     fn asset_type() -> AssetType
     where
         Self: Sized;
 
     fn get_asset_type(&self) -> AssetType;
+
+    fn load<F: FileSystem>(
+        path: &AssetPath,
+        manager: &mut AssetManager<F>,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> Result<Self, AssetLoadError>
+    where
+        Self: Sized,
+    {
+        todo!()
+    }
 }
