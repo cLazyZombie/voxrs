@@ -19,16 +19,11 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new<F: FileSystem>(
-        width: u32,
-        height: u32,
-        asset_manager: &mut AssetManager<F>,
-    ) -> Self {
+    pub fn new<F: FileSystem>(width: u32, height: u32, asset_manager: &mut AssetManager<F>) -> Self {
         let world = World::default();
         let mut res = Resources::default();
 
-        let world_block_res =
-            WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
+        let world_block_res = WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
         res.insert(world_block_res);
 
         let camera = CameraRes::new(
@@ -46,9 +41,7 @@ impl Game {
         let key_input = KeyInputRes::new();
         res.insert(key_input);
 
-        let tick_schedule = Schedule::builder()
-            .add_system(camera::camera_move_system())
-            .build();
+        let tick_schedule = Schedule::builder().add_system(camera::camera_move_system()).build();
 
         let render_schedule = Schedule::builder()
             .add_system(camera::camera_render_system())

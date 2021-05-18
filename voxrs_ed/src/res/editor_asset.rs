@@ -8,8 +8,6 @@ pub struct EditorAssetRes {
 impl EditorAssetRes {
     pub fn new<F: FileSystem>(asset_manager: &mut AssetManager<F>) -> Self {
         let block_indicator_mat = asset_manager.get(&"assets/materials/block_indicator.mat".into());
-        Self {
-            block_indicator_mat,
-        }
+        Self { block_indicator_mat }
     }
 }

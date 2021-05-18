@@ -4,10 +4,10 @@ use crate::blueprint::{self, BlockIdx, DynamicBlock};
 use voxrs_asset::{AssetHandle, ShaderAsset};
 use voxrs_math::*;
 
-use voxrs_rhi::{DEPTH_FORMAT, DynamicBuffer};
+use voxrs_rhi::{DynamicBuffer, DEPTH_FORMAT};
 use wgpu::util::DeviceExt;
 
-use super::{ShaderHash, CommonUniforms};
+use super::{CommonUniforms, ShaderHash};
 
 pub struct DynamicBlockRenderer {
     uniform_bind_group: wgpu::BindGroup,
@@ -21,28 +21,23 @@ pub struct DynamicBlockRenderer {
 }
 
 impl DynamicBlockRenderer {
-    pub fn new(
-        device: &wgpu::Device,
-        common_uniforms: &CommonUniforms
-    ) -> Self {
-
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("view projection bind group layout for dynamic block"),
-                entries: &[
-                    // view-projection matrix
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+    pub fn new(device: &wgpu::Device, common_uniforms: &CommonUniforms) -> Self {
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("view projection bind group layout for dynamic block"),
+            entries: &[
+                // view-projection matrix
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("uniform_bind_group"),
@@ -54,61 +49,62 @@ impl DynamicBlockRenderer {
         });
 
         // uniform buffer for each dynamic block
-        let uniform_local_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("local bind group layout for dynamic block"),
-                entries: &[wgpu::BindGroupLayoutEntry {
+        let uniform_local_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("local bind group layout for dynamic block"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+
+        let diffuse_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("diffuse texture bind group layout for dynamic block"),
+            entries: &[
+                // texture
+                wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
                     },
                     count: None,
-                }],
-            });
-
-        let diffuse_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("diffuse texture bind group layout for dynamic block"),
-                entries: &[
-                    // texture
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
+                },
+                // sampler
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler {
+                        filtering: true,
+                        comparison: false,
                     },
-                    // sampler
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler {
-                            filtering: true,
-                            comparison: false,
-                        },
-                        count: None,
-                    },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("dynamic block render system pipeline layout"),
-                bind_group_layouts: &[
-                    &uniform_bind_group_layout,
-                    &uniform_local_bind_group_layout,
-                    &diffuse_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("dynamic block render system pipeline layout"),
+            bind_group_layouts: &[
+                &uniform_bind_group_layout,
+                &uniform_local_bind_group_layout,
+                &diffuse_bind_group_layout,
+            ],
+            push_constant_ranges: &[],
+        });
 
-        let vertex_buffer = DynamicBuffer::new("dynamic block vertex buffer", BLOCK_VERTEX_BUFFER_SIZE, wgpu::BufferUsage::VERTEX);
+        let vertex_buffer = DynamicBuffer::new(
+            "dynamic block vertex buffer",
+            BLOCK_VERTEX_BUFFER_SIZE,
+            wgpu::BufferUsage::VERTEX,
+        );
         let (index_buffer, num_indices) = create_block_indexbuffer(BLOCK_INDICES, &device);
         let render_pipelines = HashMap::new();
 
@@ -153,11 +149,7 @@ impl DynamicBlockRenderer {
             } else {
                 let vec = vec![block];
                 map.insert(shader_hash, vec);
-                self.register_render_pipeline(
-                    device,
-                    vs_handle,
-                    fs_handle,
-                );
+                self.register_render_pipeline(device, vs_handle, fs_handle);
             }
         }
 
@@ -251,13 +243,9 @@ impl DynamicBlockRenderer {
                 let buffer = self.vertex_buffer.get_buffer(block.vertex_buffer_idx);
                 render_pass.set_vertex_buffer(
                     0,
-                    buffer.slice(
-                        block.vertex_buffer_start
-                            ..(block.vertex_buffer_start + VERTEX_SIZE_PER_BLOCK),
-                    ),
+                    buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + VERTEX_SIZE_PER_BLOCK)),
                 );
-                render_pass
-                    .set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
                 render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
                 render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
@@ -323,33 +311,32 @@ pub const BLOCK_VERTICES: &[BlockVertex]  = &[
     BlockVertex { position: [1.0, 1.0, 0.0], color: [1., 1., 1.], uv: [1.0, 1.0] },
 ];
 
-const VERTEX_SIZE_PER_BLOCK: u64 =
-    (std::mem::size_of::<BlockVertex>() * BLOCK_VERTICES.len()) as u64;
+const VERTEX_SIZE_PER_BLOCK: u64 = (std::mem::size_of::<BlockVertex>() * BLOCK_VERTICES.len()) as u64;
 
 #[rustfmt::skip]
 pub const BLOCK_INDICES: &[u16] = &[
     // +y
-    0, 1, 2, 
-    2, 1, 3, 
+    0, 1, 2,
+    2, 1, 3,
     
     // -y
-    4, 5, 6, 
-    6, 5, 7, 
+    4, 5, 6,
+    6, 5, 7,
     
     // +x
-    8, 9, 10, 
-    10, 9, 11, 
+    8, 9, 10,
+    10, 9, 11,
     
     // -x
-    12, 13, 14, 
-    14, 13, 15, 
+    12, 13, 14,
+    14, 13, 15,
     
     // +z
-    16, 17, 18, 
-    18, 17, 19, 
+    16, 17, 18,
+    18, 17, 19,
     
     // -z
-    20, 21, 22, 
+    20, 21, 22,
     22, 21, 23,
 ];
 
@@ -360,10 +347,7 @@ const BLOCK_VERTEX_BUFFER_SIZE: wgpu::BufferAddress = 1024 * 1024; // 1 MB
 /// #Returns
 ///  ().0 : index buffer
 ///  ().1 : index count
-pub fn create_block_indexbuffer(
-    block_indices: &[BlockIdx],
-    device: &wgpu::Device,
-) -> (wgpu::Buffer, u32) {
+pub fn create_block_indexbuffer(block_indices: &[BlockIdx], device: &wgpu::Device) -> (wgpu::Buffer, u32) {
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("block index buffer"),
         contents: bytemuck::cast_slice(block_indices),
@@ -389,8 +373,7 @@ pub fn create_block_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
                 format: wgpu::VertexFormat::Float3,
             },
             wgpu::VertexAttribute {
-                offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
-                    as wgpu::BufferAddress,
+                offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>()) as wgpu::BufferAddress,
                 shader_location: 2,
                 format: wgpu::VertexFormat::Float2,
             },

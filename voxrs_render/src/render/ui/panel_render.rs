@@ -18,23 +18,22 @@ impl PanelRenderer {
         common_uniforms: &CommonUniforms,
         asset_manager: &mut AssetManager<F>,
     ) -> Self {
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("ui uniform bindgroup layout"),
-                entries: &[
-                    // screen to ndc
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("ui uniform bindgroup layout"),
+            entries: &[
+                // screen to ndc
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("ui uniform bindgroup"),
@@ -45,12 +44,11 @@ impl PanelRenderer {
             }],
         });
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("ui render pipeline layout"),
-                bind_group_layouts: &[&uniform_bind_group_layout],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("ui render pipeline layout"),
+            bind_group_layouts: &[&uniform_bind_group_layout],
+            push_constant_ranges: &[],
+        });
 
         let vertex_buffer_desc = wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<PanelVertex>() as wgpu::BufferAddress,
@@ -69,10 +67,8 @@ impl PanelRenderer {
             ],
         };
 
-        let vs_handle =
-            asset_manager.get::<ShaderAsset>(&"assets/shaders/ui_shader.vert.spv".into());
-        let fs_handle =
-            asset_manager.get::<ShaderAsset>(&"assets/shaders/ui_shader.frag.spv".into());
+        let vs_handle = asset_manager.get::<ShaderAsset>(&"assets/shaders/ui_shader.vert.spv".into());
+        let fs_handle = asset_manager.get::<ShaderAsset>(&"assets/shaders/ui_shader.frag.spv".into());
 
         let vs_asset = vs_handle.get_asset();
         let fs_asset = fs_handle.get_asset();
@@ -126,11 +122,7 @@ impl PanelRenderer {
             }),
         });
 
-        let vertex_buffer = DynamicBuffer::new(
-            "ui vertex buffer",
-            UI_VERTEX_BUFFER_SIZE,
-            wgpu::BufferUsage::VERTEX,
-        );
+        let vertex_buffer = DynamicBuffer::new("ui vertex buffer", UI_VERTEX_BUFFER_SIZE, wgpu::BufferUsage::VERTEX);
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("ui panel index buffer"),
@@ -147,12 +139,7 @@ impl PanelRenderer {
     }
 
     #[profiling::function]
-    pub fn prepare(
-        &mut self,
-        panel: &Panel,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> PanelRenderInfo {
+    pub fn prepare(&mut self, panel: &Panel, device: &wgpu::Device, queue: &wgpu::Queue) -> PanelRenderInfo {
         let vertices = [
             PanelVertex {
                 position: [panel.pos.x, panel.pos.y],
@@ -180,11 +167,7 @@ impl PanelRenderer {
     }
 
     #[profiling::function]
-    pub fn render<'a>(
-        &'a self,
-        render_info: &'a PanelRenderInfo,
-        render_pass: &mut wgpu::RenderPass<'a>,
-    ) {
+    pub fn render<'a>(&'a self, render_info: &'a PanelRenderInfo, render_pass: &mut wgpu::RenderPass<'a>) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

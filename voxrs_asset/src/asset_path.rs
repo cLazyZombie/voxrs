@@ -67,9 +67,7 @@ impl From<String> for AssetPath {
 
 impl From<&AssetPath> for AssetPath {
     fn from(s: &AssetPath) -> Self {
-        Self {
-            path: s.path.clone(),
-        }
+        Self { path: s.path.clone() }
     }
 }
 

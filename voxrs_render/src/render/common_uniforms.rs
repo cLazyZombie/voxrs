@@ -49,12 +49,7 @@ impl CommonUniforms {
         );
     }
 
-    pub fn set_screen_to_ndc_mat(
-        &mut self,
-        screen_width: u32,
-        screen_height: u32,
-        queue: &wgpu::Queue,
-    ) {
+    pub fn set_screen_to_ndc_mat(&mut self, screen_width: u32, screen_height: u32, queue: &wgpu::Queue) {
         // x' = x * (1/width) * 2 - 1
         // y' = y * (1/height) * -2 + 1
         let div_width = 1.0 / screen_width as f32;

@@ -88,12 +88,7 @@ fn process_mouse_click<Message: 'static>(
     }
 }
 
-fn get_widget_under_pos(
-    entity: Entity,
-    pos: &IVec2,
-    parent_rect: &Rect2,
-    world: &SubWorld,
-) -> Option<Entity> {
+fn get_widget_under_pos(entity: Entity, pos: &IVec2, parent_rect: &Rect2, world: &SubWorld) -> Option<Entity> {
     let entry = world.entry_ref(entity).unwrap();
 
     let region = entry.get_component::<comp::Region>();

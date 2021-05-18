@@ -22,10 +22,8 @@ impl BlockPos {
 
         // get local xyz
         let lx = block_idx as i32 % BLOCK_COUNT_IN_CHUNKSIDE as i32;
-        let ly =
-            block_idx as i32 / BLOCK_COUNT_IN_CHUNKSIDE as i32 % BLOCK_COUNT_IN_CHUNKSIDE as i32;
-        let lz =
-            block_idx as i32 / (BLOCK_COUNT_IN_CHUNKSIDE as i32 * BLOCK_COUNT_IN_CHUNKSIDE as i32);
+        let ly = block_idx as i32 / BLOCK_COUNT_IN_CHUNKSIDE as i32 % BLOCK_COUNT_IN_CHUNKSIDE as i32;
+        let lz = block_idx as i32 / (BLOCK_COUNT_IN_CHUNKSIDE as i32 * BLOCK_COUNT_IN_CHUNKSIDE as i32);
 
         Self {
             x: x + lx,
@@ -167,10 +165,7 @@ mod tests {
         assert_eq!(block.get_index(&chunk_counts), Some((0, 0)));
 
         let block = BlockPos::new(BLOCK_COUNT_IN_CHUNKSIDE as i32 - 1, 0, 0);
-        assert_eq!(
-            block.get_index(&chunk_counts),
-            Some((0, BLOCK_COUNT_IN_CHUNKSIDE - 1))
-        );
+        assert_eq!(block.get_index(&chunk_counts), Some((0, BLOCK_COUNT_IN_CHUNKSIDE - 1)));
 
         let block = BlockPos::new(BLOCK_COUNT_IN_CHUNKSIDE as i32, 0, 0);
         assert_eq!(block.get_index(&chunk_counts), Some((1, 0)));

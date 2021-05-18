@@ -91,26 +91,20 @@ impl FontAtlas {
         let outline_glyph = font.outline_glyph(glyph)?; // skip if glyph is not valid (e.g. space...)
         let bounds = outline_glyph.px_bounds();
 
-        let mut allocated =
-            self.font_textures
-                .iter_mut()
-                .enumerate()
-                .find_map(|(idx, dynamic_texture)| {
-                    dynamic_texture
-                        .allocate(
-                            bounds.width().floor() as u32,
-                            bounds.height().floor() as u32,
-                        )
-                        .map(|alloc| (alloc, idx))
-                });
+        let mut allocated = self
+            .font_textures
+            .iter_mut()
+            .enumerate()
+            .find_map(|(idx, dynamic_texture)| {
+                dynamic_texture
+                    .allocate(bounds.width().floor() as u32, bounds.height().floor() as u32)
+                    .map(|alloc| (alloc, idx))
+            });
 
         if allocated.is_none() {
             let mut dynamic_texture = DynamicTexture::new(device, TEXTURE_WIDTH, TEXTURE_HEIGHT);
             let alloc = dynamic_texture
-                .allocate(
-                    bounds.width().floor() as u32,
-                    bounds.height().floor() as u32,
-                )
+                .allocate(bounds.width().floor() as u32, bounds.height().floor() as u32)
                 .unwrap();
             self.font_textures.push(dynamic_texture);
             let idx = self.font_textures.len() - 1;
@@ -152,10 +146,7 @@ impl FontAtlas {
     }
 
     pub fn register_font(&mut self, font_handle: &AssetHandle<FontAsset>) -> FontId {
-        let idx = self
-            .fonts
-            .iter()
-            .position(|(font_asset, _)| font_asset == font_handle);
+        let idx = self.fonts.iter().position(|(font_asset, _)| font_asset == font_handle);
 
         idx.map_or_else(
             || {
@@ -175,11 +166,7 @@ impl FontAtlas {
     }
 
     pub fn get_fonts(&self) -> Vec<FontArc> {
-        let fonts = self
-            .fonts
-            .iter()
-            .map(|(_, font)| font.clone())
-            .collect::<Vec<_>>();
+        let fonts = self.fonts.iter().map(|(_, font)| font.clone()).collect::<Vec<_>>();
         fonts
     }
 

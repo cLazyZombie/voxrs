@@ -16,8 +16,7 @@ pub fn control(
     let elapsed_time: f32 = **elapsed_time;
 
     // move
-    if !key_input.is_alt_pressed() && !key_input.is_ctrl_pressed() && !key_input.is_shift_pressed()
-    {
+    if !key_input.is_alt_pressed() && !key_input.is_ctrl_pressed() && !key_input.is_shift_pressed() {
         for key in key_input.keys() {
             match *key {
                 VirtualKeyCode::W | VirtualKeyCode::Up => {

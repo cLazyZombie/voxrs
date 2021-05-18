@@ -46,20 +46,19 @@ impl TextRenderer {
         common_uniforms: &CommonUniforms,
         asset_manager: &mut AssetManager<F>,
     ) -> Self {
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("text uniform bindgroup layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("text uniform bindgroup layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("text screen to ndc transform uniform bind group"),
@@ -70,38 +69,36 @@ impl TextRenderer {
             }],
         });
 
-        let font_texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("font texture bind group layout"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
+        let font_texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("font texture bind group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
                     },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler {
-                            filtering: true,
-                            comparison: false,
-                        },
-                        count: None,
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler {
+                        filtering: true,
+                        comparison: false,
                     },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("text render pipeline"),
-                bind_group_layouts: &[&uniform_bind_group_layout, &font_texture_bind_group_layout],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("text render pipeline"),
+            bind_group_layouts: &[&uniform_bind_group_layout, &font_texture_bind_group_layout],
+            push_constant_ranges: &[],
+        });
 
         let vertex_buffer_desc = wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<TextVertex>() as wgpu::BufferAddress,
@@ -118,18 +115,15 @@ impl TextRenderer {
                     format: wgpu::VertexFormat::Float3,
                 },
                 wgpu::VertexAttribute {
-                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 2]>())
-                        as wgpu::BufferAddress,
+                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 2]>()) as wgpu::BufferAddress,
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float2,
                 },
             ],
         };
 
-        let vs_handle =
-            asset_manager.get::<ShaderAsset>(&"assets/shaders/text_shader.vert.spv".into());
-        let fs_handle =
-            asset_manager.get::<ShaderAsset>(&"assets/shaders/text_shader.frag.spv".into());
+        let vs_handle = asset_manager.get::<ShaderAsset>(&"assets/shaders/text_shader.vert.spv".into());
+        let fs_handle = asset_manager.get::<ShaderAsset>(&"assets/shaders/text_shader.frag.spv".into());
 
         let vs_asset = vs_handle.get_asset();
         let fs_asset = fs_handle.get_asset();
@@ -185,11 +179,8 @@ impl TextRenderer {
 
         let font_textures = FontAtlas::new();
 
-        let vertex_buffer = DynamicBuffer::new(
-            "text vertex buffer",
-            TEXT_VERTEX_BUFFER_SIZE,
-            wgpu::BufferUsage::VERTEX,
-        );
+        let vertex_buffer =
+            DynamicBuffer::new("text vertex buffer", TEXT_VERTEX_BUFFER_SIZE, wgpu::BufferUsage::VERTEX);
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("font texture index buffer"),
@@ -211,12 +202,7 @@ impl TextRenderer {
     }
 
     #[profiling::function]
-    pub fn prepare(
-        &mut self,
-        text: &Text,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> TextRenderInfo {
+    pub fn prepare(&mut self, text: &Text, device: &wgpu::Device, queue: &wgpu::Queue) -> TextRenderInfo {
         let mut text_render_info = TextRenderInfo::default();
 
         // get section glyphs
@@ -298,11 +284,7 @@ impl TextRenderer {
             text_render_info.glyph_render_infos.push(glyph_render_info);
 
             // if new texture, create glyph atlas render info
-            if self
-                .font_atlas_bind_groups
-                .get(&atlas_info.atlas_idx)
-                .is_none()
-            {
+            if self.font_atlas_bind_groups.get(&atlas_info.atlas_idx).is_none() {
                 let atlas_texture = self.font_atlas.get_texture(atlas_info.atlas_idx);
                 let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("font texture bind group"),
@@ -318,8 +300,7 @@ impl TextRenderer {
                         },
                     ],
                 });
-                self.font_atlas_bind_groups
-                    .insert(atlas_info.atlas_idx, bind_group);
+                self.font_atlas_bind_groups.insert(atlas_info.atlas_idx, bind_group);
             };
         }
 
@@ -329,11 +310,7 @@ impl TextRenderer {
     }
 
     #[profiling::function]
-    pub fn render<'a>(
-        &'a self,
-        render_info: &'a TextRenderInfo,
-        render_pass: &mut wgpu::RenderPass<'a>,
-    ) {
+    pub fn render<'a>(&'a self, render_info: &'a TextRenderInfo, render_pass: &mut wgpu::RenderPass<'a>) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -351,9 +328,7 @@ impl TextRenderer {
             let vertex_buffer = &self.vertex_buffer.get_buffer(glyph_render_info.buffer_idx);
             render_pass.set_vertex_buffer(
                 0,
-                vertex_buffer.slice(
-                    glyph_render_info.buffer_start..(glyph_render_info.buffer_start + VERTEX_SIZE),
-                ),
+                vertex_buffer.slice(glyph_render_info.buffer_start..(glyph_render_info.buffer_start + VERTEX_SIZE)),
             );
 
             render_pass.draw_indexed(0..6, 0, 0..1);

@@ -11,9 +11,7 @@ use winit::{
 fn main() {
     profiling::register_thread!("Main Thread");
 
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .init();
+    env_logger::builder().filter_level(log::LevelFilter::Info).init();
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -30,10 +28,7 @@ fn main() {
     );
 
     event_loop.run(move |event, _, control_flow| match event {
-        Event::WindowEvent {
-            ref event,
-            window_id,
-        } if window_id == window.id() => match event {
+        Event::WindowEvent { ref event, window_id } if window_id == window.id() => match event {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
                 game.resize(physical_size.width, physical_size.height);

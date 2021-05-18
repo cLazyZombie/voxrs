@@ -3,9 +3,7 @@ use voxrs_types::io::FileSystem;
 
 use crate::{blueprint::Ui, render::CommonUniforms};
 
-use super::{
-    panel_render::PanelRenderInfo, text_render::TextRenderInfo, PanelRenderer, TextRenderer,
-};
+use super::{panel_render::PanelRenderInfo, text_render::TextRenderInfo, PanelRenderer, TextRenderer};
 
 pub struct UiRenderer {
     text_renderer: TextRenderer,
@@ -28,12 +26,7 @@ impl UiRenderer {
     }
 
     #[profiling::function]
-    pub fn prepare(
-        &mut self,
-        uis: &[Ui],
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> Vec<UiRenderInfo> {
+    pub fn prepare(&mut self, uis: &[Ui], device: &wgpu::Device, queue: &wgpu::Queue) -> Vec<UiRenderInfo> {
         let mut render_infos = Vec::new();
 
         for ui in uis {
@@ -53,11 +46,7 @@ impl UiRenderer {
     }
 
     #[profiling::function]
-    pub fn render<'a>(
-        &'a self,
-        render_infos: &'a [UiRenderInfo],
-        render_pass: &mut wgpu::RenderPass<'a>,
-    ) {
+    pub fn render<'a>(&'a self, render_infos: &'a [UiRenderInfo], render_pass: &mut wgpu::RenderPass<'a>) {
         for render_info in render_infos {
             match render_info {
                 UiRenderInfo::PanelRenderInfo(panel) => {

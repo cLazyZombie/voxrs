@@ -24,23 +24,22 @@ pub struct ChunkRenderer {
 
 impl ChunkRenderer {
     pub fn new(device: &wgpu::Device, common_uniforms: &CommonUniforms) -> Self {
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("view projection bind group layout for chunk"),
-                entries: &[
-                    // view-projection matrix
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("view projection bind group layout for chunk"),
+            entries: &[
+                // view-projection matrix
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("uniform_bind_group"),
@@ -52,59 +51,56 @@ impl ChunkRenderer {
         });
 
         // chunk마다 설정할 uniform값들
-        let uniform_local_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("local bind group layout for chunk"),
-                entries: &[wgpu::BindGroupLayoutEntry {
+        let uniform_local_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("local bind group layout for chunk"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+
+        let diffuse_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("diffuse texture bind group layout for chunk"),
+            entries: &[
+                // texture
+                wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
                     },
                     count: None,
-                }],
-            });
-
-        let diffuse_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("diffuse texture bind group layout for chunk"),
-                entries: &[
-                    // texture
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
+                },
+                // sampler
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler {
+                        filtering: true,
+                        comparison: false,
                     },
-                    // sampler
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler {
-                            filtering: true,
-                            comparison: false,
-                        },
-                        count: None,
-                    },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("chunk render system pipeline layout"),
-                bind_group_layouts: &[
-                    &uniform_bind_group_layout,
-                    &uniform_local_bind_group_layout,
-                    &diffuse_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("chunk render system pipeline layout"),
+            bind_group_layouts: &[
+                &uniform_bind_group_layout,
+                &uniform_local_bind_group_layout,
+                &diffuse_bind_group_layout,
+            ],
+            push_constant_ranges: &[],
+        });
 
         let vertex_buffer = create_chunk_vertexbuffer(&device);
         let render_pipelines = HashMap::new();
@@ -171,11 +167,7 @@ impl ChunkRenderer {
         chunks_for_render
     }
 
-    fn register_render_pipeline(
-        &mut self,
-        device: &wgpu::Device,
-        material_handle: &AssetHandle<MaterialAsset>,
-    ) {
+    fn register_render_pipeline(&mut self, device: &wgpu::Device, material_handle: &AssetHandle<MaterialAsset>) {
         let asset = material_handle.get_asset();
         let vs_handle = &asset.vertex_shader;
         let fs_handle = &asset.frag_shader;
@@ -260,8 +252,7 @@ impl ChunkRenderer {
                     render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
                 }
 
-                render_pass
-                    .set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                render_pass.set_index_buffer(chunk.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 render_pass.set_bind_group(1, &chunk.local_uniform_bind_group, &[]);
                 render_pass.set_bind_group(2, &chunk.diffuse_bind_group, &[]);
                 render_pass.draw_indexed(0..chunk.num_indices, 0, 0..1);
@@ -373,8 +364,7 @@ pub fn create_chunk_vertexbuffer(device: &wgpu::Device) -> wgpu::Buffer {
             for x in 0..BLOCK_COUNT_IN_CHUNKSIDE {
                 let offset = Vec3::new(x as f32, y as f32, z as f32);
                 v.extend(BLOCK_VERTICES.iter().map(|v| {
-                    let new_position =
-                        offset + Vec3::new(v.position[0], v.position[1], v.position[2]);
+                    let new_position = offset + Vec3::new(v.position[0], v.position[1], v.position[2]);
                     ChunkVertex {
                         position: *new_position.as_ref(),
                         ..*v
@@ -437,8 +427,7 @@ pub fn create_chunk_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
                 format: wgpu::VertexFormat::Float3,
             },
             wgpu::VertexAttribute {
-                offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>())
-                    as wgpu::BufferAddress,
+                offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 3]>()) as wgpu::BufferAddress,
                 shader_location: 2,
                 format: wgpu::VertexFormat::Float2,
             },
@@ -513,12 +502,11 @@ impl Chunk {
             let scale = Mat4::from_scale(Vec3::new(block_size, block_size, block_size));
             let world_transform = translate * scale;
 
-            let local_uniform_buffer =
-                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("view_proj buffer"),
-                    contents: bytemuck::cast_slice(world_transform.as_ref()),
-                    usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-                });
+            let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("view_proj buffer"),
+                contents: bytemuck::cast_slice(world_transform.as_ref()),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            });
 
             let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("local_uniform_bind_group"),

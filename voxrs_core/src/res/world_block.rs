@@ -2,8 +2,7 @@ use enumflags2::BitFlags;
 use rayon::prelude::*;
 
 use voxrs_asset::{
-    AssetHandle, AssetManager, AssetPath, BlockSize, WorldBlockAsset, WorldBlockAssetRaw,
-    WorldChunkRaw,
+    AssetHandle, AssetManager, AssetPath, BlockSize, WorldBlockAsset, WorldBlockAssetRaw, WorldChunkRaw,
 };
 use voxrs_math::*;
 use voxrs_types::io::FileSystem;
@@ -317,15 +316,9 @@ mod test {
         assert_eq!(res.get_block(block_pos_2), Some(1));
 
         let vis1 = res.get_block_vis(block_pos_1).unwrap();
-        assert_eq!(
-            vis1,
-            Dir::XPos | Dir::XNeg | Dir::YNeg | Dir::ZPos | Dir::ZNeg
-        );
+        assert_eq!(vis1, Dir::XPos | Dir::XNeg | Dir::YNeg | Dir::ZPos | Dir::ZNeg);
 
         let vis2 = res.get_block_vis(block_pos_2).unwrap();
-        assert_eq!(
-            vis2,
-            Dir::XPos | Dir::XNeg | Dir::YPos | Dir::ZPos | Dir::ZNeg
-        );
+        assert_eq!(vis2, Dir::XPos | Dir::XNeg | Dir::YPos | Dir::ZPos | Dir::ZNeg);
     }
 }

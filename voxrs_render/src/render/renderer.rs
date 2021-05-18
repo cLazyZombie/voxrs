@@ -64,8 +64,7 @@ impl Renderer {
         };
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
-        let depth_texture =
-            Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
+        let depth_texture = Texture::create_depth_texture(&device, &swap_chain_desc, "depth_texture");
 
         let mut common_uniforms = CommonUniforms::new(&device);
         common_uniforms.set_screen_to_ndc_mat(size.width, size.height, &queue);
@@ -103,9 +102,9 @@ impl Renderer {
         );
 
         self.update_camera(&bp.camera);
-        let blocks =
-            self.dynamic_block_renderer
-                .prepare(&bp.dynamic_blocks, &self.device, &self.queue);
+        let blocks = self
+            .dynamic_block_renderer
+            .prepare(&bp.dynamic_blocks, &self.device, &self.queue);
 
         // render fps (temp)
         self.fps.tick();
@@ -125,11 +124,9 @@ impl Renderer {
 
         let frame = self.swap_chain.get_current_frame()?.output;
 
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Render Encoder"),
+        });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -159,8 +156,7 @@ impl Renderer {
 
             self.chunk_renderer.render(&chunks, &mut render_pass);
 
-            self.dynamic_block_renderer
-                .render(&blocks, &mut render_pass);
+            self.dynamic_block_renderer.render(&blocks, &mut render_pass);
 
             self.ui_renderer.render(&ui_render_infos, &mut render_pass);
 
@@ -195,12 +191,9 @@ impl Renderer {
         self.size = new_size;
         self.swap_chain_desc.width = new_size.width;
         self.swap_chain_desc.height = new_size.height;
-        self.swap_chain = self
-            .device
-            .create_swap_chain(&self.surface, &self.swap_chain_desc);
+        self.swap_chain = self.device.create_swap_chain(&self.surface, &self.swap_chain_desc);
 
-        self.depth_texture =
-            Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
+        self.depth_texture = Texture::create_depth_texture(&self.device, &self.swap_chain_desc, "depth_texture");
 
         self.common_uniforms
             .set_screen_to_ndc_mat(new_size.width, new_size.height, &self.queue);
@@ -212,8 +205,7 @@ impl Renderer {
     }
 
     fn update_camera(&mut self, camera: &Camera) {
-        self.common_uniforms
-            .set_view_proj(camera.view_proj_mat, &self.queue);
+        self.common_uniforms.set_view_proj(camera.view_proj_mat, &self.queue);
     }
 }
 

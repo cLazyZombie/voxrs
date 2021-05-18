@@ -38,11 +38,7 @@ impl<T: Pod> DynamicBuffer<T> {
             self.buffers.push(vertex_buffer);
             self.buffer_used = 0;
 
-            log::info!(
-                "dynamic buffer {} created. count: {}",
-                self.label,
-                self.buffers.len()
-            );
+            log::info!("dynamic buffer {} created. count: {}", self.label, self.buffers.len());
         }
 
         let buffer = &self.buffers[self.buffers.len() - 1];

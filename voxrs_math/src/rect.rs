@@ -41,11 +41,7 @@ impl Rect2 {
     pub fn has_ivec2<V: Borrow<IVec2>>(&self, pos: V) -> bool {
         let pos = <V as Borrow<IVec2>>::borrow(&pos);
         let max = self.max();
-        if pos.x as f32 >= self.min.x
-            && pos.y as f32 >= self.min.y
-            && pos.x as f32 <= max.x
-            && pos.y as f32 <= max.y
-        {
+        if pos.x as f32 >= self.min.x && pos.y as f32 >= self.min.y && pos.x as f32 <= max.x && pos.y as f32 <= max.y {
             return true;
         }
 

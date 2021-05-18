@@ -95,9 +95,7 @@ impl Neg for Angle {
     type Output = Angle;
 
     fn neg(self) -> Self::Output {
-        Self::Output {
-            radians: -self.radians,
-        }
+        Self::Output { radians: -self.radians }
     }
 }
 
@@ -146,34 +144,13 @@ mod tests {
 
     #[test]
     fn test_normalize() {
-        assert_abs_diff_eq!(
-            Angle::from_degrees(90.0).normalize(),
-            Angle::from_degrees(90.0)
-        );
-        assert_abs_diff_eq!(
-            Angle::from_degrees(360.0).normalize(),
-            Angle::from_degrees(0.0)
-        );
-        assert_abs_diff_eq!(
-            Angle::from_degrees(370.0).normalize(),
-            Angle::from_degrees(10.0)
-        );
-        assert_abs_diff_eq!(
-            Angle::from_degrees(730.0).normalize(),
-            Angle::from_degrees(10.0)
-        );
+        assert_abs_diff_eq!(Angle::from_degrees(90.0).normalize(), Angle::from_degrees(90.0));
+        assert_abs_diff_eq!(Angle::from_degrees(360.0).normalize(), Angle::from_degrees(0.0));
+        assert_abs_diff_eq!(Angle::from_degrees(370.0).normalize(), Angle::from_degrees(10.0));
+        assert_abs_diff_eq!(Angle::from_degrees(730.0).normalize(), Angle::from_degrees(10.0));
 
-        assert_abs_diff_eq!(
-            Angle::from_degrees(0.0).normalize(),
-            Angle::from_degrees(0.0)
-        );
-        assert_abs_diff_eq!(
-            Angle::from_degrees(-10.0).normalize(),
-            Angle::from_degrees(350.0)
-        );
-        assert_abs_diff_eq!(
-            Angle::from_degrees(-370.0).normalize(),
-            Angle::from_degrees(350.0)
-        );
+        assert_abs_diff_eq!(Angle::from_degrees(0.0).normalize(), Angle::from_degrees(0.0));
+        assert_abs_diff_eq!(Angle::from_degrees(-10.0).normalize(), Angle::from_degrees(350.0));
+        assert_abs_diff_eq!(Angle::from_degrees(-370.0).normalize(), Angle::from_degrees(350.0));
     }
 }

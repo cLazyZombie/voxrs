@@ -26,12 +26,7 @@ impl ChunkCache {
     /// return : replaced flag
     /// if new key, insert value withkey and return false
     /// if key exists, exchange val and return true
-    pub fn add(
-        &mut self,
-        key: ChunkId,
-        chunk_bp: SafeCloner<blueprint::Chunk>,
-        chunks: Vec<Chunk>,
-    ) -> bool {
+    pub fn add(&mut self, key: ChunkId, chunk_bp: SafeCloner<blueprint::Chunk>, chunks: Vec<Chunk>) -> bool {
         let prev = self.cached.insert(key, (chunks, chunk_bp));
         self.set_used(key);
         matches!(prev, Some(_))
@@ -87,22 +82,12 @@ mod cache_tests {
         let mut cache = ChunkCache::new();
         assert_eq!(cache.set_used(1), false);
 
-        let bp_chunk_1 = SafeCloner::new(blueprint::Chunk::new(
-            Vec3::ZERO,
-            Aabb::unit(),
-            Vec::new(),
-            Vec::new(),
-        ));
+        let bp_chunk_1 = SafeCloner::new(blueprint::Chunk::new(Vec3::ZERO, Aabb::unit(), Vec::new(), Vec::new()));
 
         let chunk_1 = Vec::new();
         cache.add(1, bp_chunk_1, chunk_1);
 
-        let bp_chunk_2 = SafeCloner::new(blueprint::Chunk::new(
-            Vec3::ZERO,
-            Aabb::unit(),
-            Vec::new(),
-            Vec::new(),
-        ));
+        let bp_chunk_2 = SafeCloner::new(blueprint::Chunk::new(Vec3::ZERO, Aabb::unit(), Vec::new(), Vec::new()));
 
         let chunk_2 = Vec::new();
         cache.add(2, bp_chunk_2, chunk_2);

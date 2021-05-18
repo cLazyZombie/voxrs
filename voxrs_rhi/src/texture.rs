@@ -10,12 +10,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn from_bytes(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        bytes: &[u8],
-        label: &str,
-    ) -> Result<Self> {
+    pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
         Self::from_image(device, queue, &img, Some(label))
     }
@@ -72,11 +67,7 @@ impl Texture {
             ..Default::default()
         });
 
-        Ok(Self {
-            texture,
-            view,
-            sampler,
-        })
+        Ok(Self { texture, view, sampler })
     }
 
     pub fn create_depth_texture(
@@ -116,10 +107,6 @@ impl Texture {
             ..Default::default()
         });
 
-        Self {
-            texture,
-            view,
-            sampler,
-        }
+        Self { texture, view, sampler }
     }
 }

@@ -37,15 +37,7 @@ impl Sphere {
         }
     }
 
-    pub fn from_view_proj(
-        eye: &Vec3,
-        target: &Vec3,
-        up: &Vec3,
-        near: f32,
-        far: f32,
-        aspect: f32,
-        fov: f32,
-    ) -> Self {
+    pub fn from_view_proj(eye: &Vec3, target: &Vec3, up: &Vec3, near: f32, far: f32, aspect: f32, fov: f32) -> Self {
         let sphere = Sphere::from_proj(near, far, aspect, fov);
 
         let view = Mat4::look_at_lh(*eye, *target, *up);
@@ -53,10 +45,7 @@ impl Sphere {
 
         let center = inv_view.transform_point3(sphere.c);
 
-        Self {
-            c: center,
-            r: sphere.r,
-        }
+        Self { c: center, r: sphere.r }
     }
 
     /// sphere aabb intersection
@@ -67,9 +56,7 @@ impl Sphere {
         let z = f32::max(aabb.min.z, f32::min(self.c.z, aabb.max.z));
 
         let distance = f32::sqrt(
-            (x - self.c.x) * (x - self.c.x)
-                + (y - self.c.y) * (y - self.c.y)
-                + (z - self.c.z) * (z - self.c.z),
+            (x - self.c.x) * (x - self.c.x) + (y - self.c.y) * (y - self.c.y) + (z - self.c.z) * (z - self.c.z),
         );
 
         distance < self.r
@@ -110,10 +97,7 @@ mod test {
         assert_eq!(sp.intersect_aabb(&aabb), true);
 
         // outside
-        let aabb = Aabb::new(
-            Vec3::new(110.0, 110.0, 110.0),
-            Vec3::new(120.0, 120.0, 120.0),
-        );
+        let aabb = Aabb::new(Vec3::new(110.0, 110.0, 110.0), Vec3::new(120.0, 120.0, 120.0));
         assert_eq!(sp.intersect_aabb(&aabb), false);
     }
 }

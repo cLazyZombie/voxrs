@@ -81,15 +81,7 @@ impl CameraRes {
     pub fn get_sphere(&self) -> Sphere {
         let (_, y, z) = self.get_xyz();
         let target = self.eye + z;
-        Sphere::from_view_proj(
-            &self.eye,
-            &target,
-            &y,
-            self.znear,
-            self.zfar,
-            self.aspect(),
-            self.fovy,
-        )
+        Sphere::from_view_proj(&self.eye, &target, &y, self.znear, self.zfar, self.aspect(), self.fovy)
     }
 
     /// get_xyz returns x(right) direction, y(up) direction, z(forward) direction in world coord
