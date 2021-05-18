@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 use voxrs_types::io::FileSystem;
 
 use crate::{handle::AssetLoadError, AssetManager, AssetPath};
@@ -41,6 +43,7 @@ impl<T> AssetBuildResult<T> {
 pub struct AssetId(u64);
 
 /// any concrete asset should impl Asset
+#[async_trait]
 pub trait Asset: Send {
     fn asset_type() -> AssetType
     where
@@ -48,15 +51,15 @@ pub trait Asset: Send {
 
     fn get_asset_type(&self) -> AssetType;
 
-    fn load<F: FileSystem>(
+    /// call [ConcreteAsset]::load_asset internally with same parameter
+    /// load_asset should be async fn
+    /// see voxrs_derive::asset for implementation
+    async fn load<F: FileSystem>(
         path: &AssetPath,
         manager: &mut AssetManager<F>,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        device: Option<&wgpu::Device>,
+        queue: Option<&wgpu::Queue>,
     ) -> Result<Self, AssetLoadError>
     where
-        Self: Sized,
-    {
-        todo!()
-    }
+        Self: Sized;
 }

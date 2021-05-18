@@ -4,6 +4,8 @@ use voxrs_types::io::FileSystem;
 
 use voxrs_math::*;
 
+use crate::handle::AssetLoadError;
+
 use super::{
     assets::{Asset, AssetType},
     AssetHandle, AssetManager, AssetPath, WorldMaterialAsset,
@@ -18,6 +20,21 @@ pub struct WorldBlockAsset {
 }
 
 impl WorldBlockAsset {
+    async fn load_asset<F: voxrs_types::io::FileSystem>(
+        path: &crate::AssetPath,
+        manager: &mut crate::AssetManager<F>,
+        _device: Option<&wgpu::Device>,
+        _queue: Option<&wgpu::Queue>,
+    ) -> Result<Self, crate::handle::AssetLoadError> {
+        let result;
+        if let Ok(s) = F::read_text(path).await {
+            result = Ok(WorldBlockAsset::new(&s, manager));
+        } else {
+            result = Err(AssetLoadError::Failed);
+        }
+        result
+    }
+
     pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
         let raw: WorldBlockAssetRaw = serde_json::from_str(s).unwrap();
         raw.validate();
@@ -74,11 +91,7 @@ pub struct WorldChunk {
 }
 
 impl WorldChunk {
-    fn new(
-        idx: usize,
-        chunk_counts: &WorldChunkCounts,
-        raw_chunks: &[Option<WorldChunkRaw>],
-    ) -> Self {
+    fn new(idx: usize, chunk_counts: &WorldChunkCounts, raw_chunks: &[Option<WorldChunkRaw>]) -> Self {
         let cur_chunk = raw_chunks[idx].as_ref().unwrap();
         assert_eq!(idx, cur_chunk.idx as usize);
 

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::handle::AssetLoadError;
+
 use super::{
     assets::{Asset, AssetType},
     AssetHandle, AssetManager, AssetPath, MaterialAsset,
@@ -13,6 +15,21 @@ pub struct WorldMaterialAsset {
 }
 
 impl WorldMaterialAsset {
+    async fn load_asset<F: voxrs_types::io::FileSystem>(
+        path: &crate::AssetPath,
+        manager: &mut crate::AssetManager<F>,
+        _device: Option<&wgpu::Device>,
+        _queue: Option<&wgpu::Queue>,
+    ) -> Result<Self, crate::handle::AssetLoadError> {
+        let result;
+        if let Ok(s) = F::read_text(path).await {
+            result = Ok(WorldMaterialAsset::new(&s, manager));
+        } else {
+            result = Err(AssetLoadError::Failed);
+        }
+        result
+    }
+
     pub fn new<F: FileSystem>(s: &str, asset_manager: &mut AssetManager<F>) -> Self {
         let raw: WorldMaterialAssetRaw = serde_json::from_str(s).unwrap();
 

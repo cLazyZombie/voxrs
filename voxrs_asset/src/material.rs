@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use voxrs_types::io::FileSystem;
 
-use crate::ShaderAsset;
+use crate::{handle::AssetLoadError, ShaderAsset};
 
 use super::{
     assets::{Asset, AssetType},
@@ -35,5 +35,23 @@ impl MaterialAsset {
             vertex_shader,
             frag_shader,
         }
+    }
+
+    async fn load_asset<F: voxrs_types::io::FileSystem>(
+        path: &crate::AssetPath,
+        manager: &mut crate::AssetManager<F>,
+        _device: Option<&wgpu::Device>,
+        _queue: Option<&wgpu::Queue>,
+    ) -> Result<Self, crate::handle::AssetLoadError>
+    where
+        Self: Sized,
+    {
+        let result;
+        if let Ok(s) = F::read_text(path).await {
+            result = Ok(MaterialAsset::new(&s, manager));
+        } else {
+            result = Err(AssetLoadError::Failed);
+        }
+        result
     }
 }

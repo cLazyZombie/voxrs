@@ -13,6 +13,7 @@ pub fn derive_asset(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         #[automatically_derived]
+        #[async_trait::async_trait]
         impl Asset for #name {
             fn asset_type() -> AssetType
             where
@@ -25,6 +26,15 @@ pub fn derive_asset(input: TokenStream) -> TokenStream {
                 Self::asset_type()
             }
 
+            async fn load<F: voxrs_types::io::FileSystem>(
+                path: &crate::AssetPath,
+                manager: &mut crate::AssetManager<F>,
+                device: Option<&wgpu::Device>,
+                queue: Option<&wgpu::Queue>,
+            ) -> Result<Self, crate::handle::AssetLoadError>
+            where Self: Sized {
+                #name::load_asset(path, manager, device, queue).await
+            }
         }
     };
     TokenStream::from(expanded)
