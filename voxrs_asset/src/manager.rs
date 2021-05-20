@@ -17,7 +17,7 @@ pub struct AssetManager<F: FileSystem + 'static> {
 }
 
 unsafe impl<F: FileSystem + 'static> Send for AssetManager<F> {}
-unsafe impl<F: FileSystem + 'static> Sync for AssetManager<F> {}
+// unsafe impl<F: FileSystem + 'static> Sync for AssetManager<F> {}
 
 impl<'wgpu, F: FileSystem + 'static> AssetManager<F> {
     pub fn new() -> Self {
