@@ -107,17 +107,17 @@ impl TextRenderer {
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float2,
+                    format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float3,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
                     offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[f32; 2]>()) as wgpu::BufferAddress,
                     shader_location: 2,
-                    format: wgpu::VertexFormat::Float2,
+                    format: wgpu::VertexFormat::Float32x2,
                 },
             ],
         };
@@ -131,11 +131,11 @@ impl TextRenderer {
         let vs_module = vs_asset.module.as_ref().unwrap();
         let fs_module = fs_asset.module.as_ref().unwrap();
 
-        const COLOR_BLEND_STATE: wgpu::BlendState = wgpu::BlendState {
-            src_factor: wgpu::BlendFactor::SrcAlpha,
-            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-            operation: wgpu::BlendOperation::Add,
-        };
+        // const COLOR_BLEND_STATE: wgpu::BlendState = wgpu::BlendState {
+        //     src_factor: wgpu::BlendFactor::SrcAlpha,
+        //     dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+        //     operation: wgpu::BlendOperation::Add,
+        // };
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("text render pipeline"),
@@ -147,10 +147,12 @@ impl TextRenderer {
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: Some(wgpu::IndexFormat::Uint32),
+                strip_index_format: None,
                 front_face: wgpu::FrontFace::Cw,
-                cull_mode: wgpu::CullMode::Back,
+                cull_mode: Some(wgpu::Face::Back),
                 polygon_mode: wgpu::PolygonMode::Fill,
+                clamp_depth: false,
+                conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_FORMAT,
@@ -158,7 +160,6 @@ impl TextRenderer {
                 depth_compare: wgpu::CompareFunction::Always,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
-                clamp_depth: false,
             }),
             multisample: wgpu::MultisampleState {
                 count: 1,
@@ -170,8 +171,9 @@ impl TextRenderer {
                 entry_point: "main",
                 targets: &[wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                    alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: COLOR_BLEND_STATE,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    // alpha_blend: wgpu::BlendState::REPLACE,
+                    // color_blend: COLOR_BLEND_STATE,
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),

@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use guillotiere::{Allocation, AtlasAllocator};
 
 /// DynamicTexture
@@ -25,7 +27,7 @@ impl DynamicTexture {
         let size = wgpu::Extent3d {
             width,
             height,
-            depth: 1,
+            depth_or_array_layers: 1,
         };
 
         let texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -91,20 +93,20 @@ impl DynamicTexture {
         let size = wgpu::Extent3d {
             width: self.width,
             height: self.height,
-            depth: 1,
+            depth_or_array_layers: 1,
         };
 
         queue.write_texture(
-            wgpu::TextureCopyView {
+            wgpu::ImageCopyTexture {
                 texture: &self.texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
             &self.buffer,
-            wgpu::TextureDataLayout {
+            wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: 4 * self.width,
-                rows_per_image: 0,
+                bytes_per_row: NonZeroU32::new(4 * self.width),
+                rows_per_image: None,
             },
             size,
         );

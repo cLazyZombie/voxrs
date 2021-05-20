@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use anyhow::*;
 use image::GenericImageView;
 
@@ -29,7 +31,7 @@ impl Texture {
         let size = wgpu::Extent3d {
             width,
             height,
-            depth: 1,
+            depth_or_array_layers: 1,
         };
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label,
@@ -42,16 +44,16 @@ impl Texture {
         });
 
         queue.write_texture(
-            wgpu::TextureCopyView {
+            wgpu::ImageCopyTexture {
                 texture: &texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
             &rgba,
-            wgpu::TextureDataLayout {
+            wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: 4 * width,
-                rows_per_image: height,
+                bytes_per_row: NonZeroU32::new(4 * width),
+                rows_per_image: NonZeroU32::new(height),
             },
             size,
         );
@@ -78,7 +80,7 @@ impl Texture {
         let size = wgpu::Extent3d {
             width: swap_chain_desc.width,
             height: swap_chain_desc.height,
-            depth: 1,
+            depth_or_array_layers: 1,
         };
 
         let desc = wgpu::TextureDescriptor {

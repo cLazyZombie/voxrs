@@ -71,18 +71,18 @@ impl CommonUniforms {
     }
 
     pub fn get_view_proj_buffer(&self) -> wgpu::BindingResource<'_> {
-        wgpu::BindingResource::Buffer {
+        wgpu::BindingResource::Buffer(wgpu::BufferBinding {
             buffer: &self.buffer,
             offset: VIEW_PROJ_OFFSET,
             size: NonZeroU64::new(MATRIX_SIZE),
-        }
+        })
     }
 
     pub fn get_screen_to_ndc_buffer(&self) -> wgpu::BindingResource<'_> {
-        wgpu::BindingResource::Buffer {
+        wgpu::BindingResource::Buffer(wgpu::BufferBinding {
             buffer: &self.buffer,
             offset: SCREEN_TO_NDC_OFFSET,
             size: NonZeroU64::new(MATRIX_SIZE),
-        }
+        })
     }
 }
