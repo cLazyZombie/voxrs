@@ -137,9 +137,14 @@ fn process_input_char<Message: 'static>(
         }
         widget::Widget::Terminal(terminal) => {
             if c == '\r' {
-                let mut pre_input = String::new();
-                std::mem::swap(&mut pre_input, &mut terminal.input);
-                terminal.contents.push(pre_input);
+                let mut input = String::new();
+                std::mem::swap(&mut input, &mut terminal.input);
+                terminal.contents.push(input.clone());
+
+                if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
+                    let interaction = Interaction::TerminalInput(input);
+                    handler.process(interaction, output_queue);
+                }
             } else {
                 terminal.input.push(c);
             }

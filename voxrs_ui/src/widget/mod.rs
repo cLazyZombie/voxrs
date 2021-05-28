@@ -69,18 +69,6 @@ pub struct EditableTextInfo {
     pub contents: String,
 }
 
-pub struct TerminalInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
-    pub color: Vec4,
-    pub font: AssetHandle<FontAsset>,
-    pub font_size: u32,
-    pub contents: Vec<String>,
-}
-
-pub(crate) struct TerminalWidget {
-    pub font: AssetHandle<FontAsset>,
-    pub font_size: u32,
-    pub contents: Vec<String>,
-    pub input: String,
-}
+mod terminal;
+pub use terminal::TerminalInfo;
+pub(crate) use terminal::TerminalWidget;
