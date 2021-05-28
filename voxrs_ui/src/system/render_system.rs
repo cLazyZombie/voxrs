@@ -1,6 +1,6 @@
 use legion::world::{EntryRef, SubWorld};
 use legion::*;
-use voxrs_math::Rect2;
+use voxrs_math::{Rect2, Vec2};
 use voxrs_render::blueprint::{self, TextSection};
 
 use super::SortRootEntity;
@@ -117,7 +117,7 @@ fn render_editable_text(
 fn render_terminal(
     entity: Entity,
     parent_rect: &Rect2,
-    _terminal: &TerminalWidget,
+    terminal: &TerminalWidget,
     world: &SubWorld,
     bp: &mut blueprint::Blueprint,
 ) {
@@ -129,4 +129,45 @@ fn render_terminal(
 
     let bp_panel = blueprint::Panel::new(clipped_rect.min, clipped_rect.size, color.color);
     bp.uis.push(blueprint::Ui::Panel(bp_panel));
+
+    let height = (terminal.font_size + 2) as f32; // 테스트 필요함. font_size와 실제 pixel과의 관계 R&D 필요
+    let mut start_y = clipped_rect.min.y + clipped_rect.size.y - height;
+
+    // render input area
+    {
+        let input_section = TextSection {
+            font: terminal.font.clone(),
+            font_size: terminal.font_size,
+            text: format!("> {}", terminal.input),
+        };
+
+        let input_bp = blueprint::Text {
+            pos: Vec2::new(clipped_rect.min.x, start_y),
+            size: Vec2::new(clipped_rect.size.x, height),
+            sections: vec![input_section],
+        };
+
+        bp.uis.push(blueprint::Ui::Text(input_bp));
+
+        start_y -= height;
+    }
+    // render contents
+    let contents_height = f32::max(region.size.y - height, 0.0);
+    let contents_line_count = (contents_height / height) as usize;
+    for s in terminal.contents.iter().rev().take(contents_line_count) {
+        let content_section = TextSection {
+            font: terminal.font.clone(),
+            font_size: terminal.font_size,
+            text: s.clone(),
+        };
+
+        let content_bp = blueprint::Text {
+            pos: Vec2::new(clipped_rect.min.x, start_y),
+            size: Vec2::new(clipped_rect.size.x, height),
+            sections: vec![content_section],
+        };
+        start_y -= height;
+
+        bp.uis.push(blueprint::Ui::Text(content_bp));
+    }
 }

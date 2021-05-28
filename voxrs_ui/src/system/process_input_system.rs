@@ -134,7 +134,15 @@ fn process_input_char<Message: 'static>(
             } else {
                 editable_text.contents.push(c);
             }
-            //editable_text_process_input_char(entry, editable_text, dbg!(c), output_queue);
+        }
+        widget::Widget::Terminal(terminal) => {
+            if c == '\r' {
+                let mut pre_input = String::new();
+                std::mem::swap(&mut pre_input, &mut terminal.input);
+                terminal.contents.push(pre_input);
+            } else {
+                terminal.input.push(c);
+            }
         }
         _ => {}
     }

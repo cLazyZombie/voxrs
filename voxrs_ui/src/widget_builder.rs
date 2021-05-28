@@ -124,6 +124,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
             font: info.font,
             font_size: info.font_size,
             contents: info.contents,
+            input: String::new(),
         });
 
         let region = comp::Region::new(info.pos, info.size);

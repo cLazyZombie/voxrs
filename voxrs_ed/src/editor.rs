@@ -77,7 +77,7 @@ impl Editor {
                 color: (0.0, 0.0, 0.0, 0.7).into(),
                 font: console_font.clone(),
                 font_size: 20,
-                contents: "hello, world".to_string(),
+                contents: vec!["hello, world".to_string(), "this is terminal".to_string()],
             });
 
         let key_input = KeyInputRes::new();
