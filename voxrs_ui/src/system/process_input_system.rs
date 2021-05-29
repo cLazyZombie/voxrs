@@ -69,7 +69,7 @@ fn process_mouse_click<Message: 'static>(
 
             // process input event
             if let Ok(handler) = entry.get_component::<comp::InteractionHandler<Message>>() {
-                handler.process(Interaction::Clicked, output_queue);
+                handler.process(widget, Interaction::Clicked, output_queue);
             }
 
             // change topmost root depth
@@ -129,7 +129,7 @@ fn process_input_char<Message: 'static>(
                 let contents = editable_text.contents.clone();
                 if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                     let interaction = Interaction::TextEdited(contents);
-                    handler.process(interaction, output_queue);
+                    handler.process(entity,interaction, output_queue);
                 }
             } else {
                 editable_text.contents.push(c);
@@ -143,7 +143,7 @@ fn process_input_char<Message: 'static>(
 
                 if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                     let interaction = Interaction::TerminalInput(input);
-                    handler.process(interaction, output_queue);
+                    handler.process(entity, interaction, output_queue);
                 }
             } else {
                 terminal.input.push(c);
@@ -154,6 +154,7 @@ fn process_input_char<Message: 'static>(
 }
 
 fn editable_text_process_input_char<Message: 'static>(
+    entity: Entity,
     entry: EntryMut,
     editable_text: &mut EditableTextWidget,
     c: char,
@@ -162,7 +163,7 @@ fn editable_text_process_input_char<Message: 'static>(
     if c == '\r' {
         if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
             let interaction = Interaction::TextEdited(editable_text.contents.clone());
-            handler.process(interaction, output_queue);
+            handler.process(entity, interaction, output_queue);
         }
     } else {
         editable_text.contents.push(c);

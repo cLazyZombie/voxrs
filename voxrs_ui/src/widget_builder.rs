@@ -175,7 +175,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
 
     pub fn handle_event<F>(&mut self, f: F)
     where
-        F: Fn(Interaction) -> Option<Message> + Send + Sync + 'static,
+        F: Fn(Entity, Interaction) -> Option<Message> + Send + Sync + 'static,
     {
         let handler = comp::InteractionHandler::new(f);
         let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
@@ -231,7 +231,7 @@ mod tests {
                     color: (1.0, 1.0, 1.0, 1.0).into(),
                 })
                 .query_id(&mut child)
-                .handle_event(|event| match event {
+                .handle_event(|_widget, event| match event {
                     Interaction::Clicked => Some(MyMessage::Message1),
                     _ => None,
                 })
