@@ -5,7 +5,9 @@ use voxrs_core::res::{CameraRes, ElapsedTimeRes, KeyInputRes, MouseInputRes, Wor
 use voxrs_math::*;
 use voxrs_render::blueprint::Blueprint;
 use voxrs_types::{io::FileSystem, Clock};
-use voxrs_ui::{EditableTextInfo, PanelInfo, TerminalInfo, WidgetBuilder};
+use voxrs_ui::{
+    AnchorHorizon, AnchorVertical, EditableTextInfo, PanelInfo, TerminalInfo, WidgetBuilder, WidgetPlacementInfo,
+};
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
 use crate::{res::EditorAssetRes, WidgetMessage};
@@ -46,20 +48,32 @@ impl Editor {
         let mut builder = WidgetBuilder::<WidgetMessage>::new(&mut world, &mut resources);
         builder
             .panel(PanelInfo {
-                pos: (10.0, 10.0).into(),
-                size: (200.0, 100.0).into(),
+                placement: WidgetPlacementInfo {
+                    pos: (10.0, 10.0).into(),
+                    v_anchor: Some(AnchorVertical::Top),
+                    h_anchor: Some(AnchorHorizon::Left),
+                    size: (200.0, 100.0).into(),
+                },
                 color: (1.0, 0.0, 0.0, 1.0).into(),
             })
             .child(|b| {
                 b.panel(PanelInfo {
-                    pos: (15.0, 15.0).into(),
-                    size: (80.0, 50.0).into(),
+                    placement: WidgetPlacementInfo {
+                        pos: (15.0, 15.0).into(),
+                        v_anchor: Some(AnchorVertical::Top),
+                        h_anchor: Some(AnchorHorizon::Left),
+                        size: (80.0, 50.0).into(),
+                    },
                     color: (0.0, 1.0, 1.0, 1.0).into(),
                 })
                 .child(|b| {
                     b.editable_text(EditableTextInfo {
-                        pos: (10.0, 10.0).into(),
-                        size: (100.0, 50.0).into(),
+                        placement: WidgetPlacementInfo {
+                            pos: (10.0, 10.0).into(),
+                            v_anchor: Some(AnchorVertical::Top),
+                            h_anchor: Some(AnchorHorizon::Left),
+                            size: (100.0, 50.0).into(),
+                        },
                         font: console_font.clone(),
                         font_size: 24,
                         contents: "text".to_string(),
@@ -67,13 +81,21 @@ impl Editor {
                 });
             })
             .panel(PanelInfo {
-                pos: (30.0, 30.0).into(),
-                size: (200.0, 100.0).into(),
+                placement: WidgetPlacementInfo {
+                    pos: (30.0, 30.0).into(),
+                    v_anchor: Some(AnchorVertical::Top),
+                    h_anchor: Some(AnchorHorizon::Left),
+                    size: (200.0, 100.0).into(),
+                },
                 color: (0.0, 0.0, 1.0, 0.5).into(),
             })
             .terminal(TerminalInfo {
-                pos: (0.0, 468.0).into(),
-                size: (1024.0, 300.0).into(),
+                placement: WidgetPlacementInfo {
+                    pos: (0.0, 468.0).into(),
+                    v_anchor: Some(AnchorVertical::Top),
+                    h_anchor: Some(AnchorHorizon::Left),
+                    size: (1024.0, 300.0).into(),
+                },
                 color: (0.0, 0.0, 0.0, 0.7).into(),
                 font: console_font.clone(),
                 font_size: 20,

@@ -20,3 +20,7 @@ pub use interaction::Interaction;
 
 mod widget_builder;
 pub use widget_builder::WidgetBuilder;
+
+mod anchor;
+pub use anchor::AnchorHorizon;
+pub use anchor::AnchorVertical;

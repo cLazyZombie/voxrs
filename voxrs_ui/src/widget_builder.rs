@@ -31,7 +31,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
 
     pub fn panel(&mut self, info: widget::PanelInfo) -> &mut Self {
         let panel = widget::Widget::Panel(PanelWidget {});
-        let region = comp::Region::new(info.pos, info.size);
+        let region = comp::Region::new(info.placement);
         let color = comp::Color::new(info.color);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
@@ -52,7 +52,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
 
     pub fn button(&mut self, info: widget::ButtonInfo) -> &mut Self {
         let button = widget::Widget::Button(ButtonWidget {});
-        let region = comp::Region::new(info.pos, info.size);
+        let region = comp::Region::new(info.placement);
         let color = comp::Color::new(info.color);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
@@ -77,7 +77,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
             font_size: info.font_size,
             contents: info.contents,
         });
-        let region = comp::Region::new(info.pos, info.size);
+        let region = comp::Region::new(info.placement);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
         let entity = self.world.push((text, region, hierarchy));
@@ -101,7 +101,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
             font_size: info.font_size,
             contents: info.contents,
         });
-        let region = comp::Region::new(info.pos, info.size);
+        let region = comp::Region::new(info.placement);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
         let entity = self.world.push((editable, region, hierarchy, comp::Focusable));
@@ -127,7 +127,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
             input: String::new(),
         });
 
-        let region = comp::Region::new(info.pos, info.size);
+        let region = comp::Region::new(info.placement);
         let parent = self.get_parent();
         let hierarchy = comp::Hierarchy::new(parent);
         let color = comp::Color::new(info.color);
@@ -198,7 +198,9 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{input::WidgetInput, system, ButtonInfo, PanelInfo};
+    use crate::{
+        input::WidgetInput, system, AnchorHorizon, AnchorVertical, ButtonInfo, PanelInfo, WidgetPlacementInfo,
+    };
 
     use super::*;
 
@@ -219,15 +221,23 @@ mod tests {
 
         builder
             .panel(PanelInfo {
-                pos: (0.0, 0.0).into(),
-                size: (100.0, 100.0).into(),
+                placement: WidgetPlacementInfo {
+                    pos: (0.0, 0.0).into(),
+                    v_anchor: Some(AnchorVertical::Top),
+                    h_anchor: Some(AnchorHorizon::Left),
+                    size: (100.0, 100.0).into(),
+                },
                 color: (1.0, 1.0, 1.0, 1.0).into(),
             })
             .query_id(&mut parent)
             .child(|b| {
                 b.button(ButtonInfo {
-                    pos: (0.0, 0.0).into(),
-                    size: (100.0, 100.0).into(),
+                    placement: WidgetPlacementInfo {
+                        pos: (0.0, 0.0).into(),
+                        v_anchor: Some(AnchorVertical::Top),
+                        h_anchor: Some(AnchorHorizon::Left),
+                        size: (100.0, 100.0).into(),
+                    },
                     color: (1.0, 1.0, 1.0, 1.0).into(),
                 })
                 .query_id(&mut child)

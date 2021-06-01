@@ -1,6 +1,14 @@
 use voxrs_asset::{AssetHandle, FontAsset};
 use voxrs_math::{Vec2, Vec4};
 
+#[derive(Copy, Clone, Debug)]
+pub struct WidgetPlacementInfo {
+    pub pos: Vec2,
+    pub h_anchor: Option<AnchorHorizon>,
+    pub v_anchor: Option<AnchorVertical>,
+    pub size: Vec2,
+}
+
 pub(crate) enum Widget {
     Panel(PanelWidget),
     Button(ButtonWidget),
@@ -11,8 +19,7 @@ pub(crate) enum Widget {
 
 pub struct PanelWidget {}
 pub struct PanelInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub placement: WidgetPlacementInfo,
     pub color: Vec4,
 }
 
@@ -29,8 +36,7 @@ impl Default for PanelWidget {
 }
 
 pub struct ButtonInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub placement: WidgetPlacementInfo,
     pub color: Vec4,
 }
 
@@ -54,16 +60,14 @@ pub(crate) struct EditableTextWidget {
 }
 
 pub struct TextInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub placement: WidgetPlacementInfo,
     pub font: AssetHandle<FontAsset>,
     pub font_size: u32,
     pub contents: String,
 }
 
 pub struct EditableTextInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub placement: WidgetPlacementInfo,
     pub font: AssetHandle<FontAsset>,
     pub font_size: u32,
     pub contents: String,
@@ -72,3 +76,5 @@ pub struct EditableTextInfo {
 mod terminal;
 pub use terminal::TerminalInfo;
 pub(crate) use terminal::TerminalWidget;
+
+use crate::{AnchorHorizon, AnchorVertical};

@@ -1,9 +1,10 @@
 use voxrs_asset::{AssetHandle, FontAsset};
-use voxrs_math::{Vec2, Vec4};
+use voxrs_math::Vec4;
+
+use crate::WidgetPlacementInfo;
 
 pub struct TerminalInfo {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub placement: WidgetPlacementInfo,
     pub color: Vec4,
     pub font: AssetHandle<FontAsset>,
     pub font_size: u32,
