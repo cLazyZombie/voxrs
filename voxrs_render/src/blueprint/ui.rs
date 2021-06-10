@@ -1,5 +1,5 @@
 use voxrs_asset::{AssetHandle, FontAsset};
-use voxrs_math::{Vec2, Vec4};
+use voxrs_math::{IVec2, Vec4};
 
 pub enum Ui {
     Panel(Panel),
@@ -8,21 +8,21 @@ pub enum Ui {
 
 #[derive(Clone, Debug)]
 pub struct Panel {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub pos: IVec2,
+    pub size: IVec2,
     pub color: Vec4,
 }
 
 impl Panel {
-    pub fn new(pos: Vec2, size: Vec2, color: Vec4) -> Self {
+    pub fn new(pos: IVec2, size: IVec2, color: Vec4) -> Self {
         Self { pos, size, color }
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Text {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub pos: IVec2,
+    pub size: IVec2,
     pub sections: Vec<TextSection>,
 }
 

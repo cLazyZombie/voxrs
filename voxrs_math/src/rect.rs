@@ -1,27 +1,27 @@
 use std::borrow::Borrow;
 
-use glam::{IVec2, Vec2};
+use glam::IVec2;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Rect2 {
-    pub min: Vec2,
-    pub size: Vec2,
+    pub min: IVec2,
+    pub size: IVec2,
 }
 
 impl Rect2 {
-    pub fn new(min: Vec2, size: Vec2) -> Self {
+    pub fn new(min: IVec2, size: IVec2) -> Self {
         Self { min, size }
     }
 
-    pub fn from_min_max(min: Vec2, max: Vec2) -> Self {
+    pub fn from_min_max(min: IVec2, max: IVec2) -> Self {
         let size = max - min;
-        assert!(size.x >= 0.0);
-        assert!(size.y >= 0.0);
+        assert!(size.x >= 0);
+        assert!(size.y >= 0);
 
         Self { min, size }
     }
 
-    pub fn max(&self) -> Vec2 {
+    pub fn max(&self) -> IVec2 {
         self.min + self.size
     }
 
@@ -41,7 +41,7 @@ impl Rect2 {
     pub fn has_ivec2<V: Borrow<IVec2>>(&self, pos: V) -> bool {
         let pos = <V as Borrow<IVec2>>::borrow(&pos);
         let max = self.max();
-        if pos.x as f32 >= self.min.x && pos.y as f32 >= self.min.y && pos.x as f32 <= max.x && pos.y as f32 <= max.y {
+        if pos.x >= self.min.x && pos.y >= self.min.y && pos.x <= max.x && pos.y <= max.y {
             return true;
         }
 
@@ -55,17 +55,17 @@ mod tests {
 
     #[test]
     fn test_transform() {
-        let parent = Rect2::new((10.0, 10.0).into(), (100.0, 100.0).into());
-        let child = Rect2::new((10.0, 20.0).into(), (100.0, 200.0).into());
+        let parent = Rect2::new((10, 10).into(), (100, 100).into());
+        let child = Rect2::new((10, 20).into(), (100, 200).into());
         let transformed = child.transform(parent);
 
-        assert!(transformed.min.abs_diff_eq(Vec2::new(20.0, 30.0), 0.1));
-        assert!(transformed.size.abs_diff_eq(Vec2::new(90.0, 80.0), 0.1));
+        assert_eq!(transformed.min, (20, 30).into());
+        assert_eq!(transformed.size, (90, 80).into());
     }
 
     #[test]
     fn test_has_ivec2() {
-        let rect = Rect2::from_min_max(Vec2::new(10.0, 20.0), Vec2::new(30.0, 40.0));
+        let rect = Rect2::from_min_max(IVec2::new(10, 20), IVec2::new(30, 40));
         assert!(rect.has_ivec2(IVec2::new(10, 20)));
         assert!(!rect.has_ivec2(IVec2::new(9, 20)));
     }

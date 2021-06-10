@@ -212,7 +212,7 @@ mod tests {
     fn test_build() {
         let mut world = World::default();
         let mut resources = Resources::default();
-        res::init_resources::<MyMessage>(&mut resources);
+        res::init_resources::<MyMessage>(&mut resources, 1920, 1080);
 
         let mut builder = WidgetBuilder::<MyMessage>::new(&mut world, &mut resources);
 
@@ -222,10 +222,10 @@ mod tests {
         builder
             .panel(PanelInfo {
                 placement: WidgetPlacementInfo {
-                    pos: (0.0, 0.0).into(),
+                    pos: (0, 0).into(),
                     v_anchor: Some(AnchorVertical::Top),
                     h_anchor: Some(AnchorHorizon::Left),
-                    size: (100.0, 100.0).into(),
+                    size: (100, 100).into(),
                 },
                 color: (1.0, 1.0, 1.0, 1.0).into(),
             })
@@ -233,10 +233,10 @@ mod tests {
             .child(|b| {
                 b.button(ButtonInfo {
                     placement: WidgetPlacementInfo {
-                        pos: (0.0, 0.0).into(),
+                        pos: (0, 0).into(),
                         v_anchor: Some(AnchorVertical::Top),
                         h_anchor: Some(AnchorHorizon::Left),
-                        size: (100.0, 100.0).into(),
+                        size: (100, 100).into(),
                     },
                     color: (1.0, 1.0, 1.0, 1.0).into(),
                 })

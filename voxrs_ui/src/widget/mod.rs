@@ -1,12 +1,12 @@
 use voxrs_asset::{AssetHandle, FontAsset};
-use voxrs_math::{Vec2, Vec4};
+use voxrs_math::{IVec2, Vec4};
 
 #[derive(Copy, Clone, Debug)]
 pub struct WidgetPlacementInfo {
-    pub pos: Vec2,
+    pub pos: IVec2,
     pub h_anchor: Option<AnchorHorizon>,
     pub v_anchor: Option<AnchorVertical>,
-    pub size: Vec2,
+    pub size: IVec2,
 }
 
 pub(crate) enum Widget {

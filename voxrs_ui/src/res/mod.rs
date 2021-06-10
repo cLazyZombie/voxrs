@@ -10,8 +10,12 @@ pub use focused_widget::FocusedWidget;
 mod next_depth;
 pub use next_depth::NextDepth;
 
+mod screen;
+pub use screen::ScreenResolution;
+
 use legion::*;
-pub fn init_resources<Message: 'static>(resources: &mut Resources) {
+
+pub fn init_resources<Message: 'static>(resources: &mut Resources, screen_width: u32, screen_height: u32) {
     let input_queue = InputQueue::default();
     resources.insert(input_queue);
 
@@ -23,4 +27,7 @@ pub fn init_resources<Message: 'static>(resources: &mut Resources) {
 
     let next_depth = NextDepth::default();
     resources.insert(next_depth);
+
+    let screen_resolution = ScreenResolution::new(screen_width, screen_height);
+    resources.insert(screen_resolution);
 }

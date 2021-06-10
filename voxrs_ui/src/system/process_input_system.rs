@@ -25,6 +25,7 @@ pub fn process_inputs<Message: 'static>(
     #[resource] output_queue: &mut res::OutputQueue<Message>,
     #[resource] focused_widget: &mut res::FocusedWidget,
     #[resource] next_depth: &mut res::NextDepth,
+    #[resource] screen: &res::ScreenResolution,
 ) {
     // get roots ordered by top depth
     let roots = <(Entity, &comp::Root)>::sort_from_near(world);
@@ -38,7 +39,7 @@ pub fn process_inputs<Message: 'static>(
                 }
             }
             WidgetInput::MouseClick { pos } => {
-                process_mouse_click(&roots, pos, world, next_depth, focused_widget, output_queue);
+                process_mouse_click(&roots, pos, world, next_depth, focused_widget, output_queue, screen);
             }
             _ => {}
         }
@@ -52,8 +53,9 @@ fn process_mouse_click<Message: 'static>(
     next_depth: &mut res::NextDepth,
     focused_widget: &mut res::FocusedWidget,
     output_queue: &mut res::OutputQueue<Message>,
+    screen: &res::ScreenResolution,
 ) {
-    let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
+    let root_rect = Rect2::new((0, 0).into(), (screen.width as i32, screen.height as i32).into());
 
     let mut focused = false;
 
@@ -129,7 +131,7 @@ fn process_input_char<Message: 'static>(
                 let contents = editable_text.contents.clone();
                 if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                     let interaction = Interaction::TextEdited(contents);
-                    handler.process(entity,interaction, output_queue);
+                    handler.process(entity, interaction, output_queue);
                 }
             } else {
                 editable_text.contents.push(c);

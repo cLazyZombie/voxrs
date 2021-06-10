@@ -43,36 +43,36 @@ impl Editor {
         );
         resources.insert(camera);
 
-        voxrs_ui::init_resources::<WidgetMessage>(&mut resources);
+        voxrs_ui::init_resources::<WidgetMessage>(&mut resources, width, height);
         let console_font = asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
         let mut builder = WidgetBuilder::<WidgetMessage>::new(&mut world, &mut resources);
         builder
             .panel(PanelInfo {
                 placement: WidgetPlacementInfo {
-                    pos: (10.0, 10.0).into(),
+                    pos: (10, 10).into(),
                     v_anchor: Some(AnchorVertical::Top),
                     h_anchor: Some(AnchorHorizon::Left),
-                    size: (200.0, 100.0).into(),
+                    size: (200, 100).into(),
                 },
                 color: (1.0, 0.0, 0.0, 1.0).into(),
             })
             .child(|b| {
                 b.panel(PanelInfo {
                     placement: WidgetPlacementInfo {
-                        pos: (15.0, 15.0).into(),
+                        pos: (15, 15).into(),
                         v_anchor: Some(AnchorVertical::Top),
                         h_anchor: Some(AnchorHorizon::Left),
-                        size: (80.0, 50.0).into(),
+                        size: (80, 50).into(),
                     },
                     color: (0.0, 1.0, 1.0, 1.0).into(),
                 })
                 .child(|b| {
                     b.editable_text(EditableTextInfo {
                         placement: WidgetPlacementInfo {
-                            pos: (10.0, 10.0).into(),
+                            pos: (10, 10).into(),
                             v_anchor: Some(AnchorVertical::Top),
                             h_anchor: Some(AnchorHorizon::Left),
-                            size: (100.0, 50.0).into(),
+                            size: (100, 50).into(),
                         },
                         font: console_font.clone(),
                         font_size: 24,
@@ -82,19 +82,19 @@ impl Editor {
             })
             .panel(PanelInfo {
                 placement: WidgetPlacementInfo {
-                    pos: (30.0, 30.0).into(),
+                    pos: (30, 30).into(),
                     v_anchor: Some(AnchorVertical::Top),
                     h_anchor: Some(AnchorHorizon::Left),
-                    size: (200.0, 100.0).into(),
+                    size: (200, 100).into(),
                 },
                 color: (0.0, 0.0, 1.0, 0.5).into(),
             })
             .terminal(TerminalInfo {
                 placement: WidgetPlacementInfo {
-                    pos: (0.0, 468.0).into(),
+                    pos: (0, 468).into(),
                     v_anchor: Some(AnchorVertical::Top),
                     h_anchor: Some(AnchorHorizon::Left),
-                    size: (1024.0, 300.0).into(),
+                    size: (1024, 300).into(),
                 },
                 color: (0.0, 0.0, 0.0, 0.7).into(),
                 font: console_font.clone(),

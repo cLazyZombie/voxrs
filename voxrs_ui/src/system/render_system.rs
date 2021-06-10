@@ -1,9 +1,10 @@
 use legion::world::{EntryRef, SubWorld};
 use legion::*;
-use voxrs_math::{Rect2, Vec2};
+use voxrs_math::{IVec2, Rect2};
 use voxrs_render::blueprint::{self, TextSection};
 
 use super::SortRootEntity;
+use crate::res::ScreenResolution;
 use crate::{comp, TerminalWidget, TextWidget};
 use crate::{widget, EditableTextWidget};
 
@@ -14,11 +15,11 @@ use crate::{widget, EditableTextWidget};
 #[read_component(comp::Color)]
 #[read_component(comp::Region)]
 #[read_component(widget::Widget)]
-pub fn render(world: &SubWorld, #[resource] bp: &mut blueprint::Blueprint) {
+pub fn render(world: &SubWorld, #[resource] bp: &mut blueprint::Blueprint, #[resource] screen: &ScreenResolution) {
     // get root reversed ordered by top depth
     let roots = <(Entity, &comp::Root)>::sort_from_far(world);
 
-    let root_rect = Rect2::from_min_max((0.0, 0.0).into(), (f32::MAX, f32::MAX).into());
+    let root_rect = Rect2::new((0, 0).into(), (screen.width as i32, screen.height as i32).into());
 
     for entity in roots {
         render_widget(entity, &root_rect, world, bp);
@@ -130,7 +131,7 @@ fn render_terminal(
     let bp_panel = blueprint::Panel::new(clipped_rect.min, clipped_rect.size, color.color);
     bp.uis.push(blueprint::Ui::Panel(bp_panel));
 
-    let height = (terminal.font_size + 2) as f32; // 테스트 필요함. font_size와 실제 pixel과의 관계 R&D 필요
+    let height = (terminal.font_size + 2) as i32; // 테스트 필요함. font_size와 실제 pixel과의 관계 R&D 필요
     let mut start_y = clipped_rect.min.y + clipped_rect.size.y - height;
 
     // render input area
@@ -142,8 +143,8 @@ fn render_terminal(
         };
 
         let input_bp = blueprint::Text {
-            pos: Vec2::new(clipped_rect.min.x, start_y),
-            size: Vec2::new(clipped_rect.size.x, height),
+            pos: IVec2::new(clipped_rect.min.x, start_y),
+            size: IVec2::new(clipped_rect.size.x, height),
             sections: vec![input_section],
         };
 
@@ -152,7 +153,7 @@ fn render_terminal(
         start_y -= height;
     }
     // render contents
-    let contents_height = f32::max(region.size.y - height, 0.0);
+    let contents_height = i32::max(region.size.y - height, 0);
     let contents_line_count = (contents_height / height) as usize;
     for s in terminal.contents.iter().rev().take(contents_line_count) {
         let content_section = TextSection {
@@ -162,8 +163,8 @@ fn render_terminal(
         };
 
         let content_bp = blueprint::Text {
-            pos: Vec2::new(clipped_rect.min.x, start_y),
-            size: Vec2::new(clipped_rect.size.x, height),
+            pos: IVec2::new(clipped_rect.min.x, start_y),
+            size: IVec2::new(clipped_rect.size.x, height),
             sections: vec![content_section],
         };
         start_y -= height;

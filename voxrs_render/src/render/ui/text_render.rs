@@ -224,7 +224,7 @@ impl TextRenderer {
             .calculate_glyphs(
                 &self.font_atlas.get_fonts(),
                 &SectionGeometry {
-                    screen_position: (text.pos.x, text.pos.y),
+                    screen_position: (text.pos.x as f32, text.pos.y as f32),
                     ..Default::default()
                 },
                 &sections,

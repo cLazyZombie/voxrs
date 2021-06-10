@@ -1,12 +1,12 @@
-use voxrs_math::{Rect2, Vec2};
+use voxrs_math::{IVec2, Rect2};
 
 use crate::{AnchorHorizon, AnchorVertical, WidgetPlacementInfo};
 
 pub struct Region {
-    pub pos: Vec2,
+    pub pos: IVec2,
     pub v_anchor: AnchorVertical,
     pub h_anchor: AnchorHorizon,
-    pub size: Vec2,
+    pub size: IVec2,
 }
 
 impl Region {

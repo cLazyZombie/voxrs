@@ -144,19 +144,19 @@ impl PanelRenderer {
     pub fn prepare(&mut self, panel: &Panel, device: &wgpu::Device, queue: &wgpu::Queue) -> PanelRenderInfo {
         let vertices = [
             PanelVertex {
-                position: [panel.pos.x, panel.pos.y],
+                position: [panel.pos.x as f32, panel.pos.y as f32],
                 color: *panel.color.as_ref(),
             },
             PanelVertex {
-                position: [panel.pos.x + panel.size.x, panel.pos.y],
+                position: [(panel.pos.x + panel.size.x) as f32, panel.pos.y as f32],
                 color: *panel.color.as_ref(),
             },
             PanelVertex {
-                position: [panel.pos.x + panel.size.x, panel.pos.y + panel.size.y],
+                position: [(panel.pos.x + panel.size.x) as f32, (panel.pos.y + panel.size.y) as f32],
                 color: *panel.color.as_ref(),
             },
             PanelVertex {
-                position: [panel.pos.x, panel.pos.y + panel.size.y],
+                position: [panel.pos.x as f32, (panel.pos.y + panel.size.y) as f32],
                 color: *panel.color.as_ref(),
             },
         ];
