@@ -99,7 +99,7 @@ fn get_widget_under_pos(entity: Entity, pos: &IVec2, parent_rect: &Rect2, world:
     }
 
     let region = region.unwrap();
-    let rect = region.get_rect().transform(parent_rect);
+    let rect = region.get_rect(parent_rect);
     if !rect.has_ivec2(pos) {
         return None;
     }

@@ -44,7 +44,7 @@ fn render_widget(entity: Entity, parent_rect: &Rect2, world: &SubWorld, bp: &mut
 
 fn render_child(entry: EntryRef, parent_rect: &Rect2, world: &SubWorld, bp: &mut blueprint::Blueprint) {
     let region = entry.get_component::<comp::Region>().unwrap();
-    let clipped_rect = region.get_rect().transform(parent_rect);
+    let clipped_rect = region.get_rect(parent_rect);
 
     let hierarchy = entry.get_component::<comp::Hierarchy>().unwrap(); // hierarchy component should exists
     for child in &hierarchy.children {
@@ -57,7 +57,7 @@ fn render_panel(entity: Entity, parent_rect: &Rect2, world: &SubWorld, bp: &mut 
 
     let color = entry.get_component::<comp::Color>().unwrap();
     let region = entry.get_component::<comp::Region>().unwrap();
-    let clipped_rect = region.get_rect().transform(parent_rect);
+    let clipped_rect = region.get_rect(parent_rect);
 
     let bp_panel = blueprint::Panel::new(clipped_rect.min, clipped_rect.size, color.color);
     bp.uis.push(blueprint::Ui::Panel(bp_panel));
@@ -72,7 +72,7 @@ fn render_text(
 ) {
     let entry = world.entry_ref(entity).unwrap();
     let region = entry.get_component::<comp::Region>().unwrap();
-    let clipped_rect = region.get_rect().transform(parent_rect);
+    let clipped_rect = region.get_rect(parent_rect);
 
     let section = TextSection {
         font: text_widget.font.clone(),
@@ -98,7 +98,7 @@ fn render_editable_text(
 ) {
     let entry = world.entry_ref(entity).unwrap();
     let region = entry.get_component::<comp::Region>().unwrap();
-    let clipped_rect = region.get_rect().transform(parent_rect);
+    let clipped_rect = region.get_rect(parent_rect);
 
     let section = TextSection {
         font: editable_text.font.clone(),
@@ -126,7 +126,7 @@ fn render_terminal(
 
     let color = entry.get_component::<comp::Color>().unwrap();
     let region = entry.get_component::<comp::Region>().unwrap();
-    let clipped_rect = region.get_rect().transform(parent_rect);
+    let clipped_rect = region.get_rect(parent_rect);
 
     let bp_panel = blueprint::Panel::new(clipped_rect.min, clipped_rect.size, color.color);
     bp.uis.push(blueprint::Ui::Panel(bp_panel));

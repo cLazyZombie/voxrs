@@ -91,10 +91,10 @@ impl Editor {
             })
             .terminal(TerminalInfo {
                 placement: WidgetPlacementInfo {
-                    pos: (0, 468).into(),
-                    v_anchor: Some(AnchorVertical::Top),
-                    h_anchor: Some(AnchorHorizon::Left),
-                    size: (1024, 300).into(),
+                    pos: (0, 0).into(),
+                    v_anchor: Some(AnchorVertical::Bottom),
+                    h_anchor: Some(AnchorHorizon::Fill),
+                    size: (0, 300).into(),
                 },
                 color: (0.0, 0.0, 0.0, 0.7).into(),
                 font: console_font.clone(),
@@ -200,8 +200,14 @@ impl Editor {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        let mut camera_res = self.res.get_mut::<CameraRes>().unwrap();
-        camera_res.resize(width, height);
+        if let Some(mut camera_res) = self.res.get_mut::<CameraRes>() {
+            camera_res.resize(width, height);
+        }
+
+        if let Some(mut screen_res) = self.res.get_mut::<voxrs_ui::ScreenResolution>() {
+            screen_res.width = width;
+            screen_res.height = height;
+        }
     }
 
     #[profiling::function]

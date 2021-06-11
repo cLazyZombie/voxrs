@@ -9,6 +9,7 @@ pub mod system;
 mod res;
 pub use res::init_resources;
 pub use res::InputQueue;
+pub use res::ScreenResolution;
 
 mod widget;
 pub use widget::*;

@@ -3,6 +3,7 @@ pub enum AnchorHorizon {
     Left,
     Center,
     Right,
+    Fill, // fill horizontally
 }
 
 impl Default for AnchorHorizon {
@@ -16,6 +17,7 @@ pub enum AnchorVertical {
     Top,
     Center,
     Bottom,
+    Fill, // fill vertically
 }
 
 impl Default for AnchorVertical {

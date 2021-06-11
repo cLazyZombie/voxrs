@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 
 use glam::IVec2;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Rect2 {
     pub min: IVec2,
     pub size: IVec2,
@@ -46,6 +46,13 @@ impl Rect2 {
         }
 
         false
+    }
+
+    pub fn intersect(&self, other: &Rect2) -> Rect2 {
+        let min = other.min.max(self.min);
+        let max = other.max().min(self.max());
+
+        Rect2::from_min_max(min, max)
     }
 }
 
