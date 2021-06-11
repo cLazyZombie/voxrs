@@ -5,7 +5,7 @@ mod tests {
     #[test]
     fn test_identity() {
         let q = Quat::IDENTITY;
-        assert_eq!(q, [0.0, 0.0, 0.0, 1.0].into());
+        assert_eq!(q, Quat::from_xyzw(0.0, 0.0, 0.0, 1.0));
         q.abs_diff_eq(Quat::IDENTITY, 0.01);
     }
 

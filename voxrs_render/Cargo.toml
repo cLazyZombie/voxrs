@@ -21,7 +21,7 @@ guillotiere = "0.6"
 log = "0.4"
 profiling = "1.0"
 wgpu = "0.8"
-winit = "0.24"
+winit = "0.25"
 
 [features]
 profile-with-optick = ["profiling/profile-with-optick"]
