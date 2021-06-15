@@ -10,7 +10,7 @@ use voxrs_ui::{
 };
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
 
-use crate::{res::EditorAssetRes, WidgetMessage};
+use crate::{command::Command, res::EditorAssetRes, WidgetMessage};
 
 use super::system;
 
@@ -100,6 +100,17 @@ impl Editor {
                 font: console_font.clone(),
                 font_size: 20,
                 contents: vec!["hello, world".to_string(), "this is terminal".to_string()],
+            })
+            .handle_event(|_, interaction| match interaction {
+                voxrs_ui::Interaction::TerminalInput(input) => {
+                    let command = input.parse::<Command>();
+                    if let Ok(command) = command {
+                        Some(WidgetMessage::ConsoleCommand(command))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
             });
 
         let key_input = KeyInputRes::new();
@@ -127,6 +138,7 @@ impl Editor {
         let end_frame_schedule = Schedule::builder()
             .add_system(system::end_frame::end_frame_system())
             .add_system(voxrs_ui::system::clear_inputs_system())
+            .add_system(system::process_widget_message::process_widget_message_system::<F>())
             .build();
 
         let clock = Clock::new();

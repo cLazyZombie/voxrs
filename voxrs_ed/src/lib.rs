@@ -7,3 +7,5 @@ pub mod res;
 
 mod widget_message;
 pub(crate) use widget_message::WidgetMessage;
+
+mod command;
