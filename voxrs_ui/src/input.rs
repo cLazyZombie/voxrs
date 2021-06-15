@@ -18,16 +18,10 @@ impl KeyboardInput {
     }
 
     pub fn is_return(&self) -> bool {
-        match self.keycode {
-            VirtualKeyCode::Return => true,
-            _ => false,
-        }
+        matches!(self.keycode, VirtualKeyCode::Return)
     }
 
     pub fn is_back(&self) -> bool {
-        match self.keycode {
-            VirtualKeyCode::Back => true,
-            _ => false,
-        }
+        matches!(self.keycode, VirtualKeyCode::Back)
     }
 }
