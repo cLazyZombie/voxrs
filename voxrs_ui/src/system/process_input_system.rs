@@ -1,4 +1,4 @@
-use legion::world::{EntryMut, SubWorld};
+use legion::world::SubWorld;
 use legion::*;
 use voxrs_math::{IVec2, Rect2};
 
@@ -6,7 +6,7 @@ use crate::input::KeyboardInput;
 use crate::{
     comp::{self, InteractionHandler},
     input::WidgetInput,
-    EditableTextWidget, Interaction,
+    Interaction,
 };
 use crate::{res, widget};
 
@@ -178,23 +178,6 @@ fn process_keyboard_input<Message: 'static>(
             }
         }
         _ => {}
-    }
-}
-
-fn editable_text_process_input_char<Message: 'static>(
-    entity: Entity,
-    entry: EntryMut,
-    editable_text: &mut EditableTextWidget,
-    c: char,
-    output_queue: &mut res::OutputQueue<Message>,
-) {
-    if c == '\r' {
-        if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
-            let interaction = Interaction::TextEdited(editable_text.contents.clone());
-            handler.process(entity, interaction, output_queue);
-        }
-    } else {
-        editable_text.contents.push(c);
     }
 }
 
