@@ -142,12 +142,21 @@ impl Editor {
     }
 
     pub fn on_key_input<F: FileSystem>(&mut self, input: &KeyboardInput) {
-        let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
-
         if let Some(key_code) = input.virtual_keycode {
             if input.state == ElementState::Pressed {
-                key_input.on_key_pressed(key_code);
+                {
+                    let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
+                    key_input.on_key_pressed(key_code);
+                }
+
+                {
+                    let mut input_queue = self.res.get_mut_or_default::<voxrs_ui::InputQueue>();
+                    input_queue.add(voxrs_ui::input::WidgetInput::KeyboardInput(
+                        voxrs_ui::input::KeyboardInput::new(key_code),
+                    ));
+                }
             } else {
+                let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
                 key_input.on_key_released(key_code);
 
                 // temporary

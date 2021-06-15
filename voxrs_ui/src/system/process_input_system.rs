@@ -2,6 +2,7 @@ use legion::world::{EntryMut, SubWorld};
 use legion::*;
 use voxrs_math::{IVec2, Rect2};
 
+use crate::input::KeyboardInput;
 use crate::{
     comp::{self, InteractionHandler},
     input::WidgetInput,
@@ -35,7 +36,12 @@ pub fn process_inputs<Message: 'static>(
             WidgetInput::Character(c) => {
                 // only send to focused widget
                 if let Some(focused) = focused_widget.get() {
-                    process_input_char(focused, *c, output_queue, world);
+                    process_input_char(focused, *c, world);
+                }
+            }
+            WidgetInput::KeyboardInput(key) => {
+                if let Some(focused) = focused_widget.get() {
+                    process_keyboard_input(focused, key, output_queue, world);
                 }
             }
             WidgetInput::MouseClick { pos } => {
@@ -115,9 +121,29 @@ fn get_widget_under_pos(entity: Entity, pos: &IVec2, parent_rect: &Rect2, world:
     Some(entity)
 }
 
-fn process_input_char<Message: 'static>(
+fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
+    let mut entry = world.entry_mut(entity).unwrap();
+    let widget = entry.get_component_mut::<widget::Widget>().unwrap();
+
+    #[allow(clippy::single_match)]
+    match widget {
+        widget::Widget::EditableText(editable_text) => {
+            if !c.is_control() {
+                editable_text.contents.push(c);
+            }
+        }
+        widget::Widget::Terminal(terminal) => {
+            if !c.is_control() {
+                terminal.input.push(c);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn process_keyboard_input<Message: 'static>(
     entity: Entity,
-    c: char,
+    input: &KeyboardInput,
     output_queue: &mut res::OutputQueue<Message>,
     world: &mut SubWorld,
 ) {
@@ -127,18 +153,18 @@ fn process_input_char<Message: 'static>(
     #[allow(clippy::single_match)]
     match widget {
         widget::Widget::EditableText(editable_text) => {
-            if c == '\r' {
+            if input.is_return() {
                 let contents = editable_text.contents.clone();
                 if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
                     let interaction = Interaction::TextEdited(contents);
                     handler.process(entity, interaction, output_queue);
                 }
-            } else {
-                editable_text.contents.push(c);
+            } else if input.is_back() {
+                editable_text.contents.pop();
             }
         }
         widget::Widget::Terminal(terminal) => {
-            if c == '\r' {
+            if input.is_return() {
                 let mut input = String::new();
                 std::mem::swap(&mut input, &mut terminal.input);
                 terminal.contents.push(input.clone());
@@ -147,8 +173,8 @@ fn process_input_char<Message: 'static>(
                     let interaction = Interaction::TerminalInput(input);
                     handler.process(entity, interaction, output_queue);
                 }
-            } else {
-                terminal.input.push(c);
+            } else if input.is_back() {
+                terminal.input.pop();
             }
         }
         _ => {}
