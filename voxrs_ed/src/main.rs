@@ -20,11 +20,7 @@ fn main() {
 
     let mut renderer = futures::executor::block_on(render::Renderer::new(&window, &mut asset_manager));
 
-    let mut editor = Editor::new(
-        window.inner_size().width,
-        window.inner_size().height,
-        &mut asset_manager,
-    );
+    let mut editor = Editor::new(window.inner_size().width, window.inner_size().height, asset_manager);
 
     #[allow(clippy::single_match, clippy::clippy::collapsible_match)]
     event_loop.run(move |event, _, control_flow| match event {

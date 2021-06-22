@@ -32,7 +32,7 @@ impl std::str::FromStr for Command {
                 if args.len() != 2 {
                     Err(CommandParseError::InvalidCommand)
                 } else {
-                    Ok(Command::Save(args[1].clone().into()))
+                    Ok(Command::Load(args[1].clone().into()))
                 }
             }
             _ => Err(CommandParseError::UnknownCommand(args[0].to_string())),

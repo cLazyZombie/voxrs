@@ -8,7 +8,7 @@ use voxrs_types::{io::FileSystem, Clock};
 use voxrs_ui::{
     AnchorHorizon, AnchorVertical, EditableTextInfo, PanelInfo, TerminalInfo, WidgetBuilder, WidgetPlacementInfo,
 };
-use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton, VirtualKeyCode};
+use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
 use crate::{command::Command, res::EditorAssetRes, WidgetMessage};
 
@@ -24,11 +24,11 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new<F: FileSystem>(width: u32, height: u32, asset_manager: &mut AssetManager<F>) -> Self {
+    pub fn new<F: FileSystem>(width: u32, height: u32, mut asset_manager: AssetManager<F>) -> Self {
         let mut world = World::default();
         let mut resources = Resources::default();
 
-        let world_block_res = WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), asset_manager);
+        let world_block_res = WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), &mut asset_manager);
         resources.insert(world_block_res);
 
         let camera = CameraRes::new(
@@ -119,8 +119,10 @@ impl Editor {
         let mouse_input = MouseInputRes::new();
         resources.insert(mouse_input);
 
-        let editor_asset = EditorAssetRes::new(asset_manager);
+        let editor_asset = EditorAssetRes::new(&mut asset_manager);
         resources.insert(editor_asset);
+
+        resources.insert(asset_manager);
 
         let tick_schedule = Schedule::builder()
             .add_system(voxrs_ui::system::process_inputs_system::<WidgetMessage>())
@@ -170,16 +172,6 @@ impl Editor {
             } else {
                 let mut key_input = self.res.get_mut_or_default::<KeyInputRes>();
                 key_input.on_key_released(key_code);
-
-                // temporary
-                if key_code == VirtualKeyCode::S && key_input.is_ctrl_pressed() {
-                    drop(key_input);
-
-                    let result = self.save::<F>(&"assets/world_temp.wb".into());
-                    if let Err(error) = result {
-                        log::error!("save error. {:?}", error);
-                    }
-                }
             }
         }
     }
