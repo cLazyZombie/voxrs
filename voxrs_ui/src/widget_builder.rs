@@ -120,14 +120,7 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
     }
 
     pub fn terminal(&mut self, info: widget::TerminalInfo) -> &mut Self {
-        let terminal = widget::Widget::Terminal(TerminalWidget {
-            font: info.font,
-            font_size: info.font_size,
-            contents: info.contents,
-            input: String::new(),
-            history: Vec::new(),
-            cursor: None,
-        });
+        let terminal = widget::Widget::Terminal(TerminalWidget::new(&info));
 
         let region = comp::Region::new(info.placement);
         let parent = self.get_parent();

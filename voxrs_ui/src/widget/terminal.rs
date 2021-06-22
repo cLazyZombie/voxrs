@@ -16,11 +16,23 @@ pub(crate) struct TerminalWidget {
     pub font_size: u32,
     pub contents: Vec<String>,
     pub input: String,
-    pub history: Vec<String>,
-    pub cursor: Option<usize>,
+
+    history: Vec<String>,
+    cursor: Option<usize>,
 }
 
 impl TerminalWidget {
+    pub fn new(info: &TerminalInfo) -> Self {
+        Self {
+            font: info.font.clone(),
+            font_size: info.font_size,
+            contents: info.contents.clone(),
+            input: String::new(),
+            history: Vec::new(),
+            cursor: None,
+        }
+    }
+
     pub fn enter(&mut self) -> String {
         let mut input = String::new();
         std::mem::swap(&mut input, &mut self.input);
