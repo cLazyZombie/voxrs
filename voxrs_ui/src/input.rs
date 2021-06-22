@@ -24,4 +24,12 @@ impl KeyboardInput {
     pub fn is_back(&self) -> bool {
         matches!(self.keycode, VirtualKeyCode::Back)
     }
+
+    pub fn is_up(&self) -> bool {
+        matches!(self.keycode, VirtualKeyCode::Up)
+    }
+
+    pub fn is_down(&self) -> bool {
+        matches!(self.keycode, VirtualKeyCode::Down)
+    }
 }

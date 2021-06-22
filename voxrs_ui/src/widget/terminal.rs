@@ -16,6 +16,54 @@ pub(crate) struct TerminalWidget {
     pub font_size: u32,
     pub contents: Vec<String>,
     pub input: String,
+    pub history: Vec<String>,
+    pub cursor: Option<usize>,
+}
+
+impl TerminalWidget {
+    pub fn enter(&mut self) -> String {
+        let mut input = String::new();
+        std::mem::swap(&mut input, &mut self.input);
+        self.contents.push(input.clone());
+        self.history.push(input.clone());
+
+        self.cursor = None;
+
+        input
+    }
+
+    pub fn prev(&mut self) {
+        match self.cursor {
+            Some(idx) => {
+                let prev_idx = idx.checked_sub(1);
+                if let Some(prev_idx) = prev_idx {
+                    if prev_idx < self.history.len() {
+                        self.cursor = Some(prev_idx);
+                        self.input = self.history[prev_idx].clone();
+                    }
+                }
+            }
+            None => {
+                if !self.history.is_empty() {
+                    self.cursor = Some(self.history.len() - 1);
+                    self.input = self.history.last().unwrap().clone();
+                }
+            }
+        }
+    }
+
+    pub fn next(&mut self) {
+        match self.cursor {
+            Some(idx) => {
+                let next_idx = idx + 1;
+                if next_idx < self.history.len() {
+                    self.cursor = Some(next_idx);
+                    self.input = self.history[next_idx].clone();
+                }
+            }
+            None => {}
+        }
+    }
 }
 
 // impl TerminalWidget {

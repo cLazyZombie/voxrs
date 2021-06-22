@@ -165,16 +165,21 @@ fn process_keyboard_input<Message: 'static>(
         }
         widget::Widget::Terminal(terminal) => {
             if input.is_return() {
-                let mut input = String::new();
-                std::mem::swap(&mut input, &mut terminal.input);
-                terminal.contents.push(input.clone());
+                let command = terminal.enter();
+                // let mut input = String::new();
+                // std::mem::swap(&mut input, &mut terminal.input);
+                // terminal.contents.push(input.clone());
 
                 if let Ok(handler) = entry.get_component::<InteractionHandler<Message>>() {
-                    let interaction = Interaction::TerminalInput(input);
+                    let interaction = Interaction::TerminalInput(command);
                     handler.process(entity, interaction, output_queue);
                 }
             } else if input.is_back() {
                 terminal.input.pop();
+            } else if input.is_up() {
+                terminal.prev();
+            } else if input.is_down() {
+                terminal.next();
             }
         }
         _ => {}
