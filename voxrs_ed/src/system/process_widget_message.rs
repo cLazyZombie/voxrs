@@ -14,8 +14,7 @@ pub fn process_widget_message<F: FileSystem + 'static>(
     #[resource] output_queue: &mut OutputQueue<WidgetMessage>,
     #[resource] world_block: &mut WorldBlockRes,
 ) {
-    //todo. into iterator로 처리
-    for m in output_queue.iter() {
+    for m in output_queue as &OutputQueue<WidgetMessage> {
         match m {
             WidgetMessage::ConsoleCommand(command) => match command {
                 Command::Save(path) => {

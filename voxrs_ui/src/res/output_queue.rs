@@ -21,3 +21,21 @@ impl<Message: 'static> Default for OutputQueue<Message> {
         Self { vec: Vec::new() }
     }
 }
+
+impl<Message: 'static> IntoIterator for OutputQueue<Message> {
+    type Item = Message;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.vec.into_iter()
+    }
+}
+
+impl<'a, Message: 'static> IntoIterator for &'a OutputQueue<Message> {
+    type Item = &'a Message;
+    type IntoIter = std::slice::Iter<'a, Message>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.vec).into_iter()
+    }
+}
