@@ -46,8 +46,8 @@ pub fn control(
     const ROTATE_SPEED_VERT: f32 = 0.003;
 
     // rotate mouse
-    if mouse_input.right_button {
-        let delta = mouse_input.delta;
+    if mouse_input.get_right_button_pressed() {
+        let delta = mouse_input.get_delta();
         camera.rotate_camera(
             Angle::from_radians(delta.0 as f32 * ROTATE_SPEED_HORIZON),
             Angle::from_radians(delta.1 as f32 * ROTATE_SPEED_VERT * -1.0),

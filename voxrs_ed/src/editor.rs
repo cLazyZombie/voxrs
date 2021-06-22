@@ -126,6 +126,7 @@ impl Editor {
 
         let tick_schedule = Schedule::builder()
             .add_system(voxrs_ui::system::process_inputs_system::<WidgetMessage>())
+            .add_system(system::disable_input::disable_input_system())
             .add_system(system::camera::control_system())
             .add_system(system::world_block_modify::modify_system())
             .build();
@@ -189,7 +190,7 @@ impl Editor {
             mouse_input.on_mouse_released(button);
 
             // send to ui event
-            let pos = IVec2::new(mouse_input.position.0 as i32, mouse_input.position.1 as i32);
+            let pos = IVec2::new(mouse_input.get_position().0 as i32, mouse_input.get_position().1 as i32);
             drop(mouse_input);
 
             let mut input_queue = self.res.get_mut_or_default::<voxrs_ui::InputQueue>();

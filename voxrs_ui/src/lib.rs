@@ -8,6 +8,7 @@ pub mod system;
 
 mod res;
 pub use res::init_resources;
+pub use res::FocusedWidget;
 pub use res::InputQueue;
 pub use res::OutputQueue;
 pub use res::ScreenResolution;

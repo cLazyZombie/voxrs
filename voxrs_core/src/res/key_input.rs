@@ -1,6 +1,7 @@
 use winit::event::{ModifiersState, VirtualKeyCode};
 
 pub struct KeyInputRes {
+    disabled: bool,
     pressed_keys: Vec<VirtualKeyCode>,
     shift_pressed: bool,
     ctrl_pressed: bool,
@@ -10,11 +11,21 @@ pub struct KeyInputRes {
 impl KeyInputRes {
     pub fn new() -> Self {
         KeyInputRes {
+            disabled: false,
             pressed_keys: Vec::new(),
             shift_pressed: false,
             ctrl_pressed: false,
             alt_pressed: false,
         }
+    }
+
+    pub fn disable(&mut self) {
+        self.disabled = true;
+        self.pressed_keys.clear();
+    }
+
+    pub fn enable(&mut self) {
+        self.disabled = false;
     }
 
     pub fn on_key_pressed(&mut self, key: VirtualKeyCode) {
@@ -36,27 +47,51 @@ impl KeyInputRes {
     }
 
     pub fn is_key_pressed(&self, key: VirtualKeyCode) -> bool {
-        self.pressed_keys.iter().any(|k| *k == key)
+        if self.disabled {
+            false
+        } else {
+            self.pressed_keys.iter().any(|k| *k == key)
+        }
     }
 
     fn get_pressed_key_position(&self, key: VirtualKeyCode) -> Option<usize> {
-        self.pressed_keys.iter().position(|k| *k == key)
+        if self.disabled {
+            None
+        } else {
+            self.pressed_keys.iter().position(|k| *k == key)
+        }
     }
 
     pub fn keys(&self) -> impl Iterator<Item = &VirtualKeyCode> + '_ {
-        self.pressed_keys.iter()
+        if self.disabled {
+            [].iter()
+        } else {
+            self.pressed_keys.iter()
+        }
     }
 
     pub fn is_shift_pressed(&self) -> bool {
-        self.shift_pressed
+        if self.disabled {
+            false
+        } else {
+            self.shift_pressed
+        }
     }
 
     pub fn is_ctrl_pressed(&self) -> bool {
-        self.ctrl_pressed
+        if self.disabled {
+            false
+        } else {
+            self.ctrl_pressed
+        }
     }
 
     pub fn is_alt_pressed(&self) -> bool {
-        self.alt_pressed
+        if self.disabled {
+            false
+        } else {
+            self.alt_pressed
+        }
     }
 }
 

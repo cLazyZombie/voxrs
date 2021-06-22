@@ -16,6 +16,10 @@ impl FocusedWidget {
     pub fn get(&self) -> Option<Entity> {
         self.focused
     }
+
+    pub fn has_focus(&self) -> bool {
+        self.focused.is_some()
+    }
 }
 
 impl Default for FocusedWidget {

@@ -1,19 +1,21 @@
 use winit::event::MouseButton;
 
 pub struct MouseInputRes {
-    pub delta: (f64, f64),
-    pub position: (f32, f32),
-    pub left_button: bool,
-    pub right_button: bool,
-    pub middle_button: bool,
-    pub left_click: bool,
-    pub right_click: bool,
-    pub middle_click: bool,
+    disabled: bool,
+    delta: (f64, f64),
+    position: (f32, f32),
+    left_button: bool,
+    right_button: bool,
+    middle_button: bool,
+    left_click: bool,
+    right_click: bool,
+    middle_click: bool,
 }
 
 impl MouseInputRes {
     pub fn new() -> Self {
         Self {
+            disabled: false,
             delta: (0.0, 0.0),
             position: (0.0, 0.0),
             left_button: false,
@@ -23,6 +25,14 @@ impl MouseInputRes {
             right_click: false,
             middle_click: false,
         }
+    }
+
+    pub fn disable(&mut self) {
+        self.disabled = true;
+    }
+
+    pub fn enable(&mut self) {
+        self.disabled = false;
     }
 
     pub fn on_mouse_motion(&mut self, delta: (f64, f64)) {
@@ -66,6 +76,66 @@ impl MouseInputRes {
                 self.middle_click = true;
             }
             _ => {}
+        }
+    }
+
+    pub fn get_delta(&self) -> (f64, f64) {
+        if self.disabled {
+            (0.0, 0.0)
+        } else {
+            self.delta
+        }
+    }
+
+    pub fn get_position(&self) -> (f32, f32) {
+        self.position
+    }
+
+    pub fn get_left_button_pressed(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.left_button
+        }
+    }
+
+    pub fn get_middle_button_pressed(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.middle_button
+        }
+    }
+
+    pub fn get_right_button_pressed(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.right_button
+        }
+    }
+
+    pub fn get_left_button_clicked(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.left_click
+        }
+    }
+
+    pub fn get_middle_button_clicked(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.middle_click
+        }
+    }
+
+    pub fn get_right_button_clicked(&self) -> bool {
+        if self.disabled {
+            false
+        } else {
+            self.right_click
         }
     }
 }

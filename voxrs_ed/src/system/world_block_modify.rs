@@ -11,11 +11,11 @@ pub fn modify(
     #[resource] mouse_input: &MouseInputRes,
     #[resource] key_input: &KeyInputRes,
 ) {
-    if !mouse_input.left_click {
+    if !mouse_input.get_left_button_clicked() {
         return;
     }
 
-    let ray = camera.create_ray(mouse_input.position);
+    let ray = camera.create_ray(mouse_input.get_position());
     let result = world_block_res.trace(&ray);
     let chunk_counts = world_block_res.get_world_chunk_counts();
 
@@ -45,7 +45,7 @@ pub fn indicator_render(
     #[resource] blueprint: &mut Blueprint,
     #[resource] editor_asset: &EditorAssetRes,
 ) {
-    let ray = camera.create_ray(mouse_input.position);
+    let ray = camera.create_ray(mouse_input.get_position());
     let result = world_block_res.trace(&ray);
     let chunk_counts = world_block_res.get_world_chunk_counts();
 
