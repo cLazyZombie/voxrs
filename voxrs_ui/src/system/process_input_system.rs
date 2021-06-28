@@ -125,7 +125,6 @@ fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
     let mut entry = world.entry_mut(entity).unwrap();
     let widget = entry.get_component_mut::<widget::Widget>().unwrap();
 
-    #[allow(clippy::single_match)]
     match widget {
         widget::Widget::EditableText(editable_text) => {
             if !c.is_control() {

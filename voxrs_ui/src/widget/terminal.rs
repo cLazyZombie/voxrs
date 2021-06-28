@@ -65,16 +65,12 @@ impl TerminalWidget {
     }
 
     pub fn next(&mut self) {
-        #[allow(clippy::single_match)]
-        match self.cursor {
-            Some(idx) => {
-                let next_idx = idx + 1;
-                if next_idx < self.history.len() {
-                    self.cursor = Some(next_idx);
-                    self.input = self.history[next_idx].clone();
-                }
+        if let Some(idx) = self.cursor {
+            let next_idx = idx + 1;
+            if next_idx < self.history.len() {
+                self.cursor = Some(next_idx);
+                self.input = self.history[next_idx].clone();
             }
-            None => {}
         }
     }
 }
