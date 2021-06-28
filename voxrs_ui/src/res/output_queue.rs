@@ -36,6 +36,6 @@ impl<'a, Message: 'static> IntoIterator for &'a OutputQueue<Message> {
     type IntoIter = std::slice::Iter<'a, Message>;
 
     fn into_iter(self) -> Self::IntoIter {
-        (&self.vec).into_iter()
+        (&self.vec).iter()
     }
 }

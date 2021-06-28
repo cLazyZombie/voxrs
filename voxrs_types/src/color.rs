@@ -11,7 +11,7 @@ impl Color {
         Color { r, g, b, a }
     }
 
-    pub fn to_array(&self) -> [f32; 4] {
+    pub fn as_array(&self) -> [f32; 4] {
         [self.r, self.g, self.b, self.a]
     }
 }

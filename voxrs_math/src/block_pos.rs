@@ -49,7 +49,7 @@ impl BlockPos {
             && self.z < chunk_counts.z * BLOCK_COUNT_IN_CHUNKSIDE as i32
     }
 
-    pub fn to_chunk_pos(&self) -> ChunkPos {
+    pub fn get_chunk_pos(&self) -> ChunkPos {
         let x = self.x / BLOCK_COUNT_IN_CHUNKSIDE as i32;
         let y = self.y / BLOCK_COUNT_IN_CHUNKSIDE as i32;
         let z = self.z / BLOCK_COUNT_IN_CHUNKSIDE as i32;
@@ -65,7 +65,7 @@ impl BlockPos {
             return None;
         }
 
-        let chunk_pos = self.to_chunk_pos();
+        let chunk_pos = self.get_chunk_pos();
         let chunk_idx = chunk_pos.get_index(chunk_counts);
 
         let local_pos = self.get_local_pos();

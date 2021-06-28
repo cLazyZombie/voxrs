@@ -179,7 +179,7 @@ pub enum BlockSize {
 }
 
 impl BlockSize {
-    pub fn to_f32(&self) -> f32 {
+    pub fn to_f32(self) -> f32 {
         match self {
             BlockSize::Xs => 0.25,
             BlockSize::S => 0.5,

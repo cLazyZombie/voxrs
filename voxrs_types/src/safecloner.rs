@@ -59,15 +59,12 @@ where
         match self {
             SafeCloner::R(_) => panic!("SafeCloner::R can not modified"),
             SafeCloner::Rw(arc) => {
-                // not clonned before, just use self
-                if Arc::strong_count(arc) == 1 {
-                    Arc::get_mut(arc).unwrap()
-                } else {
-                    // if already clonned, clone T and write to it
+                // if already clonned, clone T and write to it
+                if Arc::strong_count(arc) != 1 {
                     let clonned = <T as Clone>::clone(arc);
                     *arc = Arc::new(clonned);
-                    Arc::get_mut(arc).unwrap()
                 }
+                Arc::get_mut(arc).unwrap()
             }
         }
     }

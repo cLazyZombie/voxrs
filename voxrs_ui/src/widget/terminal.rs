@@ -65,6 +65,7 @@ impl TerminalWidget {
     }
 
     pub fn next(&mut self) {
+        #[allow(clippy::single_match)]
         match self.cursor {
             Some(idx) => {
                 let next_idx = idx + 1;

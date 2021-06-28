@@ -22,7 +22,7 @@ fn main() {
 
     let mut editor = Editor::new(window.inner_size().width, window.inner_size().height, asset_manager);
 
-    #[allow(clippy::single_match, clippy::clippy::collapsible_match)]
+    #[allow(clippy::single_match, clippy::collapsible_match)]
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent { ref event, window_id } if window_id == window.id() => match event {
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
