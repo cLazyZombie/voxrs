@@ -11,4 +11,5 @@ voxrs_math = {version = "0.1", path = "../voxrs_math"}
 voxrs_render = {version = "0.1", path = "../voxrs_render"}
 
 legion = "0.4"
+log = "0.4"
 winit = "0.25"

@@ -28,6 +28,14 @@ pub fn render(world: &SubWorld, #[resource] bp: &mut blueprint::Blueprint, #[res
 
 fn render_widget(entity: Entity, parent_rect: &Rect2, world: &SubWorld, bp: &mut blueprint::Blueprint) {
     let entry = world.entry_ref(entity).unwrap();
+
+    // hide invisible widget
+    let region = entry.get_component::<comp::Region>().unwrap();
+    if !region.visible {
+        return;
+    }
+
+    // render current widget
     let widget = entry.get_component::<widget::Widget>().unwrap();
     match widget {
         widget::Widget::Panel(_) => render_panel(entity, parent_rect, world, bp),

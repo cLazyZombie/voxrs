@@ -7,6 +7,7 @@ pub struct Region {
     pub v_anchor: AnchorVertical,
     pub h_anchor: AnchorHorizon,
     pub size: IVec2,
+    pub visible: bool,
 }
 
 impl Region {
@@ -16,6 +17,7 @@ impl Region {
             v_anchor: placement.v_anchor.unwrap_or_default(),
             h_anchor: placement.h_anchor.unwrap_or_default(),
             size: placement.size,
+            visible: true,
         }
     }
 

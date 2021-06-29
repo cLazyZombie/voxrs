@@ -3,6 +3,7 @@ use legion::*;
 use voxrs_math::{IVec2, Rect2};
 
 use crate::input::KeyboardInput;
+use crate::input::WidgetVisible;
 use crate::{
     comp::{self, InteractionHandler},
     input::WidgetInput,
@@ -47,9 +48,27 @@ pub fn process_inputs<Message: 'static>(
             WidgetInput::MouseClick { pos } => {
                 process_mouse_click(&roots, pos, world, next_depth, focused_widget, output_queue, screen);
             }
+            WidgetInput::WidgetVisible(visible) => {
+                process_widget_visible(visible, world);
+            }
             _ => {}
         }
     }
+}
+
+fn process_widget_visible(visible: &WidgetVisible, world: &mut SubWorld) {
+    let entry = world.entry_mut(visible.entity);
+    if entry.is_err() {
+        log::error!("entity {:?} is not exists. when process widget visible", visible.entity);
+        return;
+    }
+
+    let mut entry = entry.unwrap();
+
+    let region = entry.get_component_mut::<comp::Region>().unwrap();
+    region.visible = visible.visible;
+
+    // todo: visible이 false인 widget이 focused면 focused 삭제
 }
 
 fn process_mouse_click<Message: 'static>(

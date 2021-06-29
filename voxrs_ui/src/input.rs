@@ -1,3 +1,4 @@
+use legion::Entity;
 use voxrs_math::{IVec2, Vec2};
 use winit::event::VirtualKeyCode;
 
@@ -6,6 +7,7 @@ pub enum WidgetInput {
     MouseClick { pos: IVec2 },
     Character(char),
     KeyboardInput(KeyboardInput),
+    WidgetVisible(WidgetVisible),
 }
 
 pub struct KeyboardInput {
@@ -31,5 +33,16 @@ impl KeyboardInput {
 
     pub fn is_down(&self) -> bool {
         matches!(self.keycode, VirtualKeyCode::Down)
+    }
+}
+
+pub struct WidgetVisible {
+    pub(crate) entity: Entity,
+    pub(crate) visible: bool,
+}
+
+impl WidgetVisible {
+    pub fn new(entity: Entity, visible: bool) -> Self {
+        Self { entity, visible }
     }
 }
