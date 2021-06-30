@@ -10,7 +10,7 @@ use voxrs_ui::{
 };
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
-use crate::{command::Command, res::EditorAssetRes, WidgetMessage};
+use crate::{command::Command, res::EditorAssetRes, system::shortcut::ShortcutState, WidgetMessage};
 
 use super::system;
 
@@ -44,6 +44,7 @@ impl Editor {
         resources.insert(camera);
 
         voxrs_ui::init_resources::<WidgetMessage>(&mut resources, width, height);
+        let mut terminal_id = None;
         let console_font = asset_manager.get::<FontAsset>(&AssetPath::from("assets/fonts/NanumBarunGothic.ttf"));
         let mut builder = WidgetBuilder::<WidgetMessage>::new(&mut world, &mut resources);
         builder
@@ -111,7 +112,10 @@ impl Editor {
                     }
                 }
                 _ => None,
-            });
+            })
+            .query_id(&mut terminal_id);
+
+        let terminal_id = terminal_id.unwrap();
 
         let key_input = KeyInputRes::new();
         resources.insert(key_input);
@@ -124,7 +128,10 @@ impl Editor {
 
         resources.insert(asset_manager);
 
+        let shortcut_state = ShortcutState::new(terminal_id, true);
+
         let tick_schedule = Schedule::builder()
+            .add_system(system::shortcut::shortcut_system(shortcut_state))
             .add_system(voxrs_ui::system::process_inputs_system::<WidgetMessage>())
             .add_system(system::disable_input::disable_input_system())
             .add_system(system::camera::control_system())
@@ -157,7 +164,7 @@ impl Editor {
     }
 
     pub fn on_key_input<F: FileSystem>(&mut self, input: &KeyboardInput) {
-        if let Some(key_code) = dbg!(input.virtual_keycode) {
+        if let Some(key_code) = input.virtual_keycode {
             if input.state == ElementState::Pressed {
                 // set key input for editor
                 {

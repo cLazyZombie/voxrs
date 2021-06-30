@@ -168,13 +168,15 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
         self
     }
 
-    pub fn handle_event<F>(&mut self, f: F)
+    pub fn handle_event<F>(&mut self, f: F) -> &mut Self
     where
         F: Fn(Entity, Interaction) -> Option<Message> + Send + Sync + 'static,
     {
         let handler = comp::InteractionHandler::new(f);
         let mut target = self.world.entry(self.last_entity.unwrap()).unwrap();
         target.add_component(handler);
+
+        self
     }
 
     fn link_to_parent(&mut self, parent: Entity, child: Entity) {
@@ -239,7 +241,7 @@ mod tests {
                 .handle_event(|_widget, event| match event {
                     Interaction::Clicked => Some(MyMessage::Message1),
                     _ => None,
-                })
+                });
             });
 
         assert_eq!(<&comp::Root>::query().iter(&world).count(), 1);

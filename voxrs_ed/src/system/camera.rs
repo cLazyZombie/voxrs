@@ -17,7 +17,7 @@ pub fn control(
 
     // move
     if !key_input.is_alt_pressed() && !key_input.is_ctrl_pressed() && !key_input.is_shift_pressed() {
-        for key in key_input.keys() {
+        for key in key_input.keys(false) {
             match *key {
                 VirtualKeyCode::W | VirtualKeyCode::Up => {
                     camera.move_camera_relative(&(Vec3::Z * elapsed_time * MOVE_SPEED));

@@ -18,7 +18,7 @@ use super::SortRootEntity;
 #[write_component(comp::Root)]
 #[read_component(comp::Hierarchy)]
 #[read_component(comp::InteractionHandler<Message>)]
-#[read_component(comp::Region)]
+#[write_component(comp::Region)]
 #[read_component(comp::Focusable)]
 #[write_component(widget::Widget)]
 pub fn process_inputs<Message: 'static>(
@@ -49,14 +49,14 @@ pub fn process_inputs<Message: 'static>(
                 process_mouse_click(&roots, pos, world, next_depth, focused_widget, output_queue, screen);
             }
             WidgetInput::WidgetVisible(visible) => {
-                process_widget_visible(visible, world);
+                process_widget_visible(visible, focused_widget, world);
             }
             _ => {}
         }
     }
 }
 
-fn process_widget_visible(visible: &WidgetVisible, world: &mut SubWorld) {
+fn process_widget_visible(visible: &WidgetVisible, focused_widget: &mut res::FocusedWidget, world: &mut SubWorld) {
     let entry = world.entry_mut(visible.entity);
     if entry.is_err() {
         log::error!("entity {:?} is not exists. when process widget visible", visible.entity);
@@ -68,7 +68,14 @@ fn process_widget_visible(visible: &WidgetVisible, world: &mut SubWorld) {
     let region = entry.get_component_mut::<comp::Region>().unwrap();
     region.visible = visible.visible;
 
-    // todo: visible이 false인 widget이 focused면 focused 삭제
+    // clear focused when this widget became invisible
+    if !visible.visible {
+        if let Some(focused_id) = focused_widget.get() {
+            if visible.entity == focused_id {
+                focused_widget.clear();
+            }
+        }
+    }
 }
 
 fn process_mouse_click<Message: 'static>(
@@ -124,6 +131,10 @@ fn get_widget_under_pos(entity: Entity, pos: &IVec2, parent_rect: &Rect2, world:
     }
 
     let region = region.unwrap();
+    if !region.visible {
+        return None;
+    }
+
     let rect = region.get_rect(parent_rect);
     if !rect.has_ivec2(pos) {
         return None;

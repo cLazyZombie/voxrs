@@ -15,8 +15,8 @@ pub fn camera_move(
 
     let elapsed_time: f32 = **elapsed_time;
 
-    for key in key_input.keys() {
-        match *key {
+    for &key in key_input.keys(false) {
+        match key {
             VirtualKeyCode::W | VirtualKeyCode::Up => {
                 camera.move_camera(&(Vec3::Z * elapsed_time * MOVE_SPEED));
             }
