@@ -10,7 +10,7 @@ use voxrs_ui::{
 };
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
-use crate::{command::Command, res::EditorAssetRes, system::shortcut::ShortcutState, WidgetMessage};
+use crate::{command::Command, res::EditorAssetRes, system::shortcut::Shortcut, WidgetMessage};
 
 use super::system;
 
@@ -128,10 +128,10 @@ impl Editor {
 
         resources.insert(asset_manager);
 
-        let shortcut_state = ShortcutState::new(terminal_id, true);
+        let shortcut = Shortcut::new(terminal_id, true);
 
         let tick_schedule = Schedule::builder()
-            .add_system(system::shortcut::shortcut_system(shortcut_state))
+            .add_system(system::shortcut::process_shortcut_system(shortcut))
             .add_system(voxrs_ui::system::process_inputs_system::<WidgetMessage>())
             .add_system(system::disable_input::disable_input_system())
             .add_system(system::camera::control_system())

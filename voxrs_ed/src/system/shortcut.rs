@@ -3,30 +3,51 @@ use voxrs_core::res::KeyInputRes;
 use voxrs_ui::input::{WidgetInput, WidgetVisible};
 use winit::event::VirtualKeyCode;
 
-pub(crate) struct ShortcutState {
+pub(crate) struct Shortcut {
     terminal_entity: Entity,
     terminal_visible: bool,
 }
 
-impl ShortcutState {
+impl Shortcut {
+    const TOGGLE_TERMINAL_KEY: VirtualKeyCode = VirtualKeyCode::Grave;
+
     pub fn new(terminal_entity: Entity, terminal_visible: bool) -> Self {
         Self {
             terminal_entity,
             terminal_visible,
         }
     }
+
+    pub fn process_key(&mut self, key_input: &KeyInputRes) -> Option<ShortcutCommand> {
+        if key_input.is_key_pressing(Self::TOGGLE_TERMINAL_KEY, true) && key_input.is_ctrl_pressed() {
+            self.terminal_visible = !self.terminal_visible;
+            Some(ShortcutCommand::ToggleTerminal(
+                self.terminal_entity,
+                self.terminal_visible,
+            ))
+        } else {
+            None
+        }
+    }
+}
+
+pub(crate) enum ShortcutCommand {
+    ToggleTerminal(Entity, bool),
 }
 
 #[system]
-pub(crate) fn shortcut(
-    #[state] state: &mut ShortcutState,
+pub(crate) fn process_shortcut(
+    #[state] state: &mut Shortcut,
     #[resource] key_input: &KeyInputRes,
     #[resource] input: &mut voxrs_ui::InputQueue,
 ) {
-    // show/hide terminal
-    if key_input.is_key_pressing(VirtualKeyCode::Grave, true) && key_input.is_ctrl_pressed() {
-        state.terminal_visible = !state.terminal_visible;
-        let message = WidgetInput::WidgetVisible(WidgetVisible::new(state.terminal_entity, state.terminal_visible));
-        input.add(message);
+    if let Some(command) = state.process_key(key_input) {
+        match command {
+            // show/hide terminal
+            ShortcutCommand::ToggleTerminal(entity, visible) => {
+                let message = WidgetInput::WidgetVisible(WidgetVisible::new(entity, visible));
+                input.add(message);
+            }
+        }
     }
 }
