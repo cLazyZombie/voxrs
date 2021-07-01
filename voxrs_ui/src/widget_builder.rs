@@ -141,6 +141,15 @@ impl<'a, Message: 'static> WidgetBuilder<'a, Message> {
         self
     }
 
+    pub fn hide(&mut self) -> &mut Self {
+        if let Some(entity) = self.last_entity {
+            let mut entry = self.world.entry_mut(entity).unwrap();
+            let region = entry.get_component_mut::<comp::Region>().unwrap();
+            region.visible = false;
+        }
+        self
+    }
+
     pub fn begin_child(&mut self) -> &mut Self {
         let last_entity = self.last_entity.unwrap();
         self.parent_stack.push(last_entity);

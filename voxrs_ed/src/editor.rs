@@ -102,6 +102,7 @@ impl Editor {
                 font_size: 20,
                 contents: vec!["hello, world".to_string(), "this is terminal".to_string()],
             })
+            .hide()
             .handle_event(|_, interaction| match interaction {
                 voxrs_ui::Interaction::TerminalInput(input) => {
                     let command = input.parse::<Command>();
@@ -128,7 +129,7 @@ impl Editor {
 
         resources.insert(asset_manager);
 
-        let shortcut = Shortcut::new(terminal_id, true);
+        let shortcut = Shortcut::new(terminal_id, false);
 
         let tick_schedule = Schedule::builder()
             .add_system(system::shortcut::process_shortcut_system(shortcut))
