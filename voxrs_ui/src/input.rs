@@ -39,10 +39,23 @@ impl KeyboardInput {
 pub struct WidgetVisible {
     pub(crate) entity: Entity,
     pub(crate) visible: bool,
+    pub(crate) take_focus: bool, // take focus when visible. valid only if visible is true.
 }
 
 impl WidgetVisible {
-    pub fn new(entity: Entity, visible: bool) -> Self {
-        Self { entity, visible }
+    pub fn visible(entity: Entity, take_focus: bool) -> Self {
+        Self {
+            entity,
+            visible: true,
+            take_focus,
+        }
+    }
+
+    pub fn invisible(entity: Entity) -> Self {
+        Self {
+            entity,
+            visible: false,
+            take_focus: false,
+        }
     }
 }

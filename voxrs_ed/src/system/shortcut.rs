@@ -45,8 +45,13 @@ pub(crate) fn process_shortcut(
         match command {
             // show/hide terminal
             ShortcutCommand::ToggleTerminal(entity, visible) => {
-                let message = WidgetInput::WidgetVisible(WidgetVisible::new(entity, visible));
-                input.add(message);
+                if visible {
+                    let message = WidgetInput::WidgetVisible(WidgetVisible::visible(entity, true));
+                    input.add(message);
+                } else {
+                    let message = WidgetInput::WidgetVisible(WidgetVisible::invisible(entity));
+                    input.add(message);
+                }
             }
         }
     }

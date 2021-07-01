@@ -68,8 +68,13 @@ fn process_widget_visible(visible: &WidgetVisible, focused_widget: &mut res::Foc
     let region = entry.get_component_mut::<comp::Region>().unwrap();
     region.visible = visible.visible;
 
-    // clear focused when this widget became invisible
-    if !visible.visible {
+    if visible.visible {
+        // focused when widget became visible
+        if visible.take_focus && entry.get_component::<comp::Focusable>().is_ok() {
+            focused_widget.set(visible.entity);
+        }
+    } else {
+        // clear focused when this widget became invisible
         if let Some(focused_id) = focused_widget.get() {
             if visible.entity == focused_id {
                 focused_widget.clear();
