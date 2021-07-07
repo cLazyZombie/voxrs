@@ -34,6 +34,14 @@ impl KeyboardInput {
     pub fn is_down(&self) -> bool {
         matches!(self.keycode, VirtualKeyCode::Down)
     }
+
+    pub fn is_left(&self) -> bool {
+        matches!(self.keycode, VirtualKeyCode::Left)
+    }
+
+    pub fn is_right(&self) -> bool {
+        matches!(self.keycode, VirtualKeyCode::Right)
+    }
 }
 
 pub struct WidgetVisible {

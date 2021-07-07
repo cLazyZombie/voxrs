@@ -18,7 +18,9 @@ pub(crate) struct TerminalWidget {
     pub input: String,
 
     history: Vec<String>,
-    cursor: Option<usize>,
+    history_cursor: Option<usize>,
+
+    pub cursor: usize,
 }
 
 impl TerminalWidget {
@@ -29,7 +31,8 @@ impl TerminalWidget {
             contents: info.contents.clone(),
             input: String::new(),
             history: Vec::new(),
-            cursor: None,
+            history_cursor: None,
+            cursor: 0,
         }
     }
 
@@ -39,25 +42,26 @@ impl TerminalWidget {
         self.contents.push(input.clone());
         self.history.push(input.clone());
 
-        self.cursor = None;
+        self.history_cursor = None;
+        self.cursor = 0;
 
         input
     }
 
     pub fn prev(&mut self) {
-        match self.cursor {
+        match self.history_cursor {
             Some(idx) => {
                 let prev_idx = idx.checked_sub(1);
                 if let Some(prev_idx) = prev_idx {
                     if prev_idx < self.history.len() {
-                        self.cursor = Some(prev_idx);
+                        self.history_cursor = Some(prev_idx);
                         self.input = self.history[prev_idx].clone();
                     }
                 }
             }
             None => {
                 if !self.history.is_empty() {
-                    self.cursor = Some(self.history.len() - 1);
+                    self.history_cursor = Some(self.history.len() - 1);
                     self.input = self.history.last().unwrap().clone();
                 }
             }
@@ -65,18 +69,36 @@ impl TerminalWidget {
     }
 
     pub fn next(&mut self) {
-        if let Some(idx) = self.cursor {
+        if let Some(idx) = self.history_cursor {
             let next_idx = idx + 1;
             if next_idx < self.history.len() {
-                self.cursor = Some(next_idx);
+                self.history_cursor = Some(next_idx);
                 self.input = self.history[next_idx].clone();
             }
         }
     }
-}
 
-// impl TerminalWidget {
-//     pub fn process_input_char<Message: 'static>(c: char) -> Option<Message> {
-//         None
-//     }
-// }
+    pub fn add_input(&mut self, c: char) {
+        let left = self.input.chars().take(self.cursor).collect::<String>();
+        let right = self.input.chars().skip(self.cursor).collect::<String>();
+        self.input = format!("{}{}{}", left, c, right);
+        self.cursor += 1;
+    }
+
+    pub fn remove_input(&mut self) {
+        let cursor = self.cursor.saturating_sub(1);
+        let left = self.input.chars().take(cursor).collect::<String>();
+        let right = self.input.chars().skip(cursor).collect::<String>();
+
+        self.input = format!("{}{}", left, right);
+        self.cursor = cursor;
+    }
+
+    pub fn left(&mut self) {
+        self.cursor = self.cursor.saturating_sub(1);
+    }
+
+    pub fn right(&mut self) {
+        self.cursor = usize::min(self.cursor + 1, self.input.chars().count());
+    }
+}

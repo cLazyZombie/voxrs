@@ -144,10 +144,15 @@ fn render_terminal(
 
     // render input area
     {
+        const CURSOR: char = '|';
+
+        let left = terminal.input.chars().take(terminal.cursor).collect::<String>();
+        let right = terminal.input.chars().skip(terminal.cursor).collect::<String>();
+
         let input_section = TextSection {
             font: terminal.font.clone(),
             font_size: terminal.font_size,
-            text: format!("> {}", terminal.input),
+            text: format!("> {}{}{}", left, CURSOR, right),
         };
 
         let input_bp = blueprint::Text {

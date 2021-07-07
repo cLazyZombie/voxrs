@@ -168,7 +168,7 @@ fn process_input_char(entity: Entity, c: char, world: &mut SubWorld) {
         }
         widget::Widget::Terminal(terminal) => {
             if !c.is_control() {
-                terminal.input.push(c);
+                terminal.add_input(c);
             }
         }
         _ => {}
@@ -209,11 +209,15 @@ fn process_keyboard_input<Message: 'static>(
                     handler.process(entity, interaction, output_queue);
                 }
             } else if input.is_back() {
-                terminal.input.pop();
+                terminal.remove_input();
             } else if input.is_up() {
                 terminal.prev();
             } else if input.is_down() {
                 terminal.next();
+            } else if input.is_left() {
+                terminal.left();
+            } else if input.is_right() {
+                terminal.right();
             }
         }
         _ => {}
