@@ -27,6 +27,10 @@ impl KeyboardInput {
         matches!(self.keycode, VirtualKeyCode::Back)
     }
 
+    pub fn is_del(&self) -> bool {
+        matches!(self.keycode, VirtualKeyCode::Delete)
+    }
+
     pub fn is_up(&self) -> bool {
         matches!(self.keycode, VirtualKeyCode::Up)
     }

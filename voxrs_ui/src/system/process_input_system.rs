@@ -209,7 +209,9 @@ fn process_keyboard_input<Message: 'static>(
                     handler.process(entity, interaction, output_queue);
                 }
             } else if input.is_back() {
-                terminal.remove_input();
+                terminal.remove_left();
+            } else if input.is_del() { 
+                terminal.remove_right();
             } else if input.is_up() {
                 terminal.prev();
             } else if input.is_down() {

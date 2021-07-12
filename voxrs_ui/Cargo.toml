@@ -13,3 +13,6 @@ voxrs_render = {version = "0.1", path = "../voxrs_render"}
 legion = "0.4"
 log = "0.4"
 winit = "0.25"
+
+[dev-dependencies]
+voxrs_types = {version = "0.1", path = "../voxrs_types", features = ["test"]}

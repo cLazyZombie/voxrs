@@ -2238,6 +2238,7 @@ dependencies = [
  "voxrs_asset",
  "voxrs_math",
  "voxrs_render",
+ "voxrs_types",
  "winit",
 ]
 
