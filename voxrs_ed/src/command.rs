@@ -1,54 +1,41 @@
-use std::ffi::OsString;
+use voxrs_core::res::WorldBlockRes;
+use voxrs_math::BlockPos;
 
-#[derive(Debug)]
-pub enum Command {
-    Save(OsString),
-    Load(OsString),
-    ChangeMaterial(u8),
+use crate::history::History;
+
+pub(crate) struct ModifyBlock {
+    pos: BlockPos,
+    mat_id: u8,
 }
 
-pub enum CommandParseError {
-    InvalidCommand,
-    UnknownCommand(String),
-}
+impl ModifyBlock {
+    pub fn create_block(pos: BlockPos, mat_id: u8) -> Self {
+        Self { pos, mat_id }
+    }
 
-impl std::str::FromStr for Command {
-    type Err = CommandParseError;
+    pub fn delete_block(pos: BlockPos) -> Self {
+        Self { pos, mat_id: 0 }
+    }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let args = s.split_whitespace().map(|s| s.to_lowercase()).collect::<Vec<_>>();
-        if args.is_empty() {
-            return Err(CommandParseError::InvalidCommand);
-        }
-
-        match args[0].as_str() {
-            "save" => {
-                if args.len() != 2 {
-                    Err(CommandParseError::InvalidCommand)
-                } else {
-                    Ok(Command::Save(args[1].clone().into()))
-                }
+    pub fn exec(&self, world_block_res: &mut WorldBlockRes) -> Option<History> {
+        if self.mat_id == 0 {
+            // delete block
+            if let Some(prev_block) = world_block_res.get_block(self.pos) {
+                world_block_res.set_block(self.pos, 0);
+                Some(History::ModifyBlock(ModifyBlock {
+                    pos: self.pos,
+                    mat_id: prev_block,
+                }))
+            } else {
+                None
             }
-            "load" => {
-                if args.len() != 2 {
-                    Err(CommandParseError::InvalidCommand)
-                } else {
-                    Ok(Command::Load(args[1].clone().into()))
-                }
-            }
-            "change_mat" => {
-                if args.len() != 2 {
-                    Err(CommandParseError::InvalidCommand)
-                } else {
-                    let mat_id = args[1].parse::<u8>();
-                    if let Ok(mat_id) = mat_id {
-                        Ok(Command::ChangeMaterial(mat_id))
-                    } else {
-                        Err(CommandParseError::InvalidCommand)
-                    }
-                }
-            }
-            _ => Err(CommandParseError::UnknownCommand(args[0].to_string())),
+        } else {
+            // create block
+            world_block_res.set_block(self.pos, self.mat_id);
+            Some(History::ModifyBlock(ModifyBlock {
+                pos: self.pos,
+                mat_id: 0,
+            }))
         }
     }
 }

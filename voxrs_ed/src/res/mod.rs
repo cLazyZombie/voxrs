@@ -10,3 +10,6 @@ impl EditorRes {
         Self { block_mat_id: 1 }
     }
 }
+
+mod history;
+pub(crate) use history::HistoryRes;

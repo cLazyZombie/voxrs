@@ -1,7 +1,9 @@
 use legion::*;
-use voxrs_core::res::KeyInputRes;
+use voxrs_core::res::{KeyInputRes, WorldBlockRes};
 use voxrs_ui::input::{WidgetInput, WidgetVisible};
 use winit::event::VirtualKeyCode;
+
+use crate::{history::History, res::HistoryRes};
 
 pub(crate) struct Shortcut {
     terminal_entity: Entity,
@@ -25,6 +27,14 @@ impl Shortcut {
                 self.terminal_entity,
                 self.terminal_visible,
             ))
+        } else if key_input.is_key_pressing(VirtualKeyCode::Z, false) && key_input.is_ctrl_pressed() {
+            if key_input.is_shift_pressed() {
+                // redo
+                Some(ShortcutCommand::Redo)
+            } else {
+                //undo
+                Some(ShortcutCommand::Undo)
+            }
         } else {
             None
         }
@@ -33,6 +43,8 @@ impl Shortcut {
 
 pub(crate) enum ShortcutCommand {
     ToggleTerminal(Entity, bool),
+    Undo,
+    Redo,
 }
 
 #[system]
@@ -40,6 +52,8 @@ pub(crate) fn process_shortcut(
     #[state] state: &mut Shortcut,
     #[resource] key_input: &KeyInputRes,
     #[resource] input: &mut voxrs_ui::InputQueue,
+    #[resource] history_res: &mut HistoryRes<History>,
+    #[resource] world_block_res: &mut WorldBlockRes,
 ) {
     if let Some(command) = state.process_key(key_input) {
         match command {
@@ -53,6 +67,24 @@ pub(crate) fn process_shortcut(
                     input.add(message);
                 }
             }
+            ShortcutCommand::Undo => {
+                if let Some(history) = history_res.undo() {
+                    exec_history_command(history, world_block_res);
+                }
+            }
+            ShortcutCommand::Redo => {
+                if let Some(history) = history_res.redo() {
+                    exec_history_command(history, world_block_res);
+                }
+            }
+        }
+    }
+}
+
+fn exec_history_command(history: &History, world_block_res: &mut WorldBlockRes) {
+    match history {
+        History::ModifyBlock(modify_block) => {
+            modify_block.exec(world_block_res);
         }
     }
 }

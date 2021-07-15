@@ -10,7 +10,7 @@ use voxrs_ui::{
 };
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
-use crate::{command::Command, res, system::shortcut::Shortcut, WidgetMessage};
+use crate::{history::History, res, system::shortcut::Shortcut, terminal_command::TerminalCommand, WidgetMessage};
 
 use super::system;
 
@@ -33,6 +33,9 @@ impl Editor {
 
         let editor_res = res::EditorRes::new();
         resources.insert(editor_res);
+
+        let history_res = res::HistoryRes::<History>::new();
+        resources.insert(history_res);
 
         let camera = CameraRes::new(
             Vec3::new(0.0, 30.0, -30.0),
@@ -108,7 +111,7 @@ impl Editor {
             .hide()
             .handle_event(|_, interaction| match interaction {
                 voxrs_ui::Interaction::TerminalInput(input) => {
-                    let command = input.parse::<Command>();
+                    let command = input.parse::<TerminalCommand>();
                     if let Ok(command) = command {
                         Some(WidgetMessage::ConsoleCommand(command))
                     } else {

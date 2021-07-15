@@ -2,12 +2,17 @@ use legion::*;
 use voxrs_core::res::{CameraRes, KeyInputRes, MouseInputRes, WorldBlockRes};
 use voxrs_render::blueprint::{Blueprint, DynamicBlock};
 
-use crate::res::{EditorAssetRes, EditorRes};
+use crate::{
+    command,
+    history::History,
+    res::{EditorAssetRes, EditorRes, HistoryRes},
+};
 
 #[system]
-pub fn modify(
+pub(crate) fn modify(
     #[resource] camera: &mut CameraRes,
     #[resource] world_block_res: &mut WorldBlockRes,
+    #[resource] history_res: &mut HistoryRes<History>,
     #[resource] mouse_input: &MouseInputRes,
     #[resource] key_input: &KeyInputRes,
     #[resource] editor_res: &EditorRes,
@@ -25,13 +30,21 @@ pub fn modify(
         if block_pos.is_valid(&chunk_counts) {
             if key_input.is_shift_pressed() {
                 // delete picked block
-                world_block_res.set_block(block_pos, 0)
+                let del_block = command::ModifyBlock::delete_block(block_pos);
+                let undo = del_block.exec(world_block_res);
+                if let Some(undo) = undo {
+                    history_res.add_history(undo);
+                }
             } else {
                 // create new block
                 let neighbor_pos = block_pos.get_neighbor(dir);
                 if neighbor_pos.is_valid(&chunk_counts) {
                     let mat_id = editor_res.block_mat_id;
-                    world_block_res.set_block(neighbor_pos, mat_id);
+                    let create_block = command::ModifyBlock::create_block(block_pos, mat_id);
+                    let undo = create_block.exec(world_block_res);
+                    if let Some(undo) = undo {
+                        history_res.add_history(undo);
+                    }
                 }
             }
         }

@@ -1,6 +1,6 @@
-use crate::command::Command;
+use crate::terminal_command::TerminalCommand;
 
 pub enum WidgetMessage {
-    ConsoleCommand(Command),
+    ConsoleCommand(TerminalCommand),
     Other,
 }
