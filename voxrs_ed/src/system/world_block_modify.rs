@@ -2,7 +2,7 @@ use legion::*;
 use voxrs_core::res::{CameraRes, KeyInputRes, MouseInputRes, WorldBlockRes};
 use voxrs_render::blueprint::{Blueprint, DynamicBlock};
 
-use crate::res::EditorAssetRes;
+use crate::res::{EditorAssetRes, EditorRes};
 
 #[system]
 pub fn modify(
@@ -10,6 +10,7 @@ pub fn modify(
     #[resource] world_block_res: &mut WorldBlockRes,
     #[resource] mouse_input: &MouseInputRes,
     #[resource] key_input: &KeyInputRes,
+    #[resource] editor_res: &EditorRes,
 ) {
     if !mouse_input.get_left_button_clicked() {
         return;
@@ -29,7 +30,8 @@ pub fn modify(
                 // create new block
                 let neighbor_pos = block_pos.get_neighbor(dir);
                 if neighbor_pos.is_valid(&chunk_counts) {
-                    world_block_res.set_block(neighbor_pos, 1);
+                    let mat_id = editor_res.block_mat_id;
+                    world_block_res.set_block(neighbor_pos, mat_id);
                 }
             }
         }

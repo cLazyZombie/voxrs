@@ -10,7 +10,7 @@ use voxrs_ui::{
 };
 use winit::event::{ElementState, KeyboardInput, ModifiersState, MouseButton};
 
-use crate::{command::Command, res::EditorAssetRes, system::shortcut::Shortcut, WidgetMessage};
+use crate::{command::Command, res, system::shortcut::Shortcut, WidgetMessage};
 
 use super::system;
 
@@ -30,6 +30,9 @@ impl Editor {
 
         let world_block_res = WorldBlockRes::new(&AssetPath::from("assets/world_01.wb"), &mut asset_manager);
         resources.insert(world_block_res);
+
+        let editor_res = res::EditorRes::new();
+        resources.insert(editor_res);
 
         let camera = CameraRes::new(
             Vec3::new(0.0, 30.0, -30.0),
@@ -124,7 +127,7 @@ impl Editor {
         let mouse_input = MouseInputRes::new();
         resources.insert(mouse_input);
 
-        let editor_asset = EditorAssetRes::new(&mut asset_manager);
+        let editor_asset = res::EditorAssetRes::new(&mut asset_manager);
         resources.insert(editor_asset);
 
         resources.insert(asset_manager);

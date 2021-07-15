@@ -5,7 +5,7 @@ use voxrs_asset::{AssetManager, AssetPath};
 use voxrs_core::res::WorldBlockRes;
 use voxrs_types::io::FileSystem;
 
-use crate::{command::Command, widget_message::WidgetMessage};
+use crate::{command::Command, res::EditorRes, widget_message::WidgetMessage};
 use voxrs_ui::OutputQueue;
 
 #[system]
@@ -13,6 +13,7 @@ pub fn process_widget_message<F: FileSystem + 'static>(
     #[resource] asset_manager: &mut AssetManager<F>,
     #[resource] output_queue: &mut OutputQueue<WidgetMessage>,
     #[resource] world_block: &mut WorldBlockRes,
+    #[resource] editor_res: &mut EditorRes,
 ) {
     for m in output_queue as &OutputQueue<WidgetMessage> {
         match m {
@@ -34,6 +35,20 @@ pub fn process_widget_message<F: FileSystem + 'static>(
                         *world_block = world_block_res;
                     } else {
                         eprintln!("can not convert {:?} as &str", path);
+                    }
+                }
+                Command::ChangeMaterial(mat_id) => {
+                    if world_block
+                        .handle
+                        .get_asset()
+                        .world_material
+                        .get_asset()
+                        .material_handles
+                        .contains_key(&mat_id)
+                    {
+                        editor_res.block_mat_id = *mat_id;
+                    } else {
+                        eprintln!("world block material doesn't have mat id: {}", mat_id);
                     }
                 }
             },

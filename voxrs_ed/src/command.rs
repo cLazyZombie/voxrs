@@ -4,6 +4,7 @@ use std::ffi::OsString;
 pub enum Command {
     Save(OsString),
     Load(OsString),
+    ChangeMaterial(u8),
 }
 
 pub enum CommandParseError {
@@ -33,6 +34,18 @@ impl std::str::FromStr for Command {
                     Err(CommandParseError::InvalidCommand)
                 } else {
                     Ok(Command::Load(args[1].clone().into()))
+                }
+            }
+            "change_mat" => {
+                if args.len() != 2 {
+                    Err(CommandParseError::InvalidCommand)
+                } else {
+                    let mat_id = args[1].parse::<u8>();
+                    if let Ok(mat_id) = mat_id {
+                        Ok(Command::ChangeMaterial(mat_id))
+                    } else {
+                        Err(CommandParseError::InvalidCommand)
+                    }
                 }
             }
             _ => Err(CommandParseError::UnknownCommand(args[0].to_string())),
