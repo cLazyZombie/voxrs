@@ -11,5 +11,11 @@ impl EditorRes {
     }
 }
 
+impl Default for EditorRes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 mod history;
 pub(crate) use history::HistoryRes;

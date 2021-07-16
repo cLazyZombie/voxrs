@@ -47,11 +47,7 @@ impl<History: 'static> HistoryRes<History> {
     }
 
     pub fn redo(&mut self) -> Option<&History> {
-        if self.undo_count.is_none() {
-            return None;
-        }
-
-        let redo_idx = self.undo_count.unwrap();
+        let redo_idx = self.undo_count?;
         if let Some(history) = self.history.get(redo_idx) {
             self.undo_count = Some(redo_idx + 1);
             Some(history)
