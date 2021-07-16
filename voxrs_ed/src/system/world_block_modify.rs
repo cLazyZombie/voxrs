@@ -40,7 +40,7 @@ pub(crate) fn modify(
                 let neighbor_pos = block_pos.get_neighbor(dir);
                 if neighbor_pos.is_valid(&chunk_counts) {
                     let mat_id = editor_res.block_mat_id;
-                    let create_block = command::ModifyBlock::create_block(block_pos, mat_id);
+                    let create_block = command::ModifyBlock::create_block(neighbor_pos, mat_id);
                     let undo = create_block.exec(world_block_res);
                     if let Some(undo) = undo {
                         history_res.add_history(undo);
