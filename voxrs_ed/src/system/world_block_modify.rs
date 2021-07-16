@@ -32,9 +32,7 @@ pub(crate) fn modify(
                 // delete picked block
                 let del_block = command::ModifyBlock::delete_block(block_pos);
                 let undo = del_block.exec(world_block_res);
-                if let Some(undo) = undo {
-                    history_res.add_history(undo);
-                }
+                history_res.add_history(undo);
             } else {
                 // create new block
                 let neighbor_pos = block_pos.get_neighbor(dir);
@@ -42,9 +40,7 @@ pub(crate) fn modify(
                     let mat_id = editor_res.block_mat_id;
                     let create_block = command::ModifyBlock::create_block(neighbor_pos, mat_id);
                     let undo = create_block.exec(world_block_res);
-                    if let Some(undo) = undo {
-                        history_res.add_history(undo);
-                    }
+                    history_res.add_history(undo);
                 }
             }
         }

@@ -1,6 +1,6 @@
 pub(crate) struct HistoryRes<History: 'static> {
-    history: Vec<History>,
-    undo_count: Option<usize>,
+    undos: Vec<History>,
+    redos: Vec<History>,
 }
 
 impl<History: 'static> HistoryRes<History> {
@@ -8,115 +8,37 @@ impl<History: 'static> HistoryRes<History> {
 
     pub fn new() -> Self {
         Self {
-            history: Vec::new(),
-            undo_count: None,
+            undos: Vec::new(),
+            redos: Vec::new(),
         }
     }
 
-    pub fn add_history(&mut self, history: History) {
-        if let Some(cursor) = self.undo_count {
-            if cursor != self.history.len() {
-                self.history.truncate(cursor);
+    pub fn add_history(&mut self, history: Option<History>) {
+        if let Some(history) = history {
+            self.undos.push(history);
+            if self.undos.len() >= Self::MAX_HISTORY {
+                self.undos.remove(0);
             }
-        }
 
-        self.history.push(history);
-
-        if self.history.len() <= Self::MAX_HISTORY {
-            let undo_count = self.undo_count.unwrap_or(0) + 1;
-            self.undo_count = Some(undo_count);
-        } else {
-            self.history.remove(0);
+            self.redos.clear();
         }
     }
 
-    pub fn undo(&mut self) -> Option<&History> {
-        let undo_idx = self.undo_count.unwrap_or(0);
-        if undo_idx == 0 {
-            return None;
-        }
-
-        let undo_idx = usize::saturating_sub(undo_idx, 1);
-        self.undo_count = Some(undo_idx);
-
-        if let Some(history) = self.history.get(undo_idx) {
-            Some(history)
-        } else {
-            None
-        }
+    /// redo -> undo
+    pub fn add_undo(&mut self, history: History) {
+        self.undos.push(history);
     }
 
-    pub fn redo(&mut self) -> Option<&History> {
-        let redo_idx = self.undo_count?;
-        if let Some(history) = self.history.get(redo_idx) {
-            self.undo_count = Some(redo_idx + 1);
-            Some(history)
-        } else {
-            None
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[derive(PartialEq, Eq, Debug)]
-    enum History {
-        A,
-        B,
-        C,
-        D,
-        E,
+    pub fn pop_undo(&mut self) -> Option<History> {
+        self.undos.pop()
     }
 
-    #[test]
-    fn test_history() {
-        let mut history_res = HistoryRes::<History>::new();
-        assert_eq!(history_res.undo_count, None);
-
-        history_res.add_history(History::A);
-        history_res.add_history(History::B);
-        history_res.add_history(History::C);
-        history_res.add_history(History::D);
-        assert_eq!(history_res.history.len(), 4);
-        assert_eq!(history_res.undo_count, Some(4));
-
-        assert_eq!(history_res.undo(), Some(&History::D));
-        assert_eq!(history_res.undo(), Some(&History::C));
-
-        assert_eq!(history_res.redo(), Some(&History::C));
-        assert_eq!(history_res.redo(), Some(&History::D));
-        assert_eq!(history_res.redo(), None);
-
-        assert_eq!(history_res.undo(), Some(&History::D));
-        assert_eq!(history_res.undo(), Some(&History::C));
-        assert_eq!(history_res.undo(), Some(&History::B));
-        assert_eq!(history_res.undo(), Some(&History::A));
-        assert_eq!(history_res.undo(), None);
-
-        assert_eq!(history_res.redo(), Some(&History::A));
-        assert_eq!(history_res.redo(), Some(&History::B));
-
-        history_res.add_history(History::E);
-        assert_eq!(history_res.history.len(), 3);
-        assert_eq!(history_res.undo_count, Some(3));
-
-        assert_eq!(history_res.undo(), Some(&History::E));
-        assert_eq!(history_res.undo(), Some(&History::B));
-        assert_eq!(history_res.undo(), Some(&History::A));
+    /// undo -> redo
+    pub fn add_redo(&mut self, history: History) {
+        self.redos.push(history);
     }
 
-    #[test]
-    fn test_max_count() {
-        let mut history_res = HistoryRes::<History>::new();
-        for _ in 0..HistoryRes::<History>::MAX_HISTORY {
-            history_res.add_history(History::A);
-        }
-        assert_eq!(history_res.history.len(), HistoryRes::<History>::MAX_HISTORY);
-
-        history_res.add_history(History::B);
-        assert_eq!(history_res.history.len(), HistoryRes::<History>::MAX_HISTORY);
-        assert_eq!(history_res.undo_count, Some(HistoryRes::<History>::MAX_HISTORY));
+    pub fn pop_redo(&mut self) -> Option<History> {
+        self.redos.pop()
     }
 }

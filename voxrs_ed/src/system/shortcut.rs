@@ -68,23 +68,27 @@ pub(crate) fn process_shortcut(
                 }
             }
             ShortcutCommand::Undo => {
-                if let Some(history) = history_res.undo() {
-                    exec_history_command(history, world_block_res);
+                if let Some(history) = history_res.pop_undo() {
+                    let redo = exec_history_command(&history, world_block_res);
+                    if let Some(redo) = redo {
+                        history_res.add_redo(redo);
+                    }
                 }
             }
             ShortcutCommand::Redo => {
-                if let Some(history) = history_res.redo() {
-                    exec_history_command(history, world_block_res);
+                if let Some(history) = history_res.pop_redo() {
+                    let undo = exec_history_command(&history, world_block_res);
+                    if let Some(undo) = undo {
+                        history_res.add_undo(undo);
+                    }
                 }
             }
         }
     }
 }
 
-fn exec_history_command(history: &History, world_block_res: &mut WorldBlockRes) {
+fn exec_history_command(history: &History, world_block_res: &mut WorldBlockRes) -> Option<History> {
     match history {
-        History::ModifyBlock(modify_block) => {
-            modify_block.exec(world_block_res);
-        }
+        History::ModifyBlock(modify_block) => modify_block.exec(world_block_res),
     }
 }
