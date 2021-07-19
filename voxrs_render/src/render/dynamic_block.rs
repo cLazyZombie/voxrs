@@ -11,7 +11,7 @@ use super::{CommonUniforms, ShaderHash};
 
 pub struct DynamicBlockRenderer {
     uniform_bind_group: wgpu::BindGroup,
-    uniform_local_bind_group_layout: wgpu::BindGroupLayout,
+    uniform_local_bind_group: wgpu::BindGroup,
     diffuse_bind_group_layout: wgpu::BindGroupLayout,
     render_pipeline_layout: wgpu::PipelineLayout,
     vertex_buffer: DynamicBuffer<BlockVertex>,
@@ -63,6 +63,27 @@ impl DynamicBlockRenderer {
             }],
         });
 
+        let world_transform = Mat4::IDENTITY;
+
+        let uniform_local_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("dynamic local uniform buffer"),
+            contents: bytemuck::cast_slice(&world_transform.to_cols_array()),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
+
+        let uniform_local_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("local_uniform_bind_group"),
+            layout: &uniform_local_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &uniform_local_buffer,
+                    offset: 0,
+                    size: None,
+                }),
+            }],
+        });
+
         let diffuse_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("diffuse texture bind group layout for dynamic block"),
             entries: &[
@@ -110,7 +131,7 @@ impl DynamicBlockRenderer {
 
         Self {
             uniform_bind_group,
-            uniform_local_bind_group_layout,
+            uniform_local_bind_group,
             diffuse_bind_group_layout,
             render_pipeline_layout,
             vertex_buffer,
@@ -136,7 +157,6 @@ impl DynamicBlockRenderer {
                 queue,
                 &mut self.vertex_buffer,
                 &self.diffuse_bind_group_layout,
-                &self.uniform_local_bind_group_layout,
             );
 
             let material = bp.material.get_asset();
@@ -237,6 +257,7 @@ impl DynamicBlockRenderer {
                 let render_pipeline = self.render_pipelines.get(shader_hash).unwrap();
                 render_pass.set_pipeline(render_pipeline);
                 render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
+                render_pass.set_bind_group(1, &self.uniform_local_bind_group, &[]);
             }
 
             for block in vec {
@@ -246,7 +267,6 @@ impl DynamicBlockRenderer {
                     buffer.slice(block.vertex_buffer_start..(block.vertex_buffer_start + VERTEX_SIZE_PER_BLOCK)),
                 );
                 render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-                render_pass.set_bind_group(1, &block.local_uniform_bind_group, &[]);
                 render_pass.set_bind_group(2, &block.diffuse_bind_group, &[]);
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
             }
@@ -383,7 +403,6 @@ pub fn create_block_vertexbuffer_desc<'a>() -> wgpu::VertexBufferLayout<'a> {
 
 pub struct Block {
     diffuse_bind_group: wgpu::BindGroup,
-    local_uniform_bind_group: wgpu::BindGroup,
     vertex_buffer_idx: usize,
     vertex_buffer_start: wgpu::BufferAddress,
 }
@@ -396,7 +415,6 @@ impl Block {
         queue: &wgpu::Queue,
         vertex_buffer: &mut DynamicBuffer<BlockVertex>,
         diffuse_bind_group_layout: &wgpu::BindGroupLayout,
-        uniform_local_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
         let material = bp.material.get_asset();
 
@@ -418,33 +436,10 @@ impl Block {
             ],
         });
 
-        // local uniform buffer
-        let world_transform = Mat4::IDENTITY;
-
-        let local_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("view_proj buffer"),
-            contents: bytemuck::cast_slice(&world_transform.to_cols_array()),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        });
-
-        let local_uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("local_uniform_bind_group"),
-            layout: uniform_local_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &local_uniform_buffer,
-                    offset: 0,
-                    size: None,
-                }),
-            }],
-        });
-
         let (vertex_buffer_idx, vertex_buffer_start) = vertex_buffer.add_slice(&create_vertex(&bp.aabb), device, queue);
 
         Self {
             diffuse_bind_group,
-            local_uniform_bind_group,
             vertex_buffer_idx,
             vertex_buffer_start,
         }
