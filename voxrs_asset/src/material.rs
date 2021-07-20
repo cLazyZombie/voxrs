@@ -13,6 +13,7 @@ pub struct MaterialAsset {
     pub diffuse_tex: AssetHandle<TextureAsset>,
     pub vertex_shader: AssetHandle<ShaderAsset>,
     pub frag_shader: AssetHandle<ShaderAsset>,
+    pub alpha: MaterialAlpha,
 }
 
 #[derive(Deserialize)]
@@ -20,6 +21,14 @@ struct MaterialAssetRaw {
     diffuse_tex: String,
     vertex_shader: String,
     frag_shader: String,
+    alpha: MaterialAlpha,
+}
+
+#[derive(Deserialize, Copy, Clone, Debug)]
+pub enum MaterialAlpha {
+    NoAlpha,
+    OneBit,
+    FullAlpha,
 }
 
 impl MaterialAsset {
@@ -34,6 +43,7 @@ impl MaterialAsset {
             diffuse_tex,
             vertex_shader,
             frag_shader,
+            alpha: raw.alpha,
         }
     }
 
