@@ -22,6 +22,7 @@ pub struct Renderer {
     common_uniforms: CommonUniforms,
     font: AssetHandle<FontAsset>,
     fps: Fps,
+    minimized: bool, // whether main window is minimized
 }
 
 impl Renderer {
@@ -89,11 +90,16 @@ impl Renderer {
             common_uniforms,
             font,
             fps,
+            minimized: false,
         }
     }
 
     #[profiling::function]
     pub fn render(&mut self, mut bp: Blueprint) -> Result<(), wgpu::SwapChainError> {
+        if self.minimized {
+            return Ok(());
+        }
+
         let chunks = self.chunk_renderer.prepare(
             &bp.chunks,
             &bp.world_block_mat_handle.unwrap(),
@@ -188,6 +194,12 @@ impl Renderer {
 
     // todo: crash when minimized (new_size == (0, 0))
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        if new_size.width == 0 || new_size.height == 0 {
+            self.minimized = true;
+            return;
+        }
+
+        self.minimized = false;
         self.size = new_size;
         self.swap_chain_desc.width = new_size.width;
         self.swap_chain_desc.height = new_size.height;

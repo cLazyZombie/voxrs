@@ -230,6 +230,10 @@ impl Editor {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
+        if width == 0 || height == 0 {
+            return;
+        }
+
         if let Some(mut camera_res) = self.res.get_mut::<CameraRes>() {
             camera_res.resize(width, height);
         }
