@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["voxrs_asset"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html\" title=\"trait core::cmp::PartialOrd\">PartialOrd</a>&lt;<a class=\"struct\" href=\"voxrs_asset/struct.AssetHash.html\" title=\"struct voxrs_asset::AssetHash\">AssetHash</a>&gt; for <a class=\"struct\" href=\"voxrs_asset/struct.AssetHash.html\" title=\"struct voxrs_asset::AssetHash\">AssetHash</a>","synthetic":false,"types":["voxrs_asset::manager::AssetHash"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

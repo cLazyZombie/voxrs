@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Ui",""]],"struct":[["Blueprint",""],["Camera",""],["Chunk",""],["DynamicBlock",""],["Panel",""],["Text",""],["TextSection",""]],"type":[["BlockIdx",""],["BlockMatIdx","which material is used in block"],["ChunkId",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["DirectionComp",""],["PositionComp",""]]});

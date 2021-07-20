@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["voxrs_asset"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"struct\" href=\"voxrs_asset/struct.AssetPath.html\" title=\"struct voxrs_asset::AssetPath\">AssetPath</a>","synthetic":false,"types":["voxrs_asset::asset_path::AssetPath"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["indicator_render",""],["indicator_render_system",""]]});

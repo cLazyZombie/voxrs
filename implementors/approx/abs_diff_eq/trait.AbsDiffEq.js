@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["voxrs_math"] = [{"text":"impl AbsDiffEq&lt;<a class=\"struct\" href=\"voxrs_math/struct.Angle.html\" title=\"struct voxrs_math::Angle\">Angle</a>&gt; for <a class=\"struct\" href=\"voxrs_math/struct.Angle.html\" title=\"struct voxrs_math::Angle\">Angle</a>","synthetic":false,"types":["voxrs_math::angle::Angle"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

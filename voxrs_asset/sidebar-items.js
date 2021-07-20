@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["AssetBuildResult",""],["BlockSize",""]],"struct":[["AssetHandle",""],["AssetHash",""],["AssetManager",""],["AssetPath",""],["FontAsset",""],["MaterialAsset",""],["ShaderAsset",""],["TextAsset",""],["TextureAsset",""],["WorldBlockAsset",""],["WorldBlockAssetRaw",""],["WorldChunkRaw",""],["WorldMaterialAsset",""]]});

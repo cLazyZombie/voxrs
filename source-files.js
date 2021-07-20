@@ -1,0 +1,12 @@
+var N = null;var sourcesIndex = {};
+sourcesIndex["voxrs"] = {"name":"","dirs":[{"name":"system","files":["camera.rs","mod.rs","world_block_render.rs"]}],"files":["game.rs","lib.rs"]};
+sourcesIndex["voxrs_asset"] = {"name":"","files":["asset_path.rs","assets.rs","font.rs","handle.rs","lib.rs","manager.rs","material.rs","shader.rs","text.rs","texture.rs","world_block.rs","world_material.rs"]};
+sourcesIndex["voxrs_core"] = {"name":"","dirs":[{"name":"comp","files":["mod.rs"]},{"name":"res","files":["camera.rs","elapsed_time.rs","key_input.rs","mod.rs","mouse_input.rs","world_block.rs"]}],"files":["lib.rs"]};
+sourcesIndex["voxrs_derive"] = {"name":"","files":["asset.rs","lib.rs"]};
+sourcesIndex["voxrs_ed"] = {"name":"","dirs":[{"name":"res","files":["editor_asset.rs","history.rs","mod.rs"]},{"name":"system","files":["camera.rs","disable_input.rs","end_frame.rs","mod.rs","process_widget_message.rs","shortcut.rs","world_block_modify.rs","world_block_render.rs"]}],"files":["command.rs","editor.rs","history.rs","lib.rs","terminal_command.rs","widget_message.rs"]};
+sourcesIndex["voxrs_math"] = {"name":"","files":["aabb.rs","angle.rs","block_pos.rs","chunk.rs","chunk_pos.rs","dir.rs","frustum.rs","lib.rs","matrix4.rs","plane.rs","ray.rs","rect.rs","sphere.rs"]};
+sourcesIndex["voxrs_render"] = {"name":"","dirs":[{"name":"blueprint","files":["blueprint.rs","chunk.rs","dynamic_block.rs","mod.rs","ui.rs"]},{"name":"render","dirs":[{"name":"ui","files":["mod.rs","panel_render.rs","text_render.rs","ui_render.rs"]}],"files":["chunk.rs","chunk_cache.rs","commands.rs","common_uniforms.rs","dynamic_block.rs","mod.rs","renderer.rs","shader_hash.rs"]},{"name":"ui","files":["font_atlas.rs","mod.rs"]}],"files":["lib.rs"]};
+sourcesIndex["voxrs_rhi"] = {"name":"","files":["dynamic_buffer.rs","dynamic_texture.rs","lib.rs","texture.rs"]};
+sourcesIndex["voxrs_types"] = {"name":"","files":["clock.rs","color.rs","fps.rs","io.rs","lib.rs","safecloner.rs"]};
+sourcesIndex["voxrs_ui"] = {"name":"","dirs":[{"name":"comp","files":["color.rs","focusable.rs","hierarchy.rs","interaction_handler.rs","mod.rs","region.rs","root.rs"]},{"name":"res","files":["focused_widget.rs","input_queue.rs","mod.rs","next_depth.rs","output_queue.rs","screen.rs"]},{"name":"system","files":["mod.rs","process_input_system.rs","render_system.rs","util.rs"]},{"name":"widget","files":["mod.rs","terminal.rs"]}],"files":["anchor.rs","input.rs","interaction.rs","lib.rs","widget_builder.rs"]};
+createSourceSidebar();

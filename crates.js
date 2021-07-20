@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["voxrs","voxrs_asset","voxrs_core","voxrs_derive","voxrs_ed","voxrs_math","voxrs_render","voxrs_rhi","voxrs_types","voxrs_ui"];

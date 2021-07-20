@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["DEPTH_FORMAT",""]],"struct":[["DynamicBuffer",""],["DynamicTexture","DynamicTexture can write runtime only support rgba8 right now"],["Texture",""]]});
